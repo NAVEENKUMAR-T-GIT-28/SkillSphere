@@ -163,7 +163,7 @@ export default function StudentResumes() {
                   </div>
                   <p className="text-sm text-text-secondary">{resume.label || `Resume v${resume.version}`}</p>
                   <p className="text-xs text-text-muted mt-2">
-                    Uploaded: {new Date(resume.created_at).toLocaleDateString()}
+                    Uploaded: {new Date(resume.uploaded_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">

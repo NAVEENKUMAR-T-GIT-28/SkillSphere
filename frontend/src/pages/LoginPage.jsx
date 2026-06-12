@@ -17,8 +17,15 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const userData = await login(email, password);
+      const role = userData.baseRole || userData.base_role;
+      if (role === 'hod') {
+        navigate('/hod/dashboard');
+      } else if (role === 'faculty') {
+        navigate('/faculty/queue');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {

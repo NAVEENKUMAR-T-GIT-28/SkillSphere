@@ -26,7 +26,7 @@ export default function HODDrives() {
     try {
       setFetching(true);
       const { data } = await api.get('/placement-drives?limit=50');
-      const items = Array.isArray(data) ? data : data.data || data.items || [];
+      const items = data || [];
       
       setDrives(items.map(d => ({
         id: d._id,

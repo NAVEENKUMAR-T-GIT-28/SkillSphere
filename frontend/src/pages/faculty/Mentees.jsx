@@ -10,17 +10,8 @@ export default function FacultyMentees() {
   useEffect(() => {
     const fetchMentees = async () => {
       try {
-        // Since there is no mentee mapping in the DB, we fetch all students
-        // Alternatively, we could filter by the faculty's department if it were in context
-        const { data } = await api.get('/search/students?limit=50');
-        
-        // The API returns paginated data (data.data is already extracted by the interceptor if structured that way, 
-        // but search returns an array if our interceptor extracts it, wait, search returns an array or object?
-        // Let's assume the interceptor extracts data.data.
-        // Actually, search.js returns success(res, students, { total, ... })
-        // So the interceptor returns `students` (the array). Wait, if interceptor extracts `data.data`, it returns `students`.
-        // Let's handle both cases just in case.
-        const students = Array.isArray(data) ? data : data.items || data.data || [];
+        const { data } = await api.get('/my/mentees');
+        const students = data || [];
         
         const mappedMentees = students.map((s, index) => ({
           id: s._id,

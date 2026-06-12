@@ -30,15 +30,16 @@ export default function StudentSkills() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if (!user?.profileId) return;
-        const [{ data: taxonomyData }, { data: skillsData }] = await Promise.all([
-          api.get('/skill-taxonomy'),
-          api.get(`/students/${user.profileId}/skills`)
-        ]);
+        const { data: taxonomyData } = await api.get('/skill-taxonomy');
         setTaxonomy(taxonomyData);
+        
+        if (!user?.profileId) return;
+        
+        const { data: skillsData } = await api.get(`/students/${user.profileId}/skills`);
         setSkills(skillsData);
       } catch (err) {
         console.error('Failed to load skills:', err);
+        alert(err.message || 'Authentication error or failed to load data');
       } finally {
         setFetching(false);
       }

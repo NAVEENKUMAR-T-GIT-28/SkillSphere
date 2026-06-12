@@ -56,13 +56,14 @@ export default function StudentDrives() {
   // Map applications to drive object
   const appsByDriveId = applications.reduce((acc, app) => {
     // app.drive_id could be an object if populated, or string
-    const driveId = typeof app.drive_id === 'object' ? app.drive_id._id : app.drive_id;
+    const driveId = String(app.drive_id?._id || app.drive_id);
     acc[driveId] = app;
     return acc;
   }, {});
 
   const appliedDrives = applications.map(app => {
-    const drive = typeof app.drive_id === 'object' ? app.drive_id : drives.find(d => d._id === app.drive_id) || {};
+    const appDriveId = String(app.drive_id?._id || app.drive_id);
+    const drive = typeof app.drive_id === 'object' ? app.drive_id : drives.find(d => String(d._id) === appDriveId) || {};
     return {
       ...drive,
       applicationStatus: app.status,
