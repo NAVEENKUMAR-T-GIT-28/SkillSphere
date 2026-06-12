@@ -95,29 +95,31 @@ export default function LoginPage() {
         </div>
 
         {/* Dev Accounts */}
-        <div className="mt-6">
-          <button
-            onClick={() => setShowDevAccounts(!showDevAccounts)}
-            className="text-sm text-primary hover:underline w-full text-center"
-          >
-            {showDevAccounts ? 'Hide' : 'Show'} dev accounts
-          </button>
+        {import.meta.env.DEV && (
+          <div className="mt-6">
+            <button
+              onClick={() => setShowDevAccounts(!showDevAccounts)}
+              className="text-sm text-primary hover:underline w-full text-center"
+            >
+              {showDevAccounts ? 'Hide' : 'Show'} dev accounts
+            </button>
 
-          {showDevAccounts && (
-            <div className="mt-4 space-y-2">
-              {devAccounts.map((acc) => (
-                <button
-                  key={acc.email}
-                  onClick={() => fillDevAccount(acc.email, acc.password)}
-                  className="w-full card-compact hover:bg-gray-50 transition-colors text-left text-sm"
-                >
-                  <p className="font-medium text-text-primary">{acc.role}</p>
-                  <p className="text-text-muted text-xs">{acc.email}</p>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+            {showDevAccounts && (
+              <div className="mt-4 space-y-2">
+                {devAccounts.map((acc) => (
+                  <button
+                    key={acc.email}
+                    onClick={() => fillDevAccount(acc.email, acc.password)}
+                    className="w-full card-compact hover:bg-gray-50 transition-colors text-left text-sm"
+                  >
+                    <p className="font-medium text-text-primary">{acc.role}</p>
+                    <p className="text-text-muted text-xs">{acc.email}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

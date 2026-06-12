@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (err) {
-        console.error('[v0] Failed to parse stored user:', err);
+        console.error('[AuthContext] Failed to parse stored user:', err);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
       }

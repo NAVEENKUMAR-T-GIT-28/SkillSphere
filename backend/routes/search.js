@@ -57,22 +57,26 @@ router.get(
 
       // Section filter
       if (section) {
-        filter.section = section;
+        const sections = section.split(',').map(s => s.trim()).filter(Boolean);
+        filter.section = sections.length > 1 ? { $in: sections } : sections[0];
       }
 
       // Batch year filter
       if (batch_year) {
-        filter.batch_year = parseInt(batch_year);
+        const years = batch_year.split(',').map(Number).filter(Boolean);
+        filter.batch_year = years.length > 1 ? { $in: years } : years[0];
       }
 
       // Graduation year filter
       if (graduation_year) {
-        filter.graduation_year = parseInt(graduation_year);
+        const gradYears = graduation_year.split(',').map(Number).filter(Boolean);
+        filter.graduation_year = gradYears.length > 1 ? { $in: gradYears } : gradYears[0];
       }
 
       // Readiness tier filter
       if (tier) {
-        filter.readiness_tier = tier;
+        const tiers = tier.split(',').map(t => t.trim()).filter(Boolean);
+        filter.readiness_tier = tiers.length > 1 ? { $in: tiers } : tiers[0];
       }
 
       // Name search (case-insensitive partial match)

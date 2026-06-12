@@ -29,6 +29,7 @@ const searchRoutes = require('./routes/search');
 const placementRoutes = require('./routes/placement');
 const hodRoutes = require('./routes/hod');
 const notificationRoutes = require('./routes/notifications');
+const myAccessRoutes = require('./routes/myAccess');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -72,6 +73,7 @@ app.use('/api/search', searchRoutes);                // /api/search/students
 app.use('/api', placementRoutes);                     // /api/placement-drives/* + /api/applications/*
 app.use('/api/hod', hodRoutes);                      // /api/hod/*
 app.use('/api/notifications', notificationRoutes);   // /api/notifications
+app.use('/api/my', myAccessRoutes);                  // /api/my/*
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use('*', (req, res) => {

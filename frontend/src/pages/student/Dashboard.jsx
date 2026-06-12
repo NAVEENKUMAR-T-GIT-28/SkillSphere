@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Award, FileText, Code2, Users, FolderGit2 } from 'lucide-react';
+import { BookOpen, Award, FileText, Code2, Users, FolderGit2, User, ShieldCheck } from 'lucide-react';
+import React from 'react';
 import ReadinessRing from '../../components/ReadinessRing';
 import ScoreBar from '../../components/ScoreBar';
 import TierBadge from '../../components/TierBadge';
@@ -17,7 +18,7 @@ export default function StudentDashboard() {
         setDashboard(data);
       } catch (err) {
         setError(err.message || 'Failed to load dashboard');
-        console.error('[v0] Dashboard fetch error:', err);
+        console.error('[StudentDashboard] Fetch error:', err);
       } finally {
         setLoading(false);
       }
@@ -36,6 +37,8 @@ export default function StudentDashboard() {
 
   const readinessData = dashboard?.readiness || {};
   const modules = dashboard?.modules || [];
+  
+  const ICONS = { profile: User, skills: Award, projects: FolderGit2, certs: ShieldCheck, coding: Code2 };
 
   return (
     <div className="space-y-8">
@@ -85,7 +88,7 @@ export default function StudentDashboard() {
                   <p className="text-sm text-text-secondary mt-1">{module.description}</p>
                   <p className="text-xs text-text-muted mt-2">{module.status}</p>
                 </div>
-                {module.icon && <module.icon className="text-primary opacity-50 flex-shrink-0 ml-2" size={20} />}
+                {ICONS[module.id] && React.createElement(ICONS[module.id], { className: 'text-primary opacity-50 flex-shrink-0 ml-2', size: 20 })}
               </div>
               <button className="btn-primary mt-3 text-sm w-full">
                 {module.action}

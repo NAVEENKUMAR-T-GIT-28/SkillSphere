@@ -51,7 +51,6 @@ Thumbs.db
 desktop.ini
 
 # Project-specific / Gemini / Workspace files
-skillsphere-dev-info.md
 .gemini/
 artifacts/
 *.local

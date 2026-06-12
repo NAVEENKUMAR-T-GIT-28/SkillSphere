@@ -13,6 +13,7 @@ export default function HODRoles() {
   const [formData, setFormData] = useState({
     user_id: '',
     scope_label: '',
+    studentId: '',
   });
 
   const roles = [
@@ -31,7 +32,7 @@ export default function HODRoles() {
       setAssignments(items.map(a => ({
         id: a._id,
         role: a.role,
-        faculty: a.user_id?.email || 'Unknown User', // user email for now
+        faculty: a.assignee_name || a.user_id?.email || 'Unknown User',
         class: a.scope_label,
         mentee: a.scope_label,
       })));
@@ -48,7 +49,7 @@ export default function HODRoles() {
 
   const openAssignModal = (roleId) => {
     setModalRole(roleId);
-    setFormData({ user_id: '', scope_label: '' });
+    setFormData({ user_id: '', scope_label: '', studentId: '' });
     setShowModal(true);
   };
 
@@ -64,10 +65,11 @@ export default function HODRoles() {
         user_id: formData.user_id,
         role: modalRole,
         scope_type: modalRole === 'mentor' ? 'student' : (modalRole === 'rep' ? 'section' : 'class'),
+        scope_id: modalRole === 'mentor' ? formData.studentId : undefined,
         scope_label: formData.scope_label
       });
       setShowModal(false);
-      setFormData({ user_id: '', scope_label: '' });
+      setFormData({ user_id: '', scope_label: '', studentId: '' });
       fetchAssignments();
     } catch (err) {
       alert(err.message || 'Failed to assign role. Ensure User ID is valid.');
@@ -193,6 +195,18 @@ export default function HODRoles() {
               onChange={(e) => setFormData({...formData, scope_label: e.target.value})}
             />
           </div>
+          {modalRole === 'mentor' && (
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">Mentee Student ID (Object ID)</label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="MongoDB Object ID of the student"
+                value={formData.studentId}
+                onChange={(e) => setFormData({...formData, studentId: e.target.value})}
+              />
+            </div>
+          )}
 
           <div className="flex gap-3 justify-end pt-4 border-t border-border">
             <button onClick={() => setShowModal(false)} disabled={processing} className="btn-secondary disabled:opacity-50">

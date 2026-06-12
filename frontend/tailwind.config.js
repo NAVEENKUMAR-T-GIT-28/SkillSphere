@@ -23,7 +23,7 @@ export default {
           pendingText: '#92400E',
           rejected: '#FEE2E2',
           rejectedText: '#991B1B',
-          expired: '#FFEDDL',
+          expired: '#FFEDD5',
           expiredText: '#7C2D12',
         }
       },

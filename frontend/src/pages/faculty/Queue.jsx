@@ -31,7 +31,7 @@ export default function FacultyQueue() {
             itemName: c.title,
             issuer: c.issuer,
             submittedDate: c.created_at,
-            driveLink: c.certificate_link,
+            driveLink: c.drive_link,
             status: c.status,
           });
         });
@@ -44,10 +44,10 @@ export default function FacultyQueue() {
             type: 'skill',
             studentName: s.student_id?.full_name || 'Unknown',
             studentRoll: s.student_id?.roll_number || 'N/A',
-            itemName: s.taxonomy_id?.skill_name || s.custom_skill_name,
+            itemName: s.skill_name,
             category: s.taxonomy_id?.category || 'Custom',
-            proficiency: s.proficiency_level,
-            evidence: s.evidence_link,
+            proficiency: s.proficiency,
+            evidence: s.evidence_note,
             submittedDate: s.created_at,
             status: s.status,
           });
@@ -63,10 +63,9 @@ export default function FacultyQueue() {
             studentRoll: p.created_by?.roll_number || 'N/A',
             itemName: p.title,
             description: p.description,
-            role: p.role,
             techStack: p.tech_stack || [],
-            githubLink: p.github_link,
-            liveLink: p.live_link,
+            githubLink: p.github_url,
+            liveLink: p.live_demo_url,
             submittedDate: p.created_at,
             status: p.status,
           });
@@ -276,15 +275,9 @@ export default function FacultyQueue() {
                     {selectedItem.evidence && (
                       <div>
                         <p className="text-xs text-text-muted">Evidence</p>
-                        {selectedItem.evidence.startsWith('http') ? (
-                          <a href={selectedItem.evidence} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 mt-1">
-                            <ExternalLink size={12} /> View Evidence
-                          </a>
-                        ) : (
-                          <p className="text-sm text-text-primary p-3 bg-gray-50 rounded-md mt-1">
-                            {selectedItem.evidence}
-                          </p>
-                        )}
+                        <p className="text-sm text-text-primary p-3 bg-gray-50 rounded-md mt-1">
+                          {selectedItem.evidence}
+                        </p>
                       </div>
                     )}
                   </>
@@ -299,10 +292,6 @@ export default function FacultyQueue() {
                     <div>
                       <p className="text-xs text-text-muted">Description</p>
                       <p className="text-sm font-medium text-text-primary">{selectedItem.description}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-text-muted">Role</p>
-                      <p className="text-sm font-medium text-text-primary">{selectedItem.role}</p>
                     </div>
                     {selectedItem.techStack?.length > 0 && (
                       <div>

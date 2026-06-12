@@ -32,10 +32,9 @@ export default function HODSearch() {
       // The backend expects batch_year, section, tier as single values, or we can send the first one selected, or loop them.
       // Looking at search.js: if (batch_year) filter.batch_year = parseInt(batch_year); - it expects single.
       // For this prototype, if multiple are selected, we can just pass the first one, or modify the backend.
-      // Assuming we just pass the first selected for now, or join if backend supports it.
-      if (filters.batchYears.length > 0) params.append('batch_year', filters.batchYears[0]);
-      if (filters.sections.length > 0) params.append('section', filters.sections[0]);
-      if (filters.tiers.length > 0) params.append('tier', filters.tiers[0]);
+      if (filters.batchYears.length > 0) params.append('batch_year', filters.batchYears.join(','));
+      if (filters.sections.length > 0) params.append('section', filters.sections.join(','));
+      if (filters.tiers.length > 0) params.append('tier', filters.tiers.join(','));
 
       params.append('sort_by', sortBy === 'name' ? 'full_name' : (sortBy === 'cgpa' ? 'cgpa' : 'readiness_score'));
       params.append('sort_order', 'desc');

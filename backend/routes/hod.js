@@ -10,6 +10,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Student = require('../models/Student');
+const Faculty = require('../models/Faculty');
 const Skill = require('../models/Skill');
 const Certification = require('../models/Certification');
 const Project = require('../models/Project');
@@ -239,13 +240,21 @@ router.get(
   async (req, res, next) => {
     try {
       const assignments = await RoleAssignment.find({ revoked_at: null })
-        .populate('user_id', 'email')
+        .populate('user_id', 'email base_role')
         .sort({ created_at: -1 });
 
-      // We might need to manually attach names if user_id points to User which only has email.
-      // But the frontend expects the assigned user's name. Let's map it.
-      // We will leave it as is and frontend can handle, or we populate.
-      success(res, assignments);
+      const enriched = await Promise.all(assignments.map(async (a) => {
+        const obj = a.toObject();
+        if (a.user_id?.base_role === 'student') {
+          const student = await Student.findOne({ user_id: a.user_id._id }).select('full_name roll_number');
+          obj.assignee_name = student ? `${student.full_name} (${student.roll_number})` : a.user_id.email;
+        } else {
+          const faculty = await Faculty.findOne({ user_id: a.user_id._id }).select('full_name employee_id');
+          obj.assignee_name = faculty ? `${faculty.full_name} (${faculty.employee_id})` : a.user_id.email;
+        }
+        return obj;
+      }));
+      success(res, enriched);
     } catch (err) {
       next(err);
     }

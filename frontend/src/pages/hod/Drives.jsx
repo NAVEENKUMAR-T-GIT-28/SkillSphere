@@ -32,7 +32,7 @@ export default function HODDrives() {
         id: d._id,
         company: d.company_name,
         role: d.role_title,
-        ctc: d.ctc_package || 'N/A',
+        ctc: d.ctc || 'N/A',
         driveDate: d.drive_date,
         openings: d.openings || 0,
         applications: 0, // Mocked for now, backend could provide this or we fetch applications
@@ -60,7 +60,7 @@ export default function HODDrives() {
       await api.post('/placement-drives', {
         company_name: formData.companyName,
         role_title: formData.roleTitle,
-        ctc_package: formData.ctc,
+        ctc: formData.ctc,
         location: formData.location,
         drive_date: formData.driveDate,
         application_deadline: formData.deadline,

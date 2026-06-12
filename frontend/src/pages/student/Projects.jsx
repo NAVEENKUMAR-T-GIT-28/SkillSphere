@@ -52,9 +52,9 @@ export default function StudentProjects() {
         github_url: formData.githubUrl,
         live_demo_url: formData.liveUrl,
         complexity_tier: formData.complexity,
-        // Optional team members logic not fully mapped, assuming comma separated student IDs for now,
-        // or leaving it out if we just want single-owner projects.
-        // team_member_ids: formData.teamMembers ? formData.teamMembers.split(',').map(m => m.trim()) : [],
+        team_member_ids: formData.teamMembers
+          ? formData.teamMembers.split(',').map(m => m.trim()).filter(Boolean)
+          : [],
       };
 
       const newProject = await api.post(`/students/${user.profileId}/projects`, payload);
@@ -170,6 +170,17 @@ export default function StudentProjects() {
                 <option value="advanced">Advanced</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">Team Members (comma-separated Student Object IDs)</label>
+            <input
+              type="text"
+              className="input-field"
+              placeholder="ObjectId1, ObjectId2"
+              value={formData.teamMembers}
+              onChange={(e) => setFormData({...formData, teamMembers: e.target.value})}
+            />
           </div>
 
           <div>

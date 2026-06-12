@@ -317,18 +317,18 @@ async function findEligibleStudents(drive) {
 
   // Filter by required skills (verified) — AND logic
   if (elig.required_skills && elig.required_skills.length > 0) {
-    const filteredStudents = [];
-    for (const student of students) {
-      const verifiedSkills = await Skill.find({
-        student_id: student._id,
-        status: 'verified',
-        skill_name: { $in: elig.required_skills }
-      });
-      if (verifiedSkills.length >= elig.required_skills.length) {
-        filteredStudents.push(student);
-      }
-    }
-    students = filteredStudents;
+    const studentIds = students.map(s => s._id);
+    const matches = await Skill.aggregate([
+      { $match: {
+          student_id: { $in: studentIds },
+          status: 'verified',
+          skill_name: { $in: elig.required_skills }
+      }},
+      { $group: { _id: '$student_id', count: { $sum: 1 } } },
+      { $match: { count: { $gte: elig.required_skills.length } } }
+    ]);
+    const eligibleIds = new Set(matches.map(m => m._id.toString()));
+    students = students.filter(s => eligibleIds.has(s._id.toString()));
   }
 
   return students;

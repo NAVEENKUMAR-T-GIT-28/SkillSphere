@@ -121,7 +121,7 @@ export default function StudentDrives() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-text-primary">{drive.company_name}</h3>
-                    <p className="text-text-secondary">{drive.role}</p>
+                    <p className="text-text-secondary">{drive.role_title}</p>
                   </div>
                   {!appsByDriveId[drive._id] && drive.status !== 'closed' && (
                     <button
@@ -183,16 +183,13 @@ export default function StudentDrives() {
                   <p className="text-xs text-text-primary font-medium mb-2">Eligibility Criteria</p>
                   <div className="flex flex-wrap gap-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-text-secondary">Min CGPA: <span className="font-medium text-text-primary">{drive.eligibility_criteria?.min_cgpa || 'N/A'}</span></span>
+                      <span className="text-xs text-text-secondary">Min CGPA: <span className="font-medium text-text-primary">{drive.eligibility?.min_cgpa || 'N/A'}</span></span>
                     </div>
-                    {drive.eligibility_criteria?.required_skills?.length > 0 && (
+                    {drive.eligibility?.required_skills?.length > 0 && (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-text-secondary">Skills: <span className="font-medium text-text-primary">{drive.eligibility_criteria.required_skills.join(', ')}</span></span>
+                        <span className="text-xs text-text-secondary">Skills: <span className="font-medium text-text-primary">{drive.eligibility.required_skills.join(', ')}</span></span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-text-secondary">No Active Backlogs: <span className="font-medium text-text-primary">{drive.eligibility_criteria?.no_active_backlogs ? 'Required' : 'No'}</span></span>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -225,7 +222,7 @@ export default function StudentDrives() {
                       <td className="py-3 px-4">
                         <p className="font-medium text-text-primary">{drive.company_name}</p>
                       </td>
-                      <td className="py-3 px-4 text-text-secondary text-sm">{drive.role}</td>
+                      <td className="py-3 px-4 text-text-secondary text-sm">{drive.role_title}</td>
                       <td className="py-3 px-4">
                         <span className={`badge text-xs capitalize ${
                           drive.applicationStatus === 'shortlisted' || drive.applicationStatus === 'selected' ? 'bg-green-100 text-green-700' :
