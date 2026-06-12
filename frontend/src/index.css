@@ -1,0 +1,60 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@layer base {
+  html {
+    @apply bg-background text-text-primary;
+  }
+  
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-700 transition-colors font-medium text-sm;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-surface border border-border text-text-primary rounded-md hover:bg-gray-50 transition-colors font-medium text-sm;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors font-medium text-sm;
+  }
+
+  .card {
+    @apply bg-surface border border-border rounded-lg p-6;
+  }
+
+  .card-compact {
+    @apply bg-surface border border-border rounded-lg p-4;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-verified {
+    @apply badge bg-status-verified text-status-verifiedText;
+  }
+
+  .badge-pending {
+    @apply badge bg-status-pending text-status-pendingText;
+  }
+
+  .badge-rejected {
+    @apply badge bg-status-rejected text-status-rejectedText;
+  }
+
+  .table-row-hover {
+    @apply hover:bg-gray-50 transition-colors;
+  }
+}
