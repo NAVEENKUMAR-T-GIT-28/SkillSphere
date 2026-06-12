@@ -14,10 +14,12 @@ const PlacementDrive = require('../models/PlacementDrive');
 const Application = require('../models/Application');
 const Student = require('../models/Student');
 const Skill = require('../models/Skill');
+const Notification = require('../models/Notification');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleGuard');
 const { notifyDriveAnnounced } = require('../services/notification');
 const { success, error } = require('../utils/response');
+const { sanitizeField } = require('../utils/sanitize');
 
 const router = express.Router();
 
@@ -64,8 +66,8 @@ router.post(
   authenticate,
   requireRole('hod'),
   [
-    body('company_name').notEmpty().trim().withMessage('Company name is required'),
-    body('role_title').notEmpty().trim().withMessage('Role title is required'),
+    body('company_name').notEmpty().trim().withMessage('Company name is required').customSanitizer(sanitizeField),
+    body('role_title').notEmpty().trim().withMessage('Role title is required').customSanitizer(sanitizeField),
     body('drive_date').isISO8601().withMessage('Valid drive date is required'),
     body('application_deadline').isISO8601().withMessage('Valid application deadline is required'),
     body('drive_type')
@@ -154,8 +156,10 @@ router.delete(
       }
 
       await drive.deleteOne();
-      // Optionally cascade delete applications for this drive
+      // cascade delete applications for this drive
       await Application.deleteMany({ drive_id: req.params.id });
+      // cascade delete notifications related to this drive
+      await Notification.deleteMany({ reference_id: req.params.id });
 
       success(res, { message: 'Placement drive deleted successfully' });
     } catch (err) {
@@ -271,7 +275,7 @@ router.patch(
     body('status')
       .isIn(['shortlisted', 'round1', 'round2', 'selected', 'rejected'])
       .withMessage('Invalid status'),
-    body('notes').optional().trim()
+    body('notes').optional().trim().customSanitizer(sanitizeField)
   ],
   async (req, res, next) => {
     try {

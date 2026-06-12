@@ -455,6 +455,19 @@ Query params: `cgpa_min`, `cgpa_max`, `skills` (comma-separated), `department`, 
 | `PATCH` | `/notifications/:id/read` | Authenticated | Mark read |
 | `PATCH` | `/notifications/read-all` | Authenticated | Mark all read |
 
+### Admin
+
+| Method | Route | Access | Description |
+|---|---|---|---|
+| `POST` | `/admin/create-hod` | Admin | Create HOD user |
+
+### Role Access
+
+| Method | Route | Access | Description |
+|---|---|---|---|
+| `GET` | `/my/mentees` | Faculty, HOD | List students mentored |
+| `GET` | `/my/class` | Faculty, Student, HOD | List students in assigned class/section |
+
 ---
 
 ## Readiness Score Engine

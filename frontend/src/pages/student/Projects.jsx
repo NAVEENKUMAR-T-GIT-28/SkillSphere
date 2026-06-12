@@ -26,7 +26,7 @@ export default function StudentProjects() {
     const fetchProjects = async () => {
       try {
         if (!user?.profileId) return;
-        const data = await api.get(`/students/${user.profileId}/projects`);
+        const { data } = await api.get(`/students/${user.profileId}/projects`);
         setProjects(data);
       } catch (err) {
         console.error('Failed to load projects:', err);
@@ -57,7 +57,7 @@ export default function StudentProjects() {
           : [],
       };
 
-      const newProject = await api.post(`/students/${user.profileId}/projects`, payload);
+      const { data: newProject } = await api.post(`/students/${user.profileId}/projects`, payload);
       setProjects([newProject, ...projects]);
       
       setFormData({

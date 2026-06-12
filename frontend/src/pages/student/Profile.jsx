@@ -32,7 +32,7 @@ export default function StudentProfile() {
     const fetchProfile = async () => {
       try {
         if (!user?.profileId) return;
-        const data = await api.get(`/students/${user.profileId}/profile`);
+        const { data } = await api.get(`/students/${user.profileId}/profile`);
         setStudentInfo(data);
         setFormData({
           fullName: data.full_name || '',

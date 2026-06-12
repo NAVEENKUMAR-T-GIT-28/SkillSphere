@@ -39,7 +39,7 @@ export default function HODSearch() {
       params.append('sort_by', sortBy === 'name' ? 'full_name' : (sortBy === 'cgpa' ? 'cgpa' : 'readiness_score'));
       params.append('sort_order', 'desc');
 
-      const data = await api.get(`/search/students?${params.toString()}`);
+      const { data } = await api.get(`/search/students?${params.toString()}`);
       
       const students = Array.isArray(data) ? data : data.data || data.items || [];
       

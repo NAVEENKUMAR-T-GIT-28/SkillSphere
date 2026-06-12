@@ -13,6 +13,7 @@ const VerificationLog = require('../models/VerificationLog');
 const { authenticate } = require('../middleware/auth');
 const { requireOwnerOrRole } = require('../middleware/ownerGuard');
 const { success, error } = require('../utils/response');
+const { driveLink } = require('../utils/validators');
 
 const router = express.Router();
 
@@ -58,7 +59,7 @@ router.post(
       .withMessage('Invalid category'),
     body('issue_date').isISO8601().withMessage('Valid issue date is required'),
     body('expiry_date').optional({ nullable: true }).isISO8601().withMessage('Invalid expiry date'),
-    body('drive_link').notEmpty().trim().withMessage('Drive link is required'),
+    driveLink('drive_link'),
     body('credential_id').optional().trim(),
     body('verification_url').optional().trim()
   ],
@@ -111,8 +112,13 @@ router.patch(
         return error(res, 'Certification not found', 404, 'NOT_FOUND');
       }
 
-      if (cert.status === 'verified') {
-        return error(res, 'Cannot update a verified certification', 400, 'CANNOT_UPDATE_VERIFIED');
+      if (cert.status === 'verified' || cert.status === 'expired') {
+        return error(
+          res,
+          'Cannot update a verified or expired certification. Submit a new one instead.',
+          400,
+          'CANNOT_UPDATE_LOCKED'
+        );
       }
 
       const allowedFields = [

@@ -11,17 +11,49 @@ const User = require('../models/User');
 const Student = require('../models/Student');
 const Faculty = require('../models/Faculty');
 const { success, error } = require('../utils/response');
+const { getKeys } = require('../utils/jwtKeys');
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
+
+// 10 attempts per 15 minutes per IP on login
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    data: null,
+    error: { message: 'Too many login attempts. Try again in 15 minutes.', code: 'RATE_LIMITED' }
+  }
+});
+
+// 5 registrations per hour per IP
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    data: null,
+    error: { message: 'Too many registration attempts. Try again in an hour.', code: 'RATE_LIMITED' }
+  }
+});
 
 /**
  * Generate JWT token for a user.
  */
 const generateToken = (user) => {
+  const { privateKey } = getKeys();
   return jwt.sign(
     { userId: user._id, baseRole: user.base_role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
+    privateKey,
+    { 
+      algorithm: 'RS256',
+      expiresIn: process.env.JWT_EXPIRES_IN || '8h' 
+    }
   );
 };
 
@@ -31,10 +63,11 @@ const generateToken = (user) => {
  */
 router.post(
   '/register',
+  registerLimiter,
   [
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-    body('base_role').isIn(['student', 'faculty', 'hod']).withMessage('Role must be student, faculty, or hod'),
+    body('base_role').isIn(['student', 'faculty']).withMessage('Role must be student or faculty. HOD accounts are created by admin only.'),
     body('full_name').notEmpty().trim().withMessage('Full name is required'),
     // Student-specific fields
     body('roll_number').if(body('base_role').equals('student')).notEmpty().withMessage('Roll number is required for students'),
@@ -120,6 +153,7 @@ router.post(
  */
 router.post(
   '/login',
+  loginLimiter,
   [
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
     body('password').notEmpty().withMessage('Password is required')

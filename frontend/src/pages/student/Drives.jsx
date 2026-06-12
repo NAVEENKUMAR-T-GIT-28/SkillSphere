@@ -16,7 +16,7 @@ export default function StudentDrives() {
     const fetchData = async () => {
       try {
         if (!user?.profileId) return;
-        const [drivesData, appsData] = await Promise.all([
+        const [{ data: drivesData }, { data: appsData }] = await Promise.all([
           api.get('/placement-drives'),
           api.get(`/students/${user.profileId}/applications`)
         ]);
@@ -44,7 +44,7 @@ export default function StudentDrives() {
   const confirmApply = async () => {
     if (confirmModal.driveId) {
       try {
-        const application = await api.post(`/placement-drives/${confirmModal.driveId}/apply`);
+        const { data: application } = await api.post(`/placement-drives/${confirmModal.driveId}/apply`);
         setApplications([application, ...applications]);
       } catch (err) {
         alert(err.message || 'Failed to apply for drive');

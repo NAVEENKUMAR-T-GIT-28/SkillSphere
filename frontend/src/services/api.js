@@ -20,8 +20,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // If backend response has standard envelope { success: true, data: ... }
-    if (response.data && response.data.success === true && response.data.hasOwnProperty('data')) {
-      return response.data.data;
+    if (response.data && response.data.success === true && Object.prototype.hasOwnProperty.call(response.data, 'data')) {
+      return {
+        data: response.data.data,
+        meta: response.data.meta || {}
+      };
     }
     return response.data;
   },

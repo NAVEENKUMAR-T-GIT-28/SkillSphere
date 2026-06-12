@@ -12,7 +12,7 @@ export default function FacultyMentees() {
       try {
         // Since there is no mentee mapping in the DB, we fetch all students
         // Alternatively, we could filter by the faculty's department if it were in context
-        const data = await api.get('/search/students?limit=50');
+        const { data } = await api.get('/search/students?limit=50');
         
         // The API returns paginated data (data.data is already extracted by the interceptor if structured that way, 
         // but search returns an array if our interceptor extracts it, wait, search returns an array or object?

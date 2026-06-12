@@ -25,7 +25,7 @@ export default function HODRoles() {
   const fetchAssignments = async () => {
     try {
       setFetching(true);
-      const data = await api.get('/hod/role-assignments');
+      const { data } = await api.get('/hod/role-assignments');
       // API might return array or data object
       const items = Array.isArray(data) ? data : data.data || [];
       

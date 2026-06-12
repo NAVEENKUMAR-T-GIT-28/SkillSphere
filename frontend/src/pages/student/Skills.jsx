@@ -31,7 +31,7 @@ export default function StudentSkills() {
     const fetchData = async () => {
       try {
         if (!user?.profileId) return;
-        const [taxonomyData, skillsData] = await Promise.all([
+        const [{ data: taxonomyData }, { data: skillsData }] = await Promise.all([
           api.get('/skill-taxonomy'),
           api.get(`/students/${user.profileId}/skills`)
         ]);
@@ -60,7 +60,7 @@ export default function StudentSkills() {
         evidence_note: formData.evidence_note,
       };
       
-      const newSkill = await api.post(`/students/${user.profileId}/skills`, payload);
+      const { data: newSkill } = await api.post(`/students/${user.profileId}/skills`, payload);
       // Wait for it to be added, then fetch fresh list or prepend the response
       // The API response doesn't have the populated taxonomy_id, so a refetch might be safer
       // but let's just prepend it. We know the name from taxonomy list.

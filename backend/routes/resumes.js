@@ -10,6 +10,8 @@ const Resume = require('../models/Resume');
 const { authenticate } = require('../middleware/auth');
 const { requireOwnerOrRole } = require('../middleware/ownerGuard');
 const { success, error } = require('../utils/response');
+const { driveLink } = require('../utils/validators');
+const { sanitizeField } = require('../utils/sanitize');
 
 const router = express.Router();
 
@@ -43,8 +45,8 @@ router.post(
   authenticate,
   requireOwnerOrRole('hod'),
   [
-    body('drive_link').notEmpty().trim().withMessage('Drive link to resume is required'),
-    body('label').optional().trim()
+    driveLink('drive_link'),
+    body('label').optional().trim().customSanitizer(sanitizeField)
   ],
   async (req, res, next) => {
     try {

@@ -34,13 +34,12 @@ const recalculateScore = async (studentId) => {
   const certScore = Math.min(verifiedCerts.length * 5, 20);
   // 5 per verified cert, capped at 20 (needs 4 certs for full marks)
 
-  // 3. Projects score (max 25)
+  // 3. Projects score (max 25) — tier points only
   const projects = await Project.find({ student_ids: studentId, status: 'reviewed' });
   let projectScore = 0;
   for (const p of projects) {
     const tierPoints = { basic: 5, intermediate: 8, advanced: 12 }[p.complexity_tier] || 0;
-    const ratingBonus = p.faculty_rating?.average ? (p.faculty_rating.average / 5) * 3 : 0;
-    projectScore += tierPoints + ratingBonus;
+    projectScore += tierPoints;
   }
   projectScore = Math.min(projectScore, 25);
 

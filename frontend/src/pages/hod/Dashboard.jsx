@@ -9,7 +9,7 @@ export default function HODDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await api.get('/hod/dashboard');
+        const { data: response } = await api.get('/hod/dashboard');
         setData(response);
       } catch (err) {
         console.error('Failed to load dashboard:', err);

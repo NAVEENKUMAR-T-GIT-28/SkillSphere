@@ -30,7 +30,7 @@ export default function StudentCoding() {
     const fetchProfiles = async () => {
       try {
         if (!user?.profileId) return;
-        const data = await api.get(`/students/${user.profileId}/coding-profiles`);
+        const { data } = await api.get(`/students/${user.profileId}/coding-profiles`);
         // Map array to object keyed by platform
         const profileMap = {};
         data.forEach(p => {
@@ -80,10 +80,10 @@ export default function StudentCoding() {
       let savedProfile;
       if (existingProfile && existingProfile._id) {
         // Update
-        savedProfile = await api.patch(`/students/${user.profileId}/coding-profiles/${existingProfile._id}`, payload);
+        ({ data: savedProfile } = await api.patch(`/students/${user.profileId}/coding-profiles/${existingProfile._id}`, payload));
       } else {
         // Create
-        savedProfile = await api.post(`/students/${user.profileId}/coding-profiles`, payload);
+        ({ data: savedProfile } = await api.post(`/students/${user.profileId}/coding-profiles`, payload));
       }
 
       setProfiles({

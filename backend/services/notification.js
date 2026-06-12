@@ -22,13 +22,11 @@ const createNotification = async ({ user_id, type, title, message, link }) => {
 
 /**
  * Notify student that their item was approved.
+ * @param {ObjectId} studentUserId - the student's User._id
  */
-const notifyVerificationApproved = async (studentId, itemType, itemName) => {
-  const student = await Student.findById(studentId);
-  if (!student) return;
-
+const notifyVerificationApproved = async (studentUserId, itemType, itemName) => {
   return createNotification({
-    user_id: student.user_id,
+    user_id: studentUserId,
     type: 'verification_approved',
     title: `${itemType} Verified`,
     message: `Your ${itemType.toLowerCase()} "${itemName}" has been verified and approved.`,
@@ -39,12 +37,9 @@ const notifyVerificationApproved = async (studentId, itemType, itemName) => {
 /**
  * Notify student that their item was rejected.
  */
-const notifyVerificationRejected = async (studentId, itemType, itemName, reason) => {
-  const student = await Student.findById(studentId);
-  if (!student) return;
-
+const notifyVerificationRejected = async (studentUserId, itemType, itemName, reason) => {
   return createNotification({
-    user_id: student.user_id,
+    user_id: studentUserId,
     type: 'verification_rejected',
     title: `${itemType} Rejected`,
     message: `Your ${itemType.toLowerCase()} "${itemName}" was rejected. Reason: ${reason || 'No reason provided.'}`,
@@ -70,12 +65,9 @@ const notifyDriveAnnounced = async (userIds, companyName, roleTitle, driveId) =>
 /**
  * Notify student that their readiness score was updated.
  */
-const notifyScoreUpdated = async (studentId, newScore, newTier) => {
-  const student = await Student.findById(studentId);
-  if (!student) return;
-
+const notifyScoreUpdated = async (studentUserId, newScore, newTier) => {
   return createNotification({
-    user_id: student.user_id,
+    user_id: studentUserId,
     type: 'score_updated',
     title: 'Readiness Score Updated',
     message: `Your readiness score is now ${newScore}/100 (${newTier.replace('_', ' ')}).`,

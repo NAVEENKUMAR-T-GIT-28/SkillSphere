@@ -181,7 +181,11 @@ router.post(
     body('role').isIn(['rep', 'mentor', 'cc']).withMessage('Role must be rep, mentor, or cc'),
     body('scope_type').isIn(['student', 'class', 'section']).withMessage('Invalid scope type'),
     body('scope_id').optional().isMongoId().withMessage('Valid scope ID required'),
-    body('scope_label').notEmpty().trim().withMessage('Scope label is required')
+    body('scope_label').notEmpty().trim().withMessage('Scope label is required'),
+    body('scope_data').optional().isObject(),
+    body('scope_data.department').optional().trim(),
+    body('scope_data.section').optional().trim(),
+    body('scope_data.batch_year').optional().isInt()
   ],
   async (req, res, next) => {
     try {
@@ -190,7 +194,7 @@ router.post(
         return error(res, errors.array().map(e => e.msg).join(', '), 400, 'VALIDATION_ERROR');
       }
 
-      const { user_id, role, scope_type, scope_id, scope_label } = req.body;
+      const { user_id, role, scope_type, scope_id, scope_label, scope_data } = req.body;
 
       // Verify user exists
       const user = await User.findById(user_id);
@@ -216,6 +220,7 @@ router.post(
         scope_type,
         scope_id,
         scope_label,
+        scope_data,
         assigned_by: req.user.userId
       });
 

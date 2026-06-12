@@ -14,6 +14,7 @@ const VerificationLog = require('../models/VerificationLog');
 const { authenticate } = require('../middleware/auth');
 const { requireOwnerOrRole } = require('../middleware/ownerGuard');
 const { success, error } = require('../utils/response');
+const { sanitizeField } = require('../utils/sanitize');
 
 const router = express.Router();
 
@@ -74,7 +75,7 @@ router.post(
     body('proficiency')
       .isIn(['beginner', 'intermediate', 'advanced', 'expert'])
       .withMessage('Proficiency must be beginner, intermediate, advanced, or expert'),
-    body('evidence_note').optional().trim()
+    body('evidence_note').optional().trim().customSanitizer(sanitizeField)
   ],
   async (req, res, next) => {
     try {

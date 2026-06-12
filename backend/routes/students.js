@@ -13,6 +13,7 @@ const { authenticate } = require('../middleware/auth');
 const { requireOwnerOrRole } = require('../middleware/ownerGuard');
 const { recalculateScore } = require('../services/readinessScore');
 const { success, error } = require('../utils/response');
+const { sanitizeField } = require('../utils/sanitize');
 
 const router = express.Router();
 
@@ -105,10 +106,10 @@ router.patch(
   authenticate,
   requireOwnerOrRole('hod'),
   [
-    body('full_name').optional().trim().notEmpty().withMessage('Full name cannot be empty'),
+    body('full_name').optional().trim().notEmpty().withMessage('Full name cannot be empty').customSanitizer(sanitizeField),
     body('phone').optional().trim(),
     body('profile_photo_url').optional().trim(),
-    body('career_objective').optional().trim().isLength({ max: 500 }).withMessage('Career objective max 500 chars'),
+    body('career_objective').optional().trim().isLength({ max: 500 }).withMessage('Career objective max 500 chars').customSanitizer(sanitizeField),
     body('department').optional().trim(),
     body('section').optional().trim(),
     body('semester').optional().isInt({ min: 1, max: 8 }).withMessage('Semester must be 1-8'),

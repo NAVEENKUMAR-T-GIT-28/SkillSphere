@@ -9,6 +9,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Project = require('../models/Project');
+const Student = require('../models/Student');
 const VerificationLog = require('../models/VerificationLog');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleGuard');
@@ -16,6 +17,8 @@ const { requireOwnerOrRole } = require('../middleware/ownerGuard');
 const { recalculateScore } = require('../services/readinessScore');
 const { notifyScoreUpdated } = require('../services/notification');
 const { success, error } = require('../utils/response');
+const { httpsUrl } = require('../utils/validators');
+const { sanitizeField } = require('../utils/sanitize');
 
 const router = express.Router();
 
@@ -51,13 +54,13 @@ router.post(
   requireOwnerOrRole('hod'),
   [
     body('title').notEmpty().trim().withMessage('Project title is required'),
-    body('description').optional().trim().isLength({ max: 1000 }).withMessage('Description max 1000 chars'),
+    body('description').optional().trim().isLength({ max: 1000 }).withMessage('Description max 1000 chars').customSanitizer(sanitizeField),
     body('tech_stack').isArray({ min: 1 }).withMessage('At least one technology is required'),
-    body('github_url').notEmpty().trim().withMessage('GitHub URL is required'),
+    httpsUrl('github_url'),
     body('complexity_tier')
       .isIn(['basic', 'intermediate', 'advanced'])
       .withMessage('Complexity must be basic, intermediate, or advanced'),
-    body('live_demo_url').optional().trim(),
+    httpsUrl('live_demo_url', false),
     body('thumbnail_url').optional().trim(),
     body('team_member_ids').optional().isArray()
   ],
@@ -130,6 +133,15 @@ router.patch(
         return error(res, 'Project not found', 404, 'NOT_FOUND');
       }
 
+      if (project.status === 'reviewed') {
+        return error(
+          res,
+          'Cannot edit a reviewed project. Contact faculty if changes are needed.',
+          400,
+          'CANNOT_EDIT_REVIEWED'
+        );
+      }
+
       const allowedFields = [
         'title', 'description', 'tech_stack', 'github_url',
         'live_demo_url', 'thumbnail_url', 'complexity_tier', 'is_featured'
@@ -196,7 +208,7 @@ router.post(
     body('documentation').isInt({ min: 1, max: 5 }).withMessage('Documentation must be 1-5'),
     body('innovation').isInt({ min: 1, max: 5 }).withMessage('Innovation must be 1-5'),
     body('complexity').isInt({ min: 1, max: 5 }).withMessage('Complexity must be 1-5'),
-    body('feedback').optional().trim()
+    body('feedback').optional().trim().customSanitizer(sanitizeField)
   ],
   async (req, res, next) => {
     try {
@@ -231,7 +243,10 @@ router.post(
       // Recalculate score for all team members
       for (const studentId of project.student_ids) {
         const scoreData = await recalculateScore(studentId);
-        await notifyScoreUpdated(studentId, scoreData.score, scoreData.tier);
+        const studentDoc = await Student.findById(studentId).select('user_id');
+        if (studentDoc) {
+          await notifyScoreUpdated(studentDoc.user_id, scoreData.score, scoreData.tier);
+        }
       }
 
       success(res, project);

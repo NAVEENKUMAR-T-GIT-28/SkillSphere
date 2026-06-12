@@ -14,7 +14,7 @@ export default function StudentDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const data = await api.get('/students/dashboard');
+        const { data } = await api.get('/students/dashboard');
         setDashboard(data);
       } catch (err) {
         setError(err.message || 'Failed to load dashboard');

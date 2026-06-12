@@ -12,6 +12,7 @@ const { authenticate } = require('../middleware/auth');
 const { requireOwnerOrRole } = require('../middleware/ownerGuard');
 const { recalculateScore } = require('../services/readinessScore');
 const { success, error } = require('../utils/response');
+const { httpsUrl } = require('../utils/validators');
 
 const router = express.Router();
 
@@ -48,7 +49,7 @@ router.post(
       .isIn(['leetcode', 'hackerrank', 'codechef', 'skillrack', 'github', 'codeforces'])
       .withMessage('Invalid platform'),
     body('username').notEmpty().trim().withMessage('Username is required'),
-    body('profile_url').notEmpty().trim().withMessage('Profile URL is required'),
+    httpsUrl('profile_url'),
     body('problems_solved').optional().isInt({ min: 0 }).withMessage('Problems solved must be >= 0'),
     body('contest_rating').optional().isInt({ min: 0 }).withMessage('Contest rating must be >= 0'),
     body('badges').optional().isArray()

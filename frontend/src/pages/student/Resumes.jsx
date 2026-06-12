@@ -21,7 +21,7 @@ export default function StudentResumes() {
     const fetchResumes = async () => {
       try {
         if (!user?.profileId) return;
-        const data = await api.get(`/students/${user.profileId}/resumes`);
+        const { data } = await api.get(`/students/${user.profileId}/resumes`);
         setResumes(data);
       } catch (err) {
         console.error('Failed to load resumes:', err);
@@ -45,7 +45,7 @@ export default function StudentResumes() {
         label: formData.label,
       };
 
-      const newResume = await api.post(`/students/${user.profileId}/resumes`, payload);
+      const { data: newResume } = await api.post(`/students/${user.profileId}/resumes`, payload);
       
       // Update previous latest to false in local state
       const updatedResumes = resumes.map(r => ({...r, is_latest: false}));

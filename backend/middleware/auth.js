@@ -5,6 +5,7 @@
  */
 
 const jwt = require('jsonwebtoken');
+const { getKeys } = require('../utils/jwtKeys');
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -20,7 +21,8 @@ const authenticate = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { publicKey } = getKeys();
+    const decoded = jwt.verify(token, publicKey, { algorithms: ['RS256'] });
     req.user = decoded; // { userId, baseRole, iat, exp }
     next();
   } catch (err) {

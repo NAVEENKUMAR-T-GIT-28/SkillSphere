@@ -86,9 +86,8 @@ router.get(
 
       // Skills filter — find students who have ALL listed skills verified
       if (skills) {
-        const skillNames = skills.split(',').map(s => s.trim());
+        const skillNames = skills.split(',').map(s => s.trim()).filter(Boolean);
 
-        // Find student IDs that have all required skills verified
         const matchPipeline = [
           {
             $match: {
@@ -104,13 +103,17 @@ router.get(
           },
           {
             $match: {
-              [`matchedSkills.${skillNames.length - 1}`]: { $exists: true }
+              $expr: { $eq: [{ $size: '$matchedSkills' }, skillNames.length] }
             }
           }
         ];
 
         const matchedStudents = await Skill.aggregate(matchPipeline);
         const matchedIds = matchedStudents.map(s => s._id);
+
+        if (matchedIds.length === 0) {
+          return success(res, [], { total: 0, page: parseInt(page), limit: parseInt(limit), pages: 0 });
+        }
 
         filter._id = { $in: matchedIds };
       }

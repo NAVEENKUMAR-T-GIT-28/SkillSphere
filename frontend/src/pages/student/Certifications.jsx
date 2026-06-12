@@ -27,7 +27,7 @@ export default function StudentCertifications() {
     const fetchCerts = async () => {
       try {
         if (!user?.profileId) return;
-        const data = await api.get(`/students/${user.profileId}/certifications`);
+        const { data } = await api.get(`/students/${user.profileId}/certifications`);
         setCerts(data);
       } catch (err) {
         console.error('Failed to load certifications:', err);
@@ -56,7 +56,7 @@ export default function StudentCertifications() {
         drive_link: formData.driveLink,
       };
 
-      const newCert = await api.post(`/students/${user.profileId}/certifications`, payload);
+      const { data: newCert } = await api.post(`/students/${user.profileId}/certifications`, payload);
       setCerts([newCert, ...certs]);
       
       setFormData({

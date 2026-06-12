@@ -10,12 +10,14 @@ const { body, validationResult } = require('express-validator');
 const Skill = require('../models/Skill');
 const Certification = require('../models/Certification');
 const Project = require('../models/Project');
+const Student = require('../models/Student');
 const VerificationLog = require('../models/VerificationLog');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleGuard');
 const { recalculateScore } = require('../services/readinessScore');
 const { notifyVerificationApproved, notifyVerificationRejected, notifyScoreUpdated } = require('../services/notification');
 const { success, error } = require('../utils/response');
+const { sanitizeField } = require('../utils/sanitize');
 
 const router = express.Router();
 
@@ -113,10 +115,15 @@ router.post(
   authenticate,
   requireRole('faculty', 'hod'),
   [
-    body('comment').optional().trim()
+    body('comment').optional().trim().customSanitizer(sanitizeField)
   ],
   async (req, res, next) => {
     try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return error(res, errors.array().map(e => e.msg).join(', '), 400, 'VALIDATION_ERROR');
+      }
+
       const { type, itemId } = req.params;
       const Model = getModel(type);
 
@@ -162,15 +169,21 @@ router.post(
 
       // Send notifications
       const itemName = getItemName(type, item);
-      await notifyVerificationApproved(studentId, type.charAt(0).toUpperCase() + type.slice(1), itemName);
-      await notifyScoreUpdated(studentId, scoreData.score, scoreData.tier);
+      const studentDoc = await Student.findById(studentId).select('user_id');
+      if (studentDoc) {
+        await notifyVerificationApproved(studentDoc.user_id, type.charAt(0).toUpperCase() + type.slice(1), itemName);
+        await notifyScoreUpdated(studentDoc.user_id, scoreData.score, scoreData.tier);
+      }
 
       // For projects with team members, recalculate for all
       if (type === 'project' && item.student_ids.length > 1) {
         for (const sid of item.student_ids) {
           if (sid.toString() !== studentId.toString()) {
             const teamScoreData = await recalculateScore(sid);
-            await notifyScoreUpdated(sid, teamScoreData.score, teamScoreData.tier);
+            const teamStudentDoc = await Student.findById(sid).select('user_id');
+            if (teamStudentDoc) {
+              await notifyScoreUpdated(teamStudentDoc.user_id, teamScoreData.score, teamScoreData.tier);
+            }
           }
         }
       }
@@ -194,8 +207,8 @@ router.post(
   authenticate,
   requireRole('faculty', 'hod'),
   [
-    body('reason').notEmpty().trim().withMessage('Rejection reason is required'),
-    body('comment').optional().trim()
+    body('reason').notEmpty().trim().withMessage('Rejection reason is required').customSanitizer(sanitizeField),
+    body('comment').optional().trim().customSanitizer(sanitizeField)
   ],
   async (req, res, next) => {
     try {
@@ -247,7 +260,10 @@ router.post(
 
       // Send notification
       const itemName = getItemName(type, item);
-      await notifyVerificationRejected(studentId, type.charAt(0).toUpperCase() + type.slice(1), itemName, req.body.reason);
+      const studentDoc = await Student.findById(studentId).select('user_id');
+      if (studentDoc) {
+        await notifyVerificationRejected(studentDoc.user_id, type.charAt(0).toUpperCase() + type.slice(1), itemName, req.body.reason);
+      }
 
       success(res, {
         item,

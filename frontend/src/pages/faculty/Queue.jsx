@@ -17,7 +17,7 @@ export default function FacultyQueue() {
   const fetchQueue = async () => {
     try {
       setFetching(true);
-      const data = await api.get('/verification/queue');
+      const { data } = await api.get('/verification/queue');
       
       const combinedQueue = [];
       
