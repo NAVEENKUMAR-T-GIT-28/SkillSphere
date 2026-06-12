@@ -1,35 +1,17 @@
 import { Plus, Edit2, Trash2, Users } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
+import api from '../../services/api';
 
 export default function HODDrives() {
-  const [drives, setDrives] = useState([
-    {
-      id: 1,
-      company: 'Google',
-      role: 'Software Engineer',
-      ctc: '12 LPA',
-      driveDate: '2024-07-15',
-      openings: 5,
-      applications: 45,
-      shortlisted: 8,
-    },
-    {
-      id: 2,
-      company: 'Amazon',
-      role: 'SDE Intern',
-      ctc: '1.5L/month',
-      driveDate: '2024-07-20',
-      openings: 10,
-      applications: 120,
-      shortlisted: 20,
-    },
-  ]);
+  const [drives, setDrives] = useState([]);
+  const [fetching, setFetching] = useState(true);
+  const [processing, setProcessing] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
-    company: '',
-    role: '',
+    companyName: '',
+    roleTitle: '',
     ctc: '',
     location: '',
     driveDate: '',
@@ -37,43 +19,95 @@ export default function HODDrives() {
     openings: '',
     jobDescUrl: '',
     minCgpa: '',
+    driveType: 'oncampus'
   });
 
-  const addDrive = () => {
-    if (!formData.company || !formData.role) {
-      alert('Company and role are required');
+  const fetchDrives = async () => {
+    try {
+      setFetching(true);
+      const data = await api.get('/placement-drives?limit=50');
+      const items = Array.isArray(data) ? data : data.data || data.items || [];
+      
+      setDrives(items.map(d => ({
+        id: d._id,
+        company: d.company_name,
+        role: d.role_title,
+        ctc: d.ctc_package || 'N/A',
+        driveDate: d.drive_date,
+        openings: d.openings || 0,
+        applications: 0, // Mocked for now, backend could provide this or we fetch applications
+        shortlisted: 0,
+      })));
+    } catch (err) {
+      console.error('Failed to fetch drives:', err);
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDrives();
+  }, []);
+
+  const addDrive = async () => {
+    if (!formData.companyName || !formData.roleTitle || !formData.driveDate || !formData.deadline) {
+      alert('Company, Role, Drive Date, and Application Deadline are required');
       return;
     }
 
-    const newDrive = {
-      id: Date.now(),
-      company: formData.company,
-      role: formData.role,
-      ctc: formData.ctc,
-      driveDate: formData.driveDate,
-      openings: parseInt(formData.openings) || 0,
-      applications: 0,
-      shortlisted: 0,
-    };
-
-    setDrives([newDrive, ...drives]);
-    setFormData({
-      company: '',
-      role: '',
-      ctc: '',
-      location: '',
-      driveDate: '',
-      deadline: '',
-      openings: '',
-      jobDescUrl: '',
-      minCgpa: '',
-    });
-    setShowModal(false);
+    try {
+      setProcessing(true);
+      await api.post('/placement-drives', {
+        company_name: formData.companyName,
+        role_title: formData.roleTitle,
+        ctc_package: formData.ctc,
+        location: formData.location,
+        drive_date: formData.driveDate,
+        application_deadline: formData.deadline,
+        openings: parseInt(formData.openings) || null,
+        job_description_url: formData.jobDescUrl,
+        drive_type: formData.driveType,
+        eligibility: {
+          min_cgpa: parseFloat(formData.minCgpa) || 0
+        }
+      });
+      
+      setFormData({
+        companyName: '',
+        roleTitle: '',
+        ctc: '',
+        location: '',
+        driveDate: '',
+        deadline: '',
+        openings: '',
+        jobDescUrl: '',
+        minCgpa: '',
+        driveType: 'oncampus'
+      });
+      setShowModal(false);
+      fetchDrives();
+    } catch (err) {
+      alert(err.message || 'Failed to create drive');
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  const deleteDrive = (driveId) => {
-    setDrives(drives.filter(d => d.id !== driveId));
+  const deleteDrive = async (driveId) => {
+    try {
+      setProcessing(true);
+      await api.delete(`/placement-drives/${driveId}`);
+      setDrives(drives.filter(d => d.id !== driveId));
+    } catch (err) {
+      alert(err.message || 'Failed to delete drive');
+    } finally {
+      setProcessing(false);
+    }
   };
+
+  if (fetching) {
+    return <div className="p-8 text-center text-text-secondary">Loading placement drives...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -103,8 +137,8 @@ export default function HODDrives() {
                 type="text"
                 className="input-field"
                 placeholder="e.g., Google"
-                value={formData.company}
-                onChange={(e) => setFormData({...formData, company: e.target.value})}
+                value={formData.companyName}
+                onChange={(e) => setFormData({...formData, companyName: e.target.value})}
               />
             </div>
             <div>
@@ -113,8 +147,8 @@ export default function HODDrives() {
                 type="text"
                 className="input-field"
                 placeholder="e.g., Software Engineer"
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                value={formData.roleTitle}
+                onChange={(e) => setFormData({...formData, roleTitle: e.target.value})}
               />
             </div>
           </div>
@@ -152,9 +186,21 @@ export default function HODDrives() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Drive Date</label>
+              <label className="block text-sm font-medium text-text-primary mb-2">Drive Type *</label>
+              <select
+                className="input-field"
+                value={formData.driveType}
+                onChange={(e) => setFormData({...formData, driveType: e.target.value})}
+              >
+                <option value="oncampus">On Campus</option>
+                <option value="offcampus">Off Campus</option>
+                <option value="internship">Internship</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">Drive Date *</label>
               <input
                 type="date"
                 className="input-field"
@@ -163,7 +209,7 @@ export default function HODDrives() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Application Deadline</label>
+              <label className="block text-sm font-medium text-text-primary mb-2">Application Deadline *</label>
               <input
                 type="date"
                 className="input-field"
@@ -173,30 +219,44 @@ export default function HODDrives() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">Min CGPA</label>
-            <input
-              type="number"
-              step="0.1"
-              className="input-field"
-              placeholder="e.g., 7.0"
-              value={formData.minCgpa}
-              onChange={(e) => setFormData({...formData, minCgpa: e.target.value})}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">Job Desc URL</label>
+              <input
+                type="url"
+                className="input-field"
+                placeholder="https://..."
+                value={formData.jobDescUrl}
+                onChange={(e) => setFormData({...formData, jobDescUrl: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">Min CGPA Requirement</label>
+              <input
+                type="number"
+                step="0.1"
+                className="input-field"
+                placeholder="e.g., 7.0"
+                value={formData.minCgpa}
+                onChange={(e) => setFormData({...formData, minCgpa: e.target.value})}
+              />
+            </div>
           </div>
 
           <div className="flex gap-3 justify-end pt-4 border-t border-border">
             <button
               onClick={() => setShowModal(false)}
-              className="btn-secondary"
+              disabled={processing}
+              className="btn-secondary disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={addDrive}
-              className="btn-primary"
+              disabled={processing}
+              className="btn-primary disabled:opacity-50"
             >
-              Create Drive
+              {processing ? 'Creating...' : 'Create Drive'}
             </button>
           </div>
         </div>
@@ -222,7 +282,8 @@ export default function HODDrives() {
                   </button>
                   <button
                     onClick={() => deleteDrive(drive.id)}
-                    className="p-2 hover:bg-red-50 rounded-md transition-colors text-red-600"
+                    disabled={processing}
+                    className="p-2 hover:bg-red-50 rounded-md transition-colors text-red-600 disabled:opacity-50"
                   >
                     <Trash2 size={16} />
                   </button>

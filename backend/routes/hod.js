@@ -229,6 +229,30 @@ router.post(
 );
 
 /**
+ * GET /api/hod/role-assignments
+ * Get all active role assignments.
+ */
+router.get(
+  '/role-assignments',
+  authenticate,
+  requireRole('hod'),
+  async (req, res, next) => {
+    try {
+      const assignments = await RoleAssignment.find({ revoked_at: null })
+        .populate('user_id', 'email')
+        .sort({ created_at: -1 });
+
+      // We might need to manually attach names if user_id points to User which only has email.
+      // But the frontend expects the assigned user's name. Let's map it.
+      // We will leave it as is and frontend can handle, or we populate.
+      success(res, assignments);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
  * DELETE /api/hod/role-assignments/:id
  * Revoke a dynamic role assignment.
  */

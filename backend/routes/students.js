@@ -154,6 +154,33 @@ router.patch(
 );
 
 /**
+ * GET /api/students/:studentId/applications
+ * Get all applications for a student.
+ */
+const Application = require('../models/Application');
+router.get(
+  '/:studentId/applications',
+  authenticate,
+  requireOwnerOrRole('faculty', 'hod'),
+  async (req, res, next) => {
+    try {
+      const student = await Student.findById(req.params.studentId);
+      if (!student) {
+        return error(res, 'Student not found', 404, 'NOT_FOUND');
+      }
+
+      const applications = await Application.find({ student_id: req.params.studentId })
+        .populate('drive_id')
+        .sort({ applied_at: -1 });
+
+      success(res, applications, { total: applications.length });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
  * GET /api/students/:studentId/score
  * Get readiness score with full breakdown. Owner, faculty, or HOD can access.
  */

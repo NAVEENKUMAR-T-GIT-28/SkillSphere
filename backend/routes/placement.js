@@ -139,6 +139,32 @@ router.get(
 );
 
 /**
+ * DELETE /api/placement-drives/:id
+ * Delete a placement drive. HOD only.
+ */
+router.delete(
+  '/placement-drives/:id',
+  authenticate,
+  requireRole('hod'),
+  async (req, res, next) => {
+    try {
+      const drive = await PlacementDrive.findById(req.params.id);
+      if (!drive) {
+        return error(res, 'Placement drive not found', 404, 'NOT_FOUND');
+      }
+
+      await drive.deleteOne();
+      // Optionally cascade delete applications for this drive
+      await Application.deleteMany({ drive_id: req.params.id });
+
+      success(res, { message: 'Placement drive deleted successfully' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
  * GET /api/placement-drives/:id/shortlist
  * Get eligible/shortlisted students for a drive. Faculty/HOD only.
  */

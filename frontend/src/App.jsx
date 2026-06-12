@@ -20,6 +20,13 @@ import HODSearch from './pages/hod/Search';
 import HODRoles from './pages/hod/Roles';
 import HODDrives from './pages/hod/Drives';
 
+const HomeRedirect = ({ user }) => {
+  if (!user) return <Navigate to="/login" />;
+  if (user.baseRole === 'hod') return <Navigate to="/hod/dashboard" />;
+  if (user.baseRole === 'faculty') return <Navigate to="/faculty/queue" />;
+  return <Navigate to="/dashboard" />;
+};
+
 function AppContent() {
   const { user, loading } = useAuth();
 
@@ -37,7 +44,7 @@ function AppContent() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
+      <Route path="/login" element={user ? <HomeRedirect user={user} /> : <LoginPage />} />
 
       {/* Student */}
       <Route
@@ -186,7 +193,7 @@ function AppContent() {
       />
 
       {/* Catch all */}
-      <Route path="/" element={<Navigate to={user ? '/dashboard' : '/login'} />} />
+      <Route path="/" element={<HomeRedirect user={user} />} />
     </Routes>
   );
 }

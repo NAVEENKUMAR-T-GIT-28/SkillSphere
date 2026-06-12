@@ -80,4 +80,42 @@ router.post(
   }
 );
 
+/**
+ * DELETE /api/students/:studentId/resumes/:resumeId
+ * Delete a resume version.
+ */
+router.delete(
+  '/:studentId/resumes/:resumeId',
+  authenticate,
+  requireOwnerOrRole('hod'),
+  async (req, res, next) => {
+    try {
+      const resume = await Resume.findOne({
+        _id: req.params.resumeId,
+        student_id: req.params.studentId
+      });
+
+      if (!resume) {
+        return error(res, 'Resume not found', 404, 'NOT_FOUND');
+      }
+
+      await Resume.findByIdAndDelete(req.params.resumeId);
+
+      // If it was the latest, we should probably set the next most recent to latest
+      if (resume.is_latest) {
+        const nextLatest = await Resume.findOne({ student_id: req.params.studentId })
+          .sort({ version: -1 });
+        if (nextLatest) {
+          nextLatest.is_latest = true;
+          await nextLatest.save();
+        }
+      }
+
+      success(res, { message: 'Resume deleted successfully' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 module.exports = router;

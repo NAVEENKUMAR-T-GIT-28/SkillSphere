@@ -151,6 +151,38 @@ router.patch(
 );
 
 /**
+ * DELETE /api/students/:studentId/projects/:projectId
+ * Delete a project. Cannot delete if already reviewed.
+ */
+router.delete(
+  '/students/:studentId/projects/:projectId',
+  authenticate,
+  requireOwnerOrRole('hod'),
+  async (req, res, next) => {
+    try {
+      const project = await Project.findOne({
+        _id: req.params.projectId,
+        student_ids: req.params.studentId
+      });
+
+      if (!project) {
+        return error(res, 'Project not found', 404, 'NOT_FOUND');
+      }
+
+      if (project.status === 'reviewed') {
+        return error(res, 'Cannot delete a reviewed project', 400, 'CANNOT_DELETE_REVIEWED');
+      }
+
+      await Project.findByIdAndDelete(req.params.projectId);
+
+      success(res, { message: 'Project deleted successfully' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
  * POST /api/projects/:projectId/rate
  * Faculty rates a project (1-5 on 5 dimensions).
  */

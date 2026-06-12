@@ -125,4 +125,35 @@ router.patch(
   }
 );
 
+/**
+ * DELETE /api/students/:studentId/coding-profiles/:profileId
+ * Delete a coding profile.
+ */
+router.delete(
+  '/:studentId/coding-profiles/:profileId',
+  authenticate,
+  requireOwnerOrRole('hod'),
+  async (req, res, next) => {
+    try {
+      const profile = await CodingProfile.findOne({
+        _id: req.params.profileId,
+        student_id: req.params.studentId
+      });
+
+      if (!profile) {
+        return error(res, 'Coding profile not found', 404, 'NOT_FOUND');
+      }
+
+      await CodingProfile.findByIdAndDelete(req.params.profileId);
+      
+      // Recalculate score
+      await recalculateScore(req.params.studentId);
+
+      success(res, { message: 'Coding profile deleted successfully' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 module.exports = router;
