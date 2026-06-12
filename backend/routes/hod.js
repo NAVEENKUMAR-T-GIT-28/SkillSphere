@@ -335,4 +335,122 @@ router.get(
   }
 );
 
+/**
+ * GET /api/hod/users
+ * Search users by name, email, roll number, or employee ID.
+ * Query params: search, role (student or faculty)
+ */
+router.get(
+  '/users',
+  authenticate,
+  requireRole('hod'),
+  async (req, res, next) => {
+    try {
+      const { search, role, limit = 10 } = req.query;
+      if (!search) {
+        return success(res, []);
+      }
+
+      const queryLimit = parseInt(limit);
+      const regex = new RegExp(search, 'i');
+
+      // Find user IDs whose email matches the search query
+      const matchingUsers = await User.find({ email: regex }).select('_id');
+      const userIds = matchingUsers.map(u => u._id);
+
+      if (role === 'student') {
+        // Search Student collection by name, roll number, or user_id email match
+        const students = await Student.find({
+          $or: [
+            { full_name: regex },
+            { roll_number: regex },
+            { user_id: { $in: userIds } }
+          ]
+        })
+        .populate('user_id', 'email')
+        .limit(queryLimit);
+
+        // Map to standard format: {_id (user_id), name, email, department}
+        const formatted = students.map(s => ({
+          _id: s.user_id?._id || s.user_id,
+          name: s.full_name,
+          email: s.user_id?.email || '',
+          department: s.department,
+          studentId: s._id // include student profile ID for mentor scope
+        }));
+        return success(res, formatted);
+      } else if (role === 'faculty') {
+        // Search Faculty collection by name, employee_id, or user_id email match
+        const faculty = await Faculty.find({
+          $or: [
+            { full_name: regex },
+            { employee_id: regex },
+            { user_id: { $in: userIds } }
+          ]
+        })
+        .populate('user_id', 'email')
+        .limit(queryLimit);
+
+        const formatted = faculty.map(f => ({
+          _id: f.user_id?._id || f.user_id,
+          name: f.full_name,
+          email: f.user_id?.email || '',
+          department: f.department
+        }));
+        return success(res, formatted);
+      } else {
+        return error(res, 'Role must be student or faculty', 400, 'INVALID_ROLE');
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * GET /api/hod/classes
+ * Get all unique classes (department, section, batch_year combinations) stored in the Student collection.
+ */
+router.get(
+  '/classes',
+  authenticate,
+  requireRole('hod'),
+  async (req, res, next) => {
+    try {
+      const classes = await Student.aggregate([
+        {
+          $group: {
+            _id: {
+              department: "$department",
+              section: "$section",
+              batch_year: "$batch_year"
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            department: "$_id.department",
+            section: "$_id.section",
+            batch_year: "$_id.batch_year",
+            label: {
+              $concat: [
+                "$_id.department",
+                "-",
+                "$_id.section",
+                "-",
+                { $toString: "$_id.batch_year" }
+              ]
+            }
+          }
+        },
+        { $sort: { department: 1, batch_year: 1, section: 1 } }
+      ]);
+      success(res, classes);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 module.exports = router;

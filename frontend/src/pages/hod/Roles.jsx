@@ -1,6 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import Modal from '../../components/Modal';
+import { useState, useEffect, useCallback } from 'react';
+import AssignRoleModal from '../../components/AssignRoleModal';
 import api from '../../services/api';
 
 export default function HODRoles() {
@@ -10,11 +10,6 @@ export default function HODRoles() {
 
   const [showModal, setShowModal] = useState(false);
   const [modalRole, setModalRole] = useState(null);
-  const [formData, setFormData] = useState({
-    user_id: '',
-    scope_label: '',
-    studentId: '',
-  });
 
   const roles = [
     { id: 'cc', title: 'Class Coordinators', description: 'Faculty assigned to a class' },
@@ -49,30 +44,34 @@ export default function HODRoles() {
 
   const openAssignModal = (roleId) => {
     setModalRole(roleId);
-    setFormData({ user_id: '', scope_label: '', studentId: '' });
     setShowModal(true);
   };
 
-  const handleAssign = async () => {
-    if (!formData.user_id || !formData.scope_label) {
-      alert('Please provide a User ID and scope');
-      return;
+  const fetchUsers = useCallback(async (query, role) => {
+    try {
+      const { data } = await api.get(`/hod/users?search=${encodeURIComponent(query)}&role=${role}&limit=10`);
+      return data;
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+      return [];
     }
+  }, []);
 
+  const handleAssign = async ({ userId, scopeLabel, studentId, scopeData }) => {
     try {
       setProcessing(true);
       await api.post('/hod/role-assignments', {
-        user_id: formData.user_id,
+        user_id: userId,
         role: modalRole,
         scope_type: modalRole === 'mentor' ? 'student' : (modalRole === 'rep' ? 'section' : 'class'),
-        scope_id: modalRole === 'mentor' ? formData.studentId : undefined,
-        scope_label: formData.scope_label
+        scope_id: modalRole === 'mentor' ? studentId : undefined,
+        scope_label: scopeLabel,
+        scope_data: scopeData
       });
-      setShowModal(false);
-      setFormData({ user_id: '', scope_label: '', studentId: '' });
       fetchAssignments();
     } catch (err) {
       alert(err.message || 'Failed to assign role. Ensure User ID is valid.');
+      throw err;
     } finally {
       setProcessing(false);
     }
@@ -168,56 +167,13 @@ export default function HODRoles() {
       })}
 
       {/* Assign Role Modal */}
-      <Modal
-        isOpen={showModal}
+      <AssignRoleModal
+        open={showModal}
+        roleType={modalRole}
         onClose={() => setShowModal(false)}
-        title={`Assign ${roles.find(r => r.id === modalRole)?.title || 'Role'}`}
-        size="md"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">User ID</label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="MongoDB Object ID of the user"
-              value={formData.user_id}
-              onChange={(e) => setFormData({...formData, user_id: e.target.value})}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">Scope Label</label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="e.g. CSE-A 2026, John Doe"
-              value={formData.scope_label}
-              onChange={(e) => setFormData({...formData, scope_label: e.target.value})}
-            />
-          </div>
-          {modalRole === 'mentor' && (
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Mentee Student ID (Object ID)</label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="MongoDB Object ID of the student"
-                value={formData.studentId}
-                onChange={(e) => setFormData({...formData, studentId: e.target.value})}
-              />
-            </div>
-          )}
-
-          <div className="flex gap-3 justify-end pt-4 border-t border-border">
-            <button onClick={() => setShowModal(false)} disabled={processing} className="btn-secondary disabled:opacity-50">
-              Cancel
-            </button>
-            <button onClick={handleAssign} disabled={processing} className="btn-primary disabled:opacity-50">
-              {processing ? 'Assigning...' : 'Assign'}
-            </button>
-          </div>
-        </div>
-      </Modal>
+        onAssign={handleAssign}
+        fetchUsers={fetchUsers}
+      />
     </div>
   );
 }

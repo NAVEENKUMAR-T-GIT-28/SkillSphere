@@ -50,7 +50,7 @@ lerna-debug.log*
 Thumbs.db
 desktop.ini
 
-# Project-specific / Gemini / Workspace files
-.gemini/
+# Project-specific / Workspace files
+dev/
 artifacts/
 *.local
