@@ -5,7 +5,10 @@ const TEST_DB_URI = process.env.MONGO_URI_TEST || 'mongodb://127.0.0.1:27017/ski
 
 // Clear all collections at the start of each test file to prevent test file cross-contamination
 // while allowing sequential steps within a test file to persist state.
+// Suppress expected console.error from errorHandler during tests
 beforeAll(async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+
   if (mongoose.connection.readyState === 0) {
     await mongoose.connect(TEST_DB_URI);
   }
@@ -18,6 +21,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (console.error.mockRestore) {
+    console.error.mockRestore();
+  }
   if (mongoose.connection.readyState === 1) {
     await mongoose.disconnect();
   }

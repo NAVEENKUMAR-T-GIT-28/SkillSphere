@@ -13,6 +13,7 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "globalSetup": "./tests/globalSetup.js",
     "setupFilesAfterEnv": [
       "./tests/setup/setupAfterFramework.js"
     ],
