@@ -30,6 +30,19 @@
 
 ---
 
+## Documentation
+
+Detailed, code-verified documentation lives in [`/docs`](./docs):
+
+- [Architecture](./docs/Architecture.md) — system design, middleware stack, auth design, services
+- [API Reference](./docs/API.md) — full endpoint reference with access rules and error codes
+- [Database](./docs/Database.md) — schema reference, relationships, readiness score formula
+- [Deployment](./docs/Deployment.md) — local setup, environment variables, CI pipeline, production guidance
+- [Testing](./docs/Testing.md) — test stack, coverage map, conventions
+- [Security](./docs/Security.md) — implemented controls and hardening recommendations
+
+---
+
 ## Overview
 
 SkillSphere is a **production-grade, centralized student talent intelligence and placement management platform** designed to serve the complete lifecycle of a student's professional development — from skill acquisition and certification to placement readiness and recruiter shortlisting.
