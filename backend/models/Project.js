@@ -77,8 +77,12 @@ const projectSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'reviewed'],
+      enum: ['pending', 'reviewed', 'rejected'],
       default: 'pending'
+    },
+    rejection_reason: {
+      type: String,
+      trim: true
     }
   },
   {

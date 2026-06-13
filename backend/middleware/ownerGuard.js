@@ -19,6 +19,13 @@ const requireOwnerOrRole = (...allowedRoles) => {
       const student = await Student.findOne({ user_id: req.user.userId });
 
       if (!student) {
+        if (req.user.baseRole !== 'student') {
+          return res.status(403).json({
+            success: false,
+            data: null,
+            error: { message: 'Access denied — insufficient role', code: 'INSUFFICIENT_ROLE' }
+          });
+        }
         return res.status(404).json({
           success: false,
           data: null,

@@ -6,7 +6,36 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed": "node seeds/skillTaxonomy.js"
+    "seed": "node seeds/skillTaxonomy.js",
+    "test": "cross-env NODE_ENV=test jest --runInBand",
+    "test:watch": "cross-env NODE_ENV=test jest --watch",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage --runInBand"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": [
+      "./tests/setup/setupAfterFramework.js"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "middleware/**/*.js",
+      "models/**/*.js",
+      "routes/**/*.js",
+      "services/**/*.js",
+      "utils/**/*.js",
+      "!**/node_modules/**",
+      "!seeds/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 75,
+        "functions": 85,
+        "lines": 85,
+        "statements": 85
+      }
+    }
   },
   "keywords": [
     "placement",
@@ -26,6 +55,10 @@
     "sanitize-html": "^2.17.5"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "@jest/globals": "^30.4.1",
+    "cross-env": "^10.1.0",
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.9",
+    "supertest": "^7.2.2"
   }
 }

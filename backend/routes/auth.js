@@ -19,7 +19,7 @@ const router = express.Router();
 // 10 attempts per 15 minutes per IP on login
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: process.env.NODE_ENV === 'test' ? 1000 : 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -32,7 +32,7 @@ const loginLimiter = rateLimit({
 // 5 registrations per hour per IP
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 5,
+  max: process.env.NODE_ENV === 'test' ? 1000 : 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
