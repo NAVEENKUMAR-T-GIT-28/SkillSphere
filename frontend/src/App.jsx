@@ -19,11 +19,13 @@ import HODDashboard from './pages/hod/Dashboard';
 import HODSearch from './pages/hod/Search';
 import HODRoles from './pages/hod/Roles';
 import HODDrives from './pages/hod/Drives';
+import AdminDashboard from './pages/admin/Dashboard';
 
 const HomeRedirect = ({ user }) => {
   if (!user) return <Navigate to="/login" />;
   if (user.baseRole === 'hod') return <Navigate to="/hod/dashboard" />;
   if (user.baseRole === 'faculty') return <Navigate to="/faculty/queue" />;
+  if (user.baseRole === 'admin') return <Navigate to="/admin/dashboard" />;
   return <Navigate to="/dashboard" />;
 };
 
@@ -187,6 +189,18 @@ function AppContent() {
           <ProtectedRoute requiredRoles={['hod']}>
             <Layout>
               <HODDrives />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin */}
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute requiredRoles={['admin']}>
+            <Layout>
+              <AdminDashboard />
             </Layout>
           </ProtectedRoute>
         }

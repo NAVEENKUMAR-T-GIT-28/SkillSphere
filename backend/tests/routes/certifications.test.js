@@ -90,4 +90,37 @@ describe('Certifications Routes', () => {
       expect(res.body.error.code).toBe('CANNOT_DELETE_VERIFIED');
     });
   });
+
+  describe('GET /api/students/:studentId/certifications — filters', () => {
+    beforeAll(async () => {
+      // Reset the cert created earlier back to pending for filter tests
+      await Certification.findByIdAndUpdate(certId, { status: 'pending' });
+    });
+
+    test('filters by status query param', async () => {
+      const res = await request(app)
+        .get(`/api/students/${student._id}/certifications?status=pending`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      res.body.data.forEach(c => expect(c.status).toBe('pending'));
+    });
+
+    test('filters by category query param', async () => {
+      const res = await request(app)
+        .get(`/api/students/${student._id}/certifications?category=technical`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      res.body.data.forEach(c => expect(c.category).toBe('technical'));
+    });
+
+    test('filters by both status and category', async () => {
+      const res = await request(app)
+        .get(`/api/students/${student._id}/certifications?status=pending&category=technical`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+  });
 });

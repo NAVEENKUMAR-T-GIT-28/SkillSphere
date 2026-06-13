@@ -23,6 +23,8 @@ export default function LoginPage() {
         navigate('/hod/dashboard');
       } else if (role === 'faculty') {
         navigate('/faculty/queue');
+      } else if (role === 'admin') {
+        navigate('/admin/dashboard');
       } else {
         navigate('/dashboard');
       }

@@ -33,6 +33,8 @@ export default function Layout({ children }) {
       { label: 'Search Students', href: '/hod/search', roles: ['hod'] },
       { label: 'Role Assignment', href: '/hod/roles', roles: ['hod'] },
       { label: 'Placement Drives', href: '/hod/drives', roles: ['hod'] },
+
+      { label: 'Admin Console', href: '/admin/dashboard', roles: ['admin'] },
     ];
 
     return baseItems.filter(item => item.roles.includes(user?.baseRole));
