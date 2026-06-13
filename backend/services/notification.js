@@ -1,29 +1,17 @@
-/**
- * Notification Service
- * Creates notification records for key events in the system.
- * Call these functions after relevant actions to keep users informed.
- */
+// services/notification.js
+const notificationRepo = require('../repositories/notificationRepo');
 
-const Notification = require('../models/Notification');
-const Student = require('../models/Student');
-
-/**
- * Create a notification for a specific user.
- */
 const createNotification = async ({ user_id, type, title, message, link }) => {
-  return Notification.create({
+  return notificationRepo.create({
     user_id,
     type,
     title,
     message,
-    link
+    link,
+    is_read: false
   });
 };
 
-/**
- * Notify student that their item was approved.
- * @param {ObjectId} studentUserId - the student's User._id
- */
 const notifyVerificationApproved = async (studentUserId, itemType, itemName) => {
   return createNotification({
     user_id: studentUserId,
@@ -34,9 +22,6 @@ const notifyVerificationApproved = async (studentUserId, itemType, itemName) => 
   });
 };
 
-/**
- * Notify student that their item was rejected.
- */
 const notifyVerificationRejected = async (studentUserId, itemType, itemName, reason) => {
   return createNotification({
     user_id: studentUserId,
@@ -47,24 +32,19 @@ const notifyVerificationRejected = async (studentUserId, itemType, itemName, rea
   });
 };
 
-/**
- * Notify all eligible students about a new placement drive.
- */
 const notifyDriveAnnounced = async (userIds, companyName, roleTitle, driveId) => {
   const notifications = userIds.map(user_id => ({
     user_id,
     type: 'drive_announced',
     title: 'New Placement Drive',
     message: `${companyName} is hiring for ${roleTitle}. Check eligibility and apply!`,
-    link: `/placement-drives/${driveId}`
+    link: `/placement-drives/${driveId}`,
+    is_read: false
   }));
 
-  return Notification.insertMany(notifications);
+  return notificationRepo.insertMany(notifications);
 };
 
-/**
- * Notify student that their readiness score was updated.
- */
 const notifyScoreUpdated = async (studentUserId, newScore, newTier) => {
   return createNotification({
     user_id: studentUserId,
@@ -75,9 +55,6 @@ const notifyScoreUpdated = async (studentUserId, newScore, newTier) => {
   });
 };
 
-/**
- * Notify user that they were assigned a dynamic role.
- */
 const notifyRoleAssigned = async (userId, role, scopeLabel) => {
   return createNotification({
     user_id: userId,

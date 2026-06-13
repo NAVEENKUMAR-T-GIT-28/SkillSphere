@@ -8,10 +8,10 @@
  * Run: npm start (production)
  */
 
-require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
+const { PORT, ALLOWED_ORIGINS, NODE_ENV } = require('./config/env');
+const connectDB = require('./config/database');
 
 // Middleware
 const { errorHandler } = require('./middleware/errorHandler');
@@ -33,10 +33,9 @@ const myAccessRoutes = require('./routes/myAccess');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // ─── Global Middleware ──────────────────────────────────────────────────────
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173')
+const allowedOrigins = ALLOWED_ORIGINS
   .split(',')
   .map(o => o.trim());
 
@@ -54,7 +53,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging in development
-if (process.env.NODE_ENV === 'development') {
+if (NODE_ENV === 'development') {
   app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} | ${req.method} ${req.originalUrl}`);
     next();
@@ -69,7 +68,7 @@ app.get('/api/health', (req, res) => {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development'
+      environment: NODE_ENV || 'development'
     }
   });
 });
@@ -103,21 +102,11 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 // ─── MongoDB Connection + Server Start ──────────────────────────────────────
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
-    console.log(`✅ MongoDB connected: ${conn.connection.host}`);
-  } catch (err) {
-    console.error('❌ MongoDB connection failed:', err.message);
-    process.exit(1);
-  }
-};
-
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`\n🚀 SkillSphere backend running on http://localhost:${PORT}`);
     console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}\n`);
+    console.log(`🌍 Environment: ${NODE_ENV || 'development'}\n`);
   });
 });
 
