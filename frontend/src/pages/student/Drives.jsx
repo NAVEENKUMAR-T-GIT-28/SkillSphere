@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Clock, MapPin, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
 import ConfirmModal from '../../components/ConfirmModal';
-import api from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
+import { DrivesAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function StudentDrives() {
@@ -11,19 +12,20 @@ export default function StudentDrives() {
   const [applications, setApplications] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, driveId: null });
+  const toast = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         if (!user?.profileId) return;
         const [{ data: drivesData }, { data: appsData }] = await Promise.all([
-          api.get('/placement-drives'),
-          api.get(`/students/${user.profileId}/applications`)
+          DrivesAPI.getDrives(),
+          DrivesAPI.getStudentApplications(user.profileId)
         ]);
         setDrives(drivesData);
         setApplications(appsData);
       } catch (err) {
-        console.error('Failed to load drives:', err);
+        toast.error('Failed to load drives');
       } finally {
         setFetching(false);
       }
@@ -44,10 +46,11 @@ export default function StudentDrives() {
   const confirmApply = async () => {
     if (confirmModal.driveId) {
       try {
-        const { data: application } = await api.post(`/placement-drives/${confirmModal.driveId}/apply`);
+        const { data: application } = await DrivesAPI.applyForDrive(confirmModal.driveId);
         setApplications([application, ...applications]);
+        toast.success('Successfully applied to drive');
       } catch (err) {
-        alert(err.message || 'Failed to apply for drive');
+        toast.error(err.message || 'Failed to apply for drive');
       }
     }
     setConfirmModal({ isOpen: false, driveId: null });
@@ -63,7 +66,8 @@ export default function StudentDrives() {
 
   const appliedDrives = applications.map(app => {
     const appDriveId = String(app.drive_id?._id || app.drive_id);
-    const drive = typeof app.drive_id === 'object' ? app.drive_id : drives.find(d => String(d._id) === appDriveId) || {};
+    const driveObj = app.drive_id && typeof app.drive_id === 'object' ? app.drive_id : {};
+    const drive = drives.find(d => String(d._id) === appDriveId) || driveObj;
     return {
       ...drive,
       applicationStatus: app.status,

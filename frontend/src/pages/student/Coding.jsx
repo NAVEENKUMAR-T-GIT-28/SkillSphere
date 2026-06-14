@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Edit2, X, Check, ExternalLink } from 'lucide-react';
-import api from '../../services/api';
+import { CodingAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function StudentCoding() {
@@ -30,7 +30,7 @@ export default function StudentCoding() {
     const fetchProfiles = async () => {
       try {
         if (!user?.profileId) return;
-        const { data } = await api.get(`/students/${user.profileId}/coding-profiles`);
+        const { data } = await CodingAPI.getProfiles(user.profileId);
         // Map array to object keyed by platform
         const profileMap = {};
         data.forEach(p => {
@@ -80,10 +80,10 @@ export default function StudentCoding() {
       let savedProfile;
       if (existingProfile && existingProfile._id) {
         // Update
-        ({ data: savedProfile } = await api.patch(`/students/${user.profileId}/coding-profiles/${existingProfile._id}`, payload));
+        ({ data: savedProfile } = await CodingAPI.updateProfile(user.profileId, existingProfile._id, payload));
       } else {
         // Create
-        ({ data: savedProfile } = await api.post(`/students/${user.profileId}/coding-profiles`, payload));
+        ({ data: savedProfile } = await CodingAPI.addProfile(user.profileId, payload));
       }
 
       setProfiles({
@@ -107,7 +107,7 @@ export default function StudentCoding() {
     if (!existingProfile || !existingProfile._id) return;
 
     try {
-      await api.delete(`/students/${user.profileId}/coding-profiles/${existingProfile._id}`);
+      await CodingAPI.deleteProfile(user.profileId, existingProfile._id);
       
       const newProfiles = { ...profiles };
       delete newProfiles[platformKey];

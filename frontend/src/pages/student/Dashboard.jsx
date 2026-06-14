@@ -4,7 +4,7 @@ import React from 'react';
 import ReadinessRing from '../../components/ReadinessRing';
 import ScoreBar from '../../components/ScoreBar';
 import TierBadge from '../../components/TierBadge';
-import api from '../../services/api';
+import { AnalyticsAPI } from '../../services/api';
 
 export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
@@ -14,7 +14,7 @@ export default function StudentDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const { data } = await api.get('/students/dashboard');
+        const { data } = await AnalyticsAPI.getStudentDashboard();
         setDashboard(data);
       } catch (err) {
         setError(err.message || 'Failed to load dashboard');
@@ -64,8 +64,8 @@ export default function StudentDashboard() {
         {/* Score Breakdown */}
         <div className="lg:col-span-2 card space-y-4">
           <h3 className="font-semibold text-text-primary">Score Breakdown</h3>
-          <ScoreBar label="Skills (pts)" value={readinessData.skills?.verified || 0} max={readinessData.skills?.total || 20} />
-          <ScoreBar label="Certs (pts)" value={readinessData.certs?.verified || 0} max={readinessData.certs?.total || 20} />
+          <ScoreBar label="Skills" value={readinessData.skills?.verified || 0} max={readinessData.skills?.total || 20} />
+          <ScoreBar label="Certs" value={readinessData.certs?.verified || 0} max={readinessData.certs?.total || 20} />
           <ScoreBar label="Projects" value={readinessData.projects?.count || 0} max={25} />
           <ScoreBar label="Coding" value={readinessData.coding?.count || 0} max={15} />
           <ScoreBar label="Faculty" value={readinessData.faculty?.count || 0} max={5} />

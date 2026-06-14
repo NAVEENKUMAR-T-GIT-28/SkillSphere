@@ -2,7 +2,9 @@ import { Plus, ExternalLink, Trash2, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
-import api from '../../services/api';
+import StudentSearchInput from '../../components/StudentSearchInput';
+import { useToast } from '../../contexts/ToastContext';
+import { ProjectsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function StudentProjects() {
@@ -11,6 +13,7 @@ export default function StudentProjects() {
   const [projects, setProjects] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -19,17 +22,17 @@ export default function StudentProjects() {
     githubUrl: '',
     liveUrl: '',
     complexity: 'intermediate',
-    teamMembers: '',
+    teamMembers: [],
   });
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         if (!user?.profileId) return;
-        const { data } = await api.get(`/students/${user.profileId}/projects`);
+        const { data } = await ProjectsAPI.getProjects(user.profileId);
         setProjects(data);
       } catch (err) {
-        console.error('Failed to load projects:', err);
+        toast.error('Failed to load projects');
       } finally {
         setFetching(false);
       }
@@ -39,7 +42,7 @@ export default function StudentProjects() {
 
   const addProject = async () => {
     if (!formData.title || !formData.githubUrl) {
-      alert('Title and GitHub URL are required');
+      toast.error('Title and GitHub URL are required');
       return;
     }
 
@@ -52,12 +55,10 @@ export default function StudentProjects() {
         github_url: formData.githubUrl,
         live_demo_url: formData.liveUrl,
         complexity_tier: formData.complexity,
-        team_member_ids: formData.teamMembers
-          ? formData.teamMembers.split(',').map(m => m.trim()).filter(Boolean)
-          : [],
+        team_member_ids: formData.teamMembers.map(m => m._id),
       };
 
-      const { data: newProject } = await api.post(`/students/${user.profileId}/projects`, payload);
+      const { data: newProject } = await ProjectsAPI.addProject(user.profileId, payload);
       setProjects([newProject, ...projects]);
       
       setFormData({
@@ -67,11 +68,12 @@ export default function StudentProjects() {
         githubUrl: '',
         liveUrl: '',
         complexity: 'intermediate',
-        teamMembers: '',
+        teamMembers: [],
       });
       setShowModal(false);
+      toast.success('Project added successfully');
     } catch (err) {
-      alert(err.message || 'Failed to add project');
+      toast.error(err.message || 'Failed to add project');
     } finally {
       setLoading(false);
     }
@@ -79,21 +81,22 @@ export default function StudentProjects() {
 
   const deleteProject = async (projectId) => {
     try {
-      await api.delete(`/students/${user.profileId}/projects/${projectId}`);
+      await ProjectsAPI.deleteProject(user.profileId, projectId);
       setProjects(projects.filter(p => p._id !== projectId));
+      toast.success('Project deleted');
     } catch (err) {
-      alert(err.message || 'Failed to delete project');
+      toast.error(err.message || 'Failed to delete project');
     }
   };
 
   const toggleFeatured = async (projectId, currentFeatured) => {
     try {
-      await api.patch(`/students/${user.profileId}/projects/${projectId}`, { is_featured: !currentFeatured });
+      await ProjectsAPI.updateFeature(user.profileId, projectId, !currentFeatured);
       setProjects(projects.map(p =>
         p._id === projectId ? {...p, is_featured: !currentFeatured} : p
       ));
     } catch (err) {
-      alert(err.message || 'Failed to update feature status');
+      toast.error(err.message || 'Failed to update feature status');
     }
   };
 
@@ -124,8 +127,9 @@ export default function StudentProjects() {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add Project" size="lg">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">Project Title *</label>
+            <label htmlFor="project-title" className="block text-sm font-medium text-text-primary mb-2">Project Title *</label>
             <input
+              id="project-title"
               type="text"
               className="input-field"
               placeholder="e.g., E-commerce Platform"
@@ -135,8 +139,9 @@ export default function StudentProjects() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">Description (max 1000 chars)</label>
+            <label htmlFor="project-desc" className="block text-sm font-medium text-text-primary mb-2">Description (max 1000 chars)</label>
             <textarea
+              id="project-desc"
               className="input-field"
               rows="4"
               maxLength="1000"
@@ -149,8 +154,9 @@ export default function StudentProjects() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Tech Stack (comma-separated)</label>
+              <label htmlFor="project-tech" className="block text-sm font-medium text-text-primary mb-2">Tech Stack (comma-separated)</label>
               <input
+                id="project-tech"
                 type="text"
                 className="input-field"
                 placeholder="React, Node.js, MongoDB"
@@ -159,8 +165,9 @@ export default function StudentProjects() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Complexity</label>
+              <label htmlFor="project-complexity" className="block text-sm font-medium text-text-primary mb-2">Complexity</label>
               <select
+                id="project-complexity"
                 className="input-field"
                 value={formData.complexity}
                 onChange={(e) => setFormData({...formData, complexity: e.target.value})}
@@ -173,19 +180,19 @@ export default function StudentProjects() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">Team Members (comma-separated Student Object IDs)</label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="ObjectId1, ObjectId2"
-              value={formData.teamMembers}
-              onChange={(e) => setFormData({...formData, teamMembers: e.target.value})}
-            />
+            <label htmlFor="project-team" className="block text-sm font-medium text-text-primary mb-2">Team Members</label>
+            <div id="project-team">
+              <StudentSearchInput
+                selected={formData.teamMembers}
+                onChange={(val) => setFormData({...formData, teamMembers: val})}
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">GitHub URL *</label>
+            <label htmlFor="project-github" className="block text-sm font-medium text-text-primary mb-2">GitHub URL *</label>
             <input
+              id="project-github"
               type="url"
               className="input-field"
               placeholder="https://github.com/..."
@@ -195,8 +202,9 @@ export default function StudentProjects() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">Live Demo URL (optional)</label>
+            <label htmlFor="project-live" className="block text-sm font-medium text-text-primary mb-2">Live Demo URL (optional)</label>
             <input
+              id="project-live"
               type="url"
               className="input-field"
               placeholder="https://..."

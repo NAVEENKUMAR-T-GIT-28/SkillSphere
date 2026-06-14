@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import api from '../../services/api';
+import { AnalyticsAPI } from '../../services/api';
 
 export default function HODDashboard() {
   const [data, setData] = useState(null);
@@ -9,7 +9,7 @@ export default function HODDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const { data: response } = await api.get('/hod/dashboard');
+        const { data: response } = await AnalyticsAPI.getHodDashboard();
         setData(response);
       } catch (err) {
         console.error('Failed to load dashboard:', err);

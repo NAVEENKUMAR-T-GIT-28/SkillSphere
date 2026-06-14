@@ -3,7 +3,9 @@ import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
 import StatusBadge from '../../components/StatusBadge';
 import EmptyState from '../../components/EmptyState';
-import api from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
+import { formatDate } from '../../utils/date';
+import { CertificationsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function StudentCertifications() {
@@ -12,6 +14,7 @@ export default function StudentCertifications() {
   const [certs, setCerts] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -27,10 +30,10 @@ export default function StudentCertifications() {
     const fetchCerts = async () => {
       try {
         if (!user?.profileId) return;
-        const { data } = await api.get(`/students/${user.profileId}/certifications`);
+        const { data } = await CertificationsAPI.getCertifications(user.profileId);
         setCerts(data);
       } catch (err) {
-        console.error('Failed to load certifications:', err);
+        toast.error('Failed to load certifications');
       } finally {
         setFetching(false);
       }
@@ -40,7 +43,7 @@ export default function StudentCertifications() {
 
   const addCertification = async () => {
     if (!formData.title || !formData.driveLink || !formData.issuer || !formData.issueDate) {
-      alert('Title, Issuer, Issue Date and Drive link are required');
+      toast.error('Title, Issuer, Issue Date and Drive link are required');
       return;
     }
 
@@ -56,7 +59,7 @@ export default function StudentCertifications() {
         drive_link: formData.driveLink,
       };
 
-      const { data: newCert } = await api.post(`/students/${user.profileId}/certifications`, payload);
+      const { data: newCert } = await CertificationsAPI.addCertification(user.profileId, payload);
       setCerts([newCert, ...certs]);
       
       setFormData({
@@ -69,8 +72,9 @@ export default function StudentCertifications() {
         driveLink: '',
       });
       setShowModal(false);
+      toast.success('Certification added successfully');
     } catch (err) {
-      alert(err.message || 'Failed to add certification');
+      toast.error(err.message || 'Failed to add certification');
     } finally {
       setLoading(false);
     }
@@ -78,10 +82,11 @@ export default function StudentCertifications() {
 
   const deleteCert = async (certId) => {
     try {
-      await api.delete(`/students/${user.profileId}/certifications/${certId}`);
+      await CertificationsAPI.deleteCertification(user.profileId, certId);
       setCerts(certs.filter(c => c._id !== certId));
+      toast.success('Certification deleted');
     } catch (err) {
-      alert(err.message || 'Failed to delete certification');
+      toast.error(err.message || 'Failed to delete certification');
     }
   };
 
@@ -120,8 +125,9 @@ export default function StudentCertifications() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Title *</label>
+              <label htmlFor="cert-title" className="block text-sm font-medium text-text-primary mb-2">Title *</label>
               <input
+                id="cert-title"
                 type="text"
                 className="input-field"
                 placeholder="e.g., AWS Solutions Architect"
@@ -130,8 +136,9 @@ export default function StudentCertifications() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Issuer *</label>
+              <label htmlFor="cert-issuer" className="block text-sm font-medium text-text-primary mb-2">Issuer *</label>
               <input
+                id="cert-issuer"
                 type="text"
                 className="input-field"
                 placeholder="e.g., Amazon Web Services"
@@ -143,8 +150,9 @@ export default function StudentCertifications() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Category</label>
+              <label htmlFor="cert-cat" className="block text-sm font-medium text-text-primary mb-2">Category</label>
               <select
+                id="cert-cat"
                 className="input-field"
                 value={formData.category}
                 onChange={(e) => setFormData({...formData, category: e.target.value})}
@@ -157,8 +165,9 @@ export default function StudentCertifications() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Credential ID</label>
+              <label htmlFor="cert-cred" className="block text-sm font-medium text-text-primary mb-2">Credential ID</label>
               <input
+                id="cert-cred"
                 type="text"
                 className="input-field"
                 placeholder="Optional"
@@ -170,8 +179,9 @@ export default function StudentCertifications() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Issue Date *</label>
+              <label htmlFor="cert-issue-date" className="block text-sm font-medium text-text-primary mb-2">Issue Date *</label>
               <input
+                id="cert-issue-date"
                 type="date"
                 className="input-field"
                 value={formData.issueDate}
@@ -179,8 +189,9 @@ export default function StudentCertifications() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Expiry Date</label>
+              <label htmlFor="cert-exp-date" className="block text-sm font-medium text-text-primary mb-2">Expiry Date</label>
               <input
+                id="cert-exp-date"
                 type="date"
                 className="input-field"
                 value={formData.expiryDate}
@@ -190,8 +201,9 @@ export default function StudentCertifications() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">Google Drive Link *</label>
+            <label htmlFor="cert-drive" className="block text-sm font-medium text-text-primary mb-2">Google Drive Link *</label>
             <input
+              id="cert-drive"
               type="url"
               className="input-field"
               placeholder="https://drive.google.com/..."
@@ -252,7 +264,7 @@ export default function StudentCertifications() {
 
                 {cert.issue_date && (
                   <p className="text-xs text-text-muted">
-                    Issued: {new Date(cert.issue_date).toLocaleDateString()}
+                    Issued: {formatDate(cert.issue_date)}
                   </p>
                 )}
 
@@ -268,6 +280,12 @@ export default function StudentCertifications() {
                       ? 'Expired'
                       : `Expires in ${daysUntilExpiry(cert.expiry_date)} days`}
                   </p>
+                )}
+
+                {cert.status === 'rejected' && (cert.notes || cert.rejection_reason) && (
+                  <div className="mt-2 p-2 bg-red-50 text-red-700 text-xs rounded border border-red-100">
+                    <strong>Reason:</strong> {cert.notes || cert.rejection_reason}
+                  </div>
                 )}
               </div>
 

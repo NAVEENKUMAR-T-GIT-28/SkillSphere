@@ -1,12 +1,14 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import AssignRoleModal from '../../components/AssignRoleModal';
-import api from '../../services/api';
+import { RolesAPI, UsersAPI } from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function HODRoles() {
   const [assignments, setAssignments] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const toast = useToast();
 
   const [showModal, setShowModal] = useState(false);
   const [modalRole, setModalRole] = useState(null);
@@ -20,19 +22,19 @@ export default function HODRoles() {
   const fetchAssignments = async () => {
     try {
       setFetching(true);
-      const { data } = await api.get('/hod/role-assignments');
-      // API might return array or data object
-      const items = Array.isArray(data) ? data : data.data || [];
+      const { data } = await RolesAPI.getAssignments();
+      // API returns the array directly due to api interceptor
+      const items = Array.isArray(data) ? data : [];
       
       setAssignments(items.map(a => ({
         id: a._id,
         role: a.role,
-        faculty: a.assignee_name || a.user_id?.email || 'Unknown User',
+        faculty: a.assignee_name || a.user_id?.name || a.user_id?.email || 'Unknown User',
         class: a.scope_label,
         mentee: a.scope_label,
       })));
     } catch (err) {
-      console.error('Failed to fetch role assignments:', err);
+      toast.error('Failed to fetch role assignments');
     } finally {
       setFetching(false);
     }
@@ -49,10 +51,10 @@ export default function HODRoles() {
 
   const fetchUsers = useCallback(async (query, role) => {
     try {
-      const { data } = await api.get(`/hod/users?search=${encodeURIComponent(query)}&role=${role}&limit=10`);
+      const { data } = await UsersAPI.searchUsers(query, role, 10);
       return data;
     } catch (err) {
-      console.error('Failed to fetch users:', err);
+      toast.error('Failed to fetch users');
       return [];
     }
   }, []);
@@ -60,17 +62,18 @@ export default function HODRoles() {
   const handleAssign = async ({ userId, scopeLabel, studentId, scopeData }) => {
     try {
       setProcessing(true);
-      await api.post('/hod/role-assignments', {
+      await RolesAPI.assignRole({
         user_id: userId,
         role: modalRole,
-        scope_type: modalRole === 'mentor' ? 'student' : (modalRole === 'rep' ? 'section' : 'class'),
+        scope_type: modalRole === 'mentor' ? 'student' : 'class',
         scope_id: modalRole === 'mentor' ? studentId : undefined,
         scope_label: scopeLabel,
         scope_data: scopeData
       });
+      toast.success('Role assigned successfully');
       fetchAssignments();
     } catch (err) {
-      alert(err.message || 'Failed to assign role. Ensure User ID is valid.');
+      toast.error(err.message || 'Failed to assign role. Ensure User ID is valid.');
       throw err;
     } finally {
       setProcessing(false);
@@ -80,10 +83,11 @@ export default function HODRoles() {
   const deleteAssignment = async (assignmentId) => {
     try {
       setProcessing(true);
-      await api.delete(`/hod/role-assignments/${assignmentId}`);
+      await RolesAPI.removeAssignment(assignmentId);
       setAssignments(assignments.filter(a => a.id !== assignmentId));
+      toast.success('Role revoked successfully');
     } catch (err) {
-      alert(err.message || 'Failed to revoke role assignment');
+      toast.error(err.message || 'Failed to revoke role assignment');
     } finally {
       setProcessing(false);
     }

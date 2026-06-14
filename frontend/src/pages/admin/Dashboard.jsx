@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Shield, UserPlus, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
-import api from '../../services/api';
+import { UsersAPI } from '../../services/api';
 
 export default function AdminDashboard() {
   const [formData, setFormData] = useState({
@@ -32,7 +32,7 @@ export default function AdminDashboard() {
     setLoading(true);
 
     try {
-      await api.post('/admin/create-hod', formData);
+      await UsersAPI.createHod(formData);
       setSuccess(`Successfully created HOD account for ${formData.full_name} (${formData.department})`);
       setFormData({
         email: '',

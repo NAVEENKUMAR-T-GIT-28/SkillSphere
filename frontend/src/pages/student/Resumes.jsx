@@ -2,7 +2,7 @@ import { Plus, ExternalLink, Trash2, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
-import api from '../../services/api';
+import { ResumesAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function StudentResumes() {
@@ -21,7 +21,7 @@ export default function StudentResumes() {
     const fetchResumes = async () => {
       try {
         if (!user?.profileId) return;
-        const { data } = await api.get(`/students/${user.profileId}/resumes`);
+        const { data } = await ResumesAPI.getResumes(user.profileId);
         setResumes(data);
       } catch (err) {
         console.error('Failed to load resumes:', err);
@@ -45,7 +45,7 @@ export default function StudentResumes() {
         label: formData.label,
       };
 
-      const { data: newResume } = await api.post(`/students/${user.profileId}/resumes`, payload);
+      const { data: newResume } = await ResumesAPI.addResume(user.profileId, payload);
       
       // Update previous latest to false in local state
       const updatedResumes = resumes.map(r => ({...r, is_latest: false}));
@@ -62,7 +62,7 @@ export default function StudentResumes() {
 
   const deleteResume = async (resumeId) => {
     try {
-      await api.delete(`/students/${user.profileId}/resumes/${resumeId}`);
+      await ResumesAPI.deleteResume(user.profileId, resumeId);
       
       let filtered = resumes.filter(r => r._id !== resumeId);
       

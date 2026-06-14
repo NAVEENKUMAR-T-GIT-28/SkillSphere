@@ -1,12 +1,19 @@
 import { Plus, Edit2, Trash2, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
-import api from '../../services/api';
+import Drawer from '../../components/Drawer';
+import { useToast } from '../../contexts/ToastContext';
+import { DrivesAPI } from '../../services/api';
 
 export default function HODDrives() {
   const [drives, setDrives] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const toast = useToast();
+
+  const [selectedDrive, setSelectedDrive] = useState(null);
+  const [applications, setApplications] = useState([]);
+  const [fetchingApps, setFetchingApps] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,7 +32,7 @@ export default function HODDrives() {
   const fetchDrives = async () => {
     try {
       setFetching(true);
-      const { data } = await api.get('/placement-drives?limit=50');
+      const { data } = await DrivesAPI.getDrives(50);
       const items = data || [];
       
       setDrives(items.map(d => ({
@@ -39,7 +46,7 @@ export default function HODDrives() {
         shortlisted: 0,
       })));
     } catch (err) {
-      console.error('Failed to fetch drives:', err);
+      toast.error('Failed to fetch drives');
     } finally {
       setFetching(false);
     }
@@ -51,13 +58,13 @@ export default function HODDrives() {
 
   const addDrive = async () => {
     if (!formData.companyName || !formData.roleTitle || !formData.driveDate || !formData.deadline) {
-      alert('Company, Role, Drive Date, and Application Deadline are required');
+      toast.error('Company, Role, Drive Date, and Application Deadline are required');
       return;
     }
 
     try {
       setProcessing(true);
-      await api.post('/placement-drives', {
+      await DrivesAPI.createDrive({
         company_name: formData.companyName,
         role_title: formData.roleTitle,
         ctc: formData.ctc,
@@ -85,9 +92,9 @@ export default function HODDrives() {
         driveType: 'oncampus'
       });
       setShowModal(false);
-      fetchDrives();
+      toast.success('Drive created successfully');
     } catch (err) {
-      alert(err.message || 'Failed to create drive');
+      toast.error(err.message || 'Failed to create drive');
     } finally {
       setProcessing(false);
     }
@@ -96,12 +103,25 @@ export default function HODDrives() {
   const deleteDrive = async (driveId) => {
     try {
       setProcessing(true);
-      await api.delete(`/placement-drives/${driveId}`);
-      setDrives(drives.filter(d => d.id !== driveId));
+      await DrivesAPI.deleteDrive(driveId);
+      toast.success('Drive deleted successfully');
     } catch (err) {
-      alert(err.message || 'Failed to delete drive');
+      toast.error(err.message || 'Failed to delete drive');
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleViewApplications = async (drive) => {
+    try {
+      setFetchingApps(true);
+      const { data } = await DrivesAPI.getShortlist(drive.id);
+      setApplications(data.applications || []);
+      setSelectedDrive(drive);
+    } catch (err) {
+      toast.error(err.message || 'Failed to fetch applications');
+    } finally {
+      setFetchingApps(false);
     }
   };
 
@@ -277,9 +297,6 @@ export default function HODDrives() {
                   <p className="text-text-secondary">{drive.role}</p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
-                  <button className="p-2 hover:bg-blue-50 rounded-md transition-colors text-primary">
-                    <Edit2 size={16} />
-                  </button>
                   <button
                     onClick={() => deleteDrive(drive.id)}
                     disabled={processing}
@@ -313,7 +330,7 @@ export default function HODDrives() {
                 </div>
               </div>
 
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-primary rounded-md hover:bg-blue-100 transition-colors text-sm font-medium">
+              <button onClick={() => handleViewApplications(drive)} disabled={fetchingApps} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-primary rounded-md hover:bg-blue-100 transition-colors text-sm font-medium disabled:opacity-50">
                 <Users size={16} />
                 View Applications
               </button>
@@ -321,6 +338,39 @@ export default function HODDrives() {
           ))}
         </div>
       )}
+      {/* View Applications Drawer */}
+      <Drawer isOpen={!!selectedDrive} onClose={() => setSelectedDrive(null)} title="Drive Applications">
+        {selectedDrive && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-semibold text-text-primary text-lg">{selectedDrive.company}</h3>
+              <p className="text-text-secondary">{selectedDrive.role}</p>
+            </div>
+            {applications.length === 0 ? (
+              <p className="text-sm text-text-secondary">No applications for this drive yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {applications.map(app => (
+                  <div key={app._id} className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium text-text-primary">{app.student_id?.full_name}</p>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        app.status === 'shortlisted' ? 'bg-green-100 text-green-800' :
+                        app.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {app.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-text-secondary">{app.student_id?.roll_number} • Dept: {app.student_id?.department}</p>
+                    <p className="text-xs text-text-secondary mt-1">CGPA: {app.student_id?.cgpa} • Readiness: {app.student_id?.readiness_score}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }

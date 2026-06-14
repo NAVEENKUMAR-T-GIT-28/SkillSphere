@@ -10,8 +10,8 @@ export default function ScoreBar({ label, value = 0, max = 20 }) {
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <p className="text-sm font-medium text-text-primary min-w-12 text-right">
-        {value}/{max}
+      <p className="text-sm font-medium text-text-primary min-w-16 text-right">
+        {value}/{max} pts
       </p>
     </div>
   );

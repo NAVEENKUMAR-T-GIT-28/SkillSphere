@@ -1,0 +1,13 @@
+export { default as api } from './api.client';
+export * from './auth.api';
+export * from './users.api';
+export * from './skills.api';
+export * from './projects.api';
+export * from './resumes.api';
+export * from './coding.api';
+export * from './certifications.api';
+export * from './drives.api';
+export * from './verification.api';
+export * from './roles.api';
+export * from './academic.api';
+export * from './analytics.api';

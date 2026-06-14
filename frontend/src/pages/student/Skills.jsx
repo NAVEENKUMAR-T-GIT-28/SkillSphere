@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import EmptyState from '../../components/EmptyState';
-import api from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
+import { formatDate } from '../../utils/date';
+import { SkillsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function StudentSkills() {
@@ -12,6 +14,7 @@ export default function StudentSkills() {
   const [taxonomy, setTaxonomy] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const toast = useToast();
   
   const [formData, setFormData] = useState({
     taxonomy_id: '',
@@ -30,16 +33,16 @@ export default function StudentSkills() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: taxonomyData } = await api.get('/skill-taxonomy');
+        const { data: taxonomyData } = await SkillsAPI.getTaxonomy();
         setTaxonomy(taxonomyData);
         
         if (!user?.profileId) return;
         
-        const { data: skillsData } = await api.get(`/students/${user.profileId}/skills`);
+        const { data: skillsData } = await SkillsAPI.getSkills(user.profileId);
         setSkills(skillsData);
       } catch (err) {
         console.error('Failed to load skills:', err);
-        alert(err.message || 'Authentication error or failed to load data');
+        toast.error('Authentication error or failed to load data');
       } finally {
         setFetching(false);
       }
@@ -49,7 +52,7 @@ export default function StudentSkills() {
 
   const addSkill = async () => {
     if (!formData.taxonomy_id) {
-      alert('Please select a skill');
+      toast.error('Please select a skill');
       return;
     }
     
@@ -61,7 +64,7 @@ export default function StudentSkills() {
         evidence_note: formData.evidence_note,
       };
       
-      const { data: newSkill } = await api.post(`/students/${user.profileId}/skills`, payload);
+      const { data: newSkill } = await SkillsAPI.addSkill(user.profileId, payload);
       // Wait for it to be added, then fetch fresh list or prepend the response
       // The API response doesn't have the populated taxonomy_id, so a refetch might be safer
       // but let's just prepend it. We know the name from taxonomy list.
@@ -75,8 +78,9 @@ export default function StudentSkills() {
       setSkills([formattedSkill, ...skills]);
       setFormData({ taxonomy_id: '', proficiency: 'intermediate', evidence_note: '' });
       setShowForm(false);
+      toast.success('Skill added successfully');
     } catch (err) {
-      alert(err.message || 'Failed to add skill');
+      toast.error(err.message || 'Failed to add skill');
     } finally {
       setLoading(false);
     }
@@ -84,10 +88,11 @@ export default function StudentSkills() {
 
   const deleteSkill = async (skillId) => {
     try {
-      await api.delete(`/students/${user.profileId}/skills/${skillId}`);
+      await SkillsAPI.deleteSkill(user.profileId, skillId);
       setSkills(skills.filter(s => s._id !== skillId));
+      toast.success('Skill deleted');
     } catch (err) {
-      alert(err.message || 'Failed to delete skill');
+      toast.error(err.message || 'Failed to delete skill');
     }
   };
 
@@ -121,8 +126,9 @@ export default function StudentSkills() {
           <h2 className="text-lg font-semibold text-text-primary">Add a New Skill</h2>
           
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-2">Select Skill</label>
+            <label htmlFor="skill-select" className="block text-sm font-medium text-text-primary mb-2">Select Skill</label>
             <select
+              id="skill-select"
               className="input-field"
               value={formData.taxonomy_id}
               onChange={(e) => setFormData({...formData, taxonomy_id: e.target.value})}
@@ -155,8 +161,9 @@ export default function StudentSkills() {
 
           {(formData.proficiency === 'advanced' || formData.proficiency === 'expert') && (
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Evidence / Experience</label>
+              <label htmlFor="skill-evidence" className="block text-sm font-medium text-text-primary mb-2">Evidence / Experience</label>
               <textarea
+                id="skill-evidence"
                 className="input-field"
                 rows="3"
                 placeholder="Describe your experience with this skill..."
@@ -211,9 +218,14 @@ export default function StudentSkills() {
                     <span className="text-xs text-text-secondary capitalize">{skill.proficiency}</span>
                     <StatusBadge status={skill.status} />
                     <span className="text-xs text-text-muted">
-                      {new Date(skill.created_at).toLocaleDateString()}
+                      {formatDate(skill.created_at)}
                     </span>
                   </div>
+                  {skill.status === 'rejected' && (skill.notes || skill.rejection_reason) && (
+                    <div className="mt-2 p-2 bg-red-50 text-red-700 text-xs rounded border border-red-100">
+                      <strong>Reason:</strong> {skill.notes || skill.rejection_reason}
+                    </div>
+                  )}
                 </div>
                 {skill.status !== 'verified' && (
                   <button

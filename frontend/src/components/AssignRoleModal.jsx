@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import api from "../services/api";
+import { AcademicAPI } from "../services/api";
+import StudentSearchInput from "./StudentSearchInput";
 
 /**
  * AssignRoleModal — replaces raw MongoDB ObjectID input with a
@@ -16,6 +17,7 @@ export default function AssignRoleModal({
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
   const [scopeLabel, setScopeLabel] = useState("");
+  const [mentees, setMentees] = useState([]);
   const [classesList, setClassesList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -56,13 +58,14 @@ export default function AssignRoleModal({
       setResults([]);
       setSelected(null);
       setScopeLabel("");
+      setMentees([]);
       setError("");
       setTimeout(() => inputRef.current?.focus(), 80);
 
       if (roleType === "cc" || roleType === "rep") {
         const fetchClasses = async () => {
           try {
-            const { data } = await api.get("/hod/classes");
+            const { data } = await AcademicAPI.getClasses();
             setClassesList(data || []);
           } catch (err) {
             console.error("Failed to load classes:", err);
@@ -103,7 +106,18 @@ export default function AssignRoleModal({
 
   const handleAssign = async () => {
     if (!selected) return setError("Please select a person.");
-    if (!scopeLabel.trim()) return setError(`Please enter/select the ${cfg.scopeLabel}.`);
+    
+    let finalScopeLabel = scopeLabel.trim();
+    let finalStudentId = selected.studentId;
+
+    if (roleType === "mentor") {
+      if (mentees.length === 0) return setError("Please select a mentee.");
+      finalScopeLabel = mentees[0].name;
+      finalStudentId = mentees[0].roll || mentees[0]._id; // roll contains the actual studentId from StudentSearchInput
+    } else if (!finalScopeLabel) {
+      return setError(`Please enter/select the ${cfg.scopeLabel}.`);
+    }
+
     setError("");
     setSubmitting(true);
     try {
@@ -121,8 +135,8 @@ export default function AssignRoleModal({
 
       await onAssign({ 
         userId: selected._id, 
-        scopeLabel: scopeLabel.trim(),
-        studentId: selected.studentId, // needed for mentor scope_id
+        scopeLabel: finalScopeLabel,
+        studentId: finalStudentId,
         scopeData
       });
       onClose();
@@ -169,7 +183,7 @@ export default function AssignRoleModal({
 
         {/* Search field */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label htmlFor="role-search-input" className="block text-sm font-medium text-gray-700 mb-1.5">
             {cfg.searchRole === "faculty" ? "Faculty Member" : "Student"}
           </label>
           <div className="relative">
@@ -186,6 +200,10 @@ export default function AssignRoleModal({
               )}
             </div>
             <input
+              id="role-search-input"
+              role="combobox"
+              aria-expanded={results.length > 0 && !selected}
+              aria-controls="role-search-results"
               ref={inputRef}
               type="text"
               value={query}
@@ -203,11 +221,13 @@ export default function AssignRoleModal({
           </div>
 
           {/* Dropdown results */}
-          {results.length > 0 && (
-            <div className="mt-1 border border-gray-200 rounded-lg shadow-lg bg-white overflow-hidden max-h-52 overflow-y-auto z-10 relative">
+          {results.length > 0 && !selected && (
+            <div id="role-search-results" role="listbox" className="mt-1 border border-gray-200 rounded-lg shadow-lg bg-white overflow-hidden max-h-52 overflow-y-auto z-10 relative">
               {results.map((user) => (
                 <button
                   key={user._id}
+                  role="option"
+                  aria-selected={false}
                   onClick={() => handleSelect(user)}
                   className="w-full text-left px-4 py-2.5 hover:bg-blue-50 flex items-center gap-3 transition-colors"
                 >
@@ -259,11 +279,12 @@ export default function AssignRoleModal({
 
         {/* Scope label field */}
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label htmlFor="role-scope-input" className="block text-sm font-medium text-gray-700 mb-1.5">
             {cfg.scopeLabel}
           </label>
           {roleType === "cc" || roleType === "rep" ? (
             <select
+              id="role-scope-input"
               value={scopeLabel}
               onChange={(e) => setScopeLabel(e.target.value)}
               className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
@@ -275,8 +296,15 @@ export default function AssignRoleModal({
                 </option>
               ))}
             </select>
+          ) : roleType === "mentor" ? (
+            <StudentSearchInput
+              selected={mentees}
+              onChange={setMentees}
+              max={1}
+            />
           ) : (
             <input
+              id="role-scope-input"
               type="text"
               value={scopeLabel}
               onChange={(e) => setScopeLabel(e.target.value)}

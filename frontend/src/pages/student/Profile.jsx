@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
-import api from '../../services/api';
+import { UsersAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function StudentProfile() {
@@ -32,7 +32,7 @@ export default function StudentProfile() {
     const fetchProfile = async () => {
       try {
         if (!user?.profileId) return;
-        const { data } = await api.get(`/students/${user.profileId}/profile`);
+        const { data } = await UsersAPI.getProfile(user.profileId);
         setStudentInfo(data);
         setFormData({
           fullName: data.full_name || '',
@@ -75,7 +75,7 @@ export default function StudentProfile() {
         payload.links = formData.links;
       }
 
-      await api.patch(`/students/${user.profileId}/profile`, payload);
+      await UsersAPI.updateProfile(user.profileId, payload);
       setMessage('✓ Changes saved successfully');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {

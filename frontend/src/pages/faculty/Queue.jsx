@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { ExternalLink, CheckCircle, XCircle } from 'lucide-react';
 import Drawer from '../../components/Drawer';
 import ConfirmModal from '../../components/ConfirmModal';
-import api from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
+import { formatDate } from '../../utils/date';
+import { VerificationAPI, ProjectsAPI } from '../../services/api';
 
 export default function FacultyQueue() {
   const [activeTab, setActiveTab] = useState('certifications');
@@ -10,14 +12,25 @@ export default function FacultyQueue() {
   const [fetching, setFetching] = useState(true);
   const [processing, setProcessing] = useState(false);
 
+  const toast = useToast();
+
   const [selectedItem, setSelectedItem] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
+  const [projectRating, setProjectRating] = useState({
+    functionality: 3,
+    code_quality: 3,
+    documentation: 3,
+    innovation: 3,
+    complexity: 3,
+    feedback: ''
+  });
+
   const fetchQueue = async () => {
     try {
       setFetching(true);
-      const { data } = await api.get('/verification/queue');
+      const { data } = await VerificationAPI.getQueue();
       
       const combinedQueue = [];
       
@@ -77,7 +90,7 @@ export default function FacultyQueue() {
       
       setQueue(combinedQueue);
     } catch (err) {
-      console.error('Failed to load queue:', err);
+      toast.error('Failed to load queue');
     } finally {
       setFetching(false);
     }
@@ -109,11 +122,12 @@ export default function FacultyQueue() {
   const handleApprove = async (itemId, type) => {
     try {
       setProcessing(true);
-      await api.post(`/verification/${type}/${itemId}/approve`);
+      await VerificationAPI.approveItem(type, itemId);
+      toast.success(`${type} approved successfully`);
       setQueue(queue.filter(item => item.id !== itemId));
       setSelectedItem(null);
     } catch (err) {
-      alert(err.message || 'Failed to approve item');
+      toast.error(err.message || 'Failed to approve item');
     } finally {
       setProcessing(false);
     }
@@ -121,18 +135,35 @@ export default function FacultyQueue() {
 
   const handleReject = async () => {
     if (!rejectReason) {
-      alert('Please provide a reason for rejection');
+      toast.error('Please provide a reason for rejection');
       return;
     }
     try {
       setProcessing(true);
-      await api.post(`/verification/${selectedItem.type}/${selectedItem.id}/reject`, { reason: rejectReason });
+      await VerificationAPI.rejectItem(selectedItem.type, selectedItem.id, rejectReason);
       setQueue(queue.filter(item => item.id !== selectedItem.id));
       setRejectReason('');
       setShowRejectModal(false);
       setSelectedItem(null);
+      toast.success('Item rejected successfully');
     } catch (err) {
-      alert(err.message || 'Failed to reject item');
+      toast.error(err.message || 'Failed to reject item');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleRateProject = async () => {
+    try {
+      setProcessing(true);
+      await ProjectsAPI.rateProject(selectedItem.id, projectRating);
+      toast.success('Project rated and approved');
+      setQueue(queue.filter(item => item.id !== selectedItem.id));
+      setSelectedItem(null);
+      // Reset form
+      setProjectRating({ functionality: 3, code_quality: 3, documentation: 3, innovation: 3, complexity: 3, feedback: '' });
+    } catch (err) {
+      toast.error(err.message || 'Failed to rate project');
     } finally {
       setProcessing(false);
     }
@@ -192,8 +223,16 @@ export default function FacultyQueue() {
           {filteredQueue.map(item => (
             <div
               key={item.id}
-              onClick={() => setSelectedItem(item)}
-              className="card hover:shadow-md transition-shadow cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedItem(item); }}
+              onClick={() => {
+                setSelectedItem(item);
+                if (item.type === 'project') {
+                  setProjectRating({ functionality: 3, code_quality: 3, documentation: 3, innovation: 3, complexity: 3, feedback: '' });
+                }
+              }}
+              className="card hover:shadow-md transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -203,9 +242,11 @@ export default function FacultyQueue() {
                       {item.type}
                     </span>
                   </div>
-                  <p className="text-sm text-text-secondary">{item.studentName} ({item.studentRoll})</p>
+                  <p className="text-sm text-text-secondary">
+                    {item.studentName} {item.studentRoll !== 'N/A' ? `(${item.studentRoll})` : ''}
+                  </p>
                   <p className="text-xs text-text-muted mt-1">
-                    Submitted {new Date(item.submittedDate).toLocaleDateString()}
+                    Submitted {formatDate(item.submittedDate)}
                   </p>
                 </div>
                 <button className="btn-primary text-sm">Review</button>
@@ -226,8 +267,9 @@ export default function FacultyQueue() {
             {/* Student Info */}
             <div className="pb-4 border-b border-border">
               <h3 className="font-semibold text-text-primary mb-2">Student Information</h3>
-              <p className="text-sm text-text-primary">{selectedItem.studentName}</p>
-              <p className="text-xs text-text-secondary">{selectedItem.studentRoll}</p>
+              <p className="text-sm text-text-primary">
+                {selectedItem.studentName} {selectedItem.studentRoll !== 'N/A' ? `(${selectedItem.studentRoll})` : ''}
+              </p>
             </div>
 
             {/* Item Details */}
@@ -319,6 +361,39 @@ export default function FacultyQueue() {
                         )}
                       </div>
                     )}
+                    
+                    {/* Project Rating Form */}
+                    <div className="mt-6 pt-6 border-t border-border">
+                      <h4 className="font-semibold text-text-primary mb-4">Rate Project</h4>
+                      <div className="space-y-4">
+                        {['functionality', 'code_quality', 'documentation', 'innovation', 'complexity'].map((criterion) => (
+                          <div key={criterion} className="flex items-center justify-between">
+                            <label className="text-sm font-medium text-text-primary capitalize">
+                              {criterion.replace('_', ' ')}
+                            </label>
+                            <input
+                              type="range"
+                              min="1"
+                              max="5"
+                              value={projectRating[criterion]}
+                              onChange={(e) => setProjectRating({ ...projectRating, [criterion]: parseInt(e.target.value) })}
+                              className="w-1/2"
+                            />
+                            <span className="text-sm font-medium w-4 text-center">{projectRating[criterion]}</span>
+                          </div>
+                        ))}
+                        <div>
+                          <label className="block text-sm font-medium text-text-primary mb-1">Feedback</label>
+                          <textarea
+                            value={projectRating.feedback}
+                            onChange={(e) => setProjectRating({ ...projectRating, feedback: e.target.value })}
+                            className="input-field w-full text-sm"
+                            rows="3"
+                            placeholder="Provide constructive feedback..."
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
@@ -326,14 +401,25 @@ export default function FacultyQueue() {
 
             {/* Actions */}
             <div className="space-y-3">
-              <button
-                onClick={() => handleApprove(selectedItem.id, selectedItem.type)}
-                disabled={processing}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors font-medium disabled:opacity-50"
-              >
-                <CheckCircle size={18} />
-                Approve
-              </button>
+              {selectedItem.type === 'project' ? (
+                <button
+                  onClick={handleRateProject}
+                  disabled={processing}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors font-medium disabled:opacity-50"
+                >
+                  <CheckCircle size={18} />
+                  Rate & Approve
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleApprove(selectedItem.id, selectedItem.type)}
+                  disabled={processing}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors font-medium disabled:opacity-50"
+                >
+                  <CheckCircle size={18} />
+                  Approve
+                </button>
+              )}
               <button
                 onClick={() => setShowRejectModal(true)}
                 disabled={processing}

@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillSphere — System Architecture Blueprint</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root {
+  --bg:#0D1117; --surface:#161B22; --surface2:#1C2128; --surface3:#21262D;
+  --border:#21262D; --border2:#30363D;
+  --text:#E6EDF3; --muted:#8B949E; --subtle:#6E7681;
+  --blue:#388BFD; --bluel:#58A6FF;
+  --green:#3FB950; --yellow:#D29922; --red:#F85149;
+  --purple:#A371F7; --teal:#39C5CF; --orange:#DB6D28; --pink:#F778BA;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+/* HEADER */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:200;}
+.logo-pill{background:linear-gradient(135deg,#388BFD,#A371F7);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.logo-name{font-size:17px;font-weight:800;letter-spacing:-.3px;}
+.logo-tag{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-left:4px;}
+.hdr-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.chip{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;border:1px solid;}
+.chip-b{background:rgba(56,139,253,.12);color:var(--bluel);border-color:rgba(56,139,253,.3);}
+.chip-g{background:rgba(63,185,80,.12);color:var(--green);border-color:rgba(63,185,80,.3);}
+.chip-y{background:rgba(210,153,34,.12);color:var(--yellow);border-color:rgba(210,153,34,.3);}
+.chip-r{background:rgba(248,81,73,.12);color:var(--red);border-color:rgba(248,81,73,.3);}
+.chip-p{background:rgba(163,113,247,.12);color:var(--purple);border-color:rgba(163,113,247,.3);}
+.chip-t{background:rgba(57,197,207,.12);color:var(--teal);border-color:rgba(57,197,207,.3);}
+.chip-o{background:rgba(219,109,40,.12);color:var(--orange);border-color:rgba(219,109,40,.3);}
+/* TABS */
+.tab-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:2px;overflow-x:auto;}
+.tab-btn{padding:11px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;font-size:13px;font-weight:500;font-family:'Inter',sans-serif;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:color .15s;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--bluel);border-bottom-color:var(--bluel);}
+.tab-icon{font-size:15px;}
+.panel{display:none;padding:28px;max-width:1400px;margin:0 auto;}
+.panel.active{display:block;}
+/* TYPOGRAPHY */
+.sec-title{font-size:18px;font-weight:700;margin-bottom:4px;}
+.sec-desc{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+.sub-title{font-size:13px;font-weight:600;color:var(--text);margin:22px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+hr.div{border:none;border-top:1px solid var(--border);margin:26px 0;}
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+/* SCHEMA CARDS */
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.sc-head{padding:11px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.sc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.sc-name{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text);}
+.sc-count{font-size:11px;color:var(--muted);margin-left:auto;}
+.sc-body{padding:10px 14px;}
+.frow{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:11.5px;}
+.frow:last-child{border-bottom:none;}
+.fn{font-family:'JetBrains Mono',monospace;color:var(--text);min-width:160px;font-size:11px;}
+.fn.pk{color:var(--yellow);}
+.fn.fk{color:var(--bluel);}
+.fn.idx{color:var(--green);}
+.fn.unq{color:var(--teal);}
+.ft{font-family:'JetBrains Mono',monospace;color:var(--purple);font-size:10px;min-width:80px;}
+.fc{font-size:10px;color:var(--muted);margin-left:auto;text-align:right;}
+.ftag{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.06);color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.ftag-pk{background:rgba(210,153,34,.15);color:var(--yellow);}
+.ftag-fk{background:rgba(88,166,255,.15);color:var(--bluel);}
+.ftag-idx{background:rgba(63,185,80,.15);color:var(--green);}
+.ftag-unq{background:rgba(57,197,207,.15);color:var(--teal);}
+.ftag-imm{background:rgba(248,81,73,.15);color:var(--red);}
+.ftag-enc{background:rgba(163,113,247,.15);color:var(--purple);}
+/* ARCH LAYERS */
+.arch-wrap{display:flex;flex-direction:column;gap:0;}
+.arch-row{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+.arch-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--subtle);font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+.arch-boxes{display:flex;gap:10px;flex-wrap:wrap;}
+.abox{border-radius:8px;padding:12px 15px;border:1px solid;flex:1;min-width:140px;}
+.abox-title{font-size:12px;font-weight:700;margin-bottom:5px;}
+.abox-sub{font-size:11px;color:rgba(255,255,255,.55);line-height:1.45;}
+.abox-tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.4);margin-top:5px;}
+.abox-b{background:rgba(56,139,253,.08);border-color:rgba(56,139,253,.25);color:#58A6FF;}
+.abox-g{background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.25);color:#3FB950;}
+.abox-p{background:rgba(163,113,247,.08);border-color:rgba(163,113,247,.25);color:#A371F7;}
+.abox-y{background:rgba(210,153,34,.08);border-color:rgba(210,153,34,.25);color:#D29922;}
+.abox-r{background:rgba(248,81,73,.08);border-color:rgba(248,81,73,.25);color:#F85149;}
+.abox-t{background:rgba(57,197,207,.08);border-color:rgba(57,197,207,.25);color:#39C5CF;}
+.abox-o{background:rgba(219,109,40,.08);border-color:rgba(219,109,40,.25);color:#DB6D28;}
+.conn{text-align:center;color:var(--border2);font-size:18px;margin:4px 0;line-height:1;}
+/* FLOW STEPS */
+.flow{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:16px 0;}
+.fstep{flex:1;min-width:120px;text-align:center;position:relative;}
+.fstep-box{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px 10px;margin:0 6px;}
+.fstep-num{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;}
+.fstep-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.fstep-desc{font-size:10.5px;color:var(--muted);line-height:1.4;}
+.farrow{display:flex;align-items:center;padding-top:18px;color:var(--border2);font-size:20px;flex-shrink:0;}
+/* MIDDLEWARE CHAIN */
+.mw-chain{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+.mw{border-radius:6px;padding:8px 13px;font-size:11px;border:1px solid;}
+.mw-title{font-weight:600;margin-bottom:2px;}
+.mw-sub{font-size:10px;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace;}
+.mw-arr{color:var(--border2);font-size:18px;}
+/* PIPELINE */
+.pipe{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;}
+.pipe-stage{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:9px 13px;font-size:11px;text-align:center;}
+.pipe-stage-t{font-weight:600;color:var(--text);margin-bottom:2px;}
+.pipe-stage-s{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.pipe-arr{color:var(--border2);font-size:16px;flex-shrink:0;}
+/* STATE MACHINE */
+.sm{display:flex;gap:10px;flex-wrap:wrap;}
+.state{border-radius:8px;padding:10px 14px;border:1px solid;min-width:120px;text-align:center;}
+.state-name{font-size:12px;font-weight:700;margin-bottom:4px;}
+.state-desc{font-size:10px;color:rgba(255,255,255,.55);line-height:1.4;}
+.sm-arrow{display:flex;align-items:center;color:var(--border2);font-size:20px;}
+/* SCORE FORMULA */
+.formula{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:18px 22px;font-family:'JetBrains Mono',monospace;font-size:12px;text-align:center;line-height:2;margin-bottom:14px;}
+.fw{color:var(--yellow);}
+.fv{color:var(--bluel);}
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{padding:8px 12px;text-align:left;background:var(--surface2);color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);font-size:11px;}
+.tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:top;line-height:1.5;}
+.tbl tr:hover td{background:rgba(255,255,255,.015);}
+/* ENDPOINTS */
+.ep-group{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.ep-group-hdr{padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--muted);}
+.ep{display:flex;align-items:center;gap:10px;padding:7px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:11.5px;}
+.ep:last-child{border-bottom:none;}
+.method{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;min-width:50px;text-align:center;}
+.mGET{background:rgba(63,185,80,.15);color:var(--green);}
+.mPOST{background:rgba(56,139,253,.15);color:var(--bluel);}
+.mPUT{background:rgba(210,153,34,.15);color:var(--yellow);}
+.mPATCH{background:rgba(163,113,247,.15);color:var(--purple);}
+.mDELETE{background:rgba(248,81,73,.15);color:var(--red);}
+.ep-path{font-family:'JetBrains Mono',monospace;color:var(--text);font-size:11px;flex:1;}
+.ep-desc{color:var(--muted);font-size:11px;text-align:right;}
+.ep-auth{font-size:9px;padding:1px 6px;border-radius:3px;white-space:nowrap;}
+/* FILE TREE */
+.ftree{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;}
+.ti{display:flex;align-items:center;gap:5px;}
+.ti-folder{color:var(--yellow);}
+.ti-js{color:var(--bluel);}
+.ti-ts{color:var(--bluel);}
+.ti-json{color:var(--green);}
+.ti-css{color:var(--purple);}
+.ti-env{color:var(--red);}
+.ti-md{color:var(--muted);}
+.ti-yml{color:var(--orange);}
+.ti-txt{color:var(--muted);}
+.ti-indent{color:var(--border2);}
+.ti-note{font-size:10px;color:var(--subtle);margin-left:6px;}
+/* INFO BOXES */
+.note{background:rgba(56,139,253,.07);border:1px solid rgba(56,139,253,.2);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.note-lbl{font-weight:600;color:var(--bluel);margin-right:5px;}
+.warn{background:rgba(210,153,34,.07);border:1px solid rgba(210,153,34,.2);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.warn-lbl{font-weight:600;color:var(--yellow);margin-right:5px;}
+/* INTEGRATION CARDS */
+.int-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.int-hdr{padding:12px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.int-ico{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.int-name{font-size:13px;font-weight:700;color:var(--text);}
+.int-type{font-size:11px;color:var(--muted);}
+.int-body{padding:12px 15px;}
+.int-row{display:flex;align-items:flex-start;gap:7px;margin-bottom:7px;font-size:11.5px;}
+.int-icon{color:var(--blue);font-size:13px;min-width:14px;margin-top:1px;}
+.int-text{color:var(--muted);line-height:1.4;}
+.int-data{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--purple);}
+/* CACHE CARD */
+.cache-row{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;}
+.cache-key{font-family:'JetBrains Mono',monospace;color:var(--teal);min-width:190px;font-size:11px;}
+.cache-ttl{color:var(--yellow);min-width:70px;font-size:11px;}
+.cache-desc{color:var(--muted);font-size:11px;}
+/* SCORE TIERS */
+.tier{border-radius:7px;padding:11px 16px;margin-bottom:8px;display:flex;align-items:center;gap:16px;}
+.tier-name{font-weight:700;font-size:13px;min-width:145px;}
+.tier-range{font-family:'JetBrains Mono',monospace;font-size:12px;min-width:80px;}
+.tier-desc{font-size:12px;color:rgba(255,255,255,.65);flex:1;}
+/* JOB CARDS */
+.job{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;}
+.job-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.job-name{font-size:13px;font-weight:600;color:var(--text);}
+.job-sched{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);}
+.job-steps{display:flex;gap:8px;flex-wrap:wrap;}
+.jstep{background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:6px 11px;font-size:11px;color:var(--muted);}
+.jstep-n{font-weight:600;color:var(--text);display:block;margin-bottom:2px;}
+/* STAT TILES */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px;}
+.stile{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.stile-val{font-size:26px;font-weight:800;margin-bottom:3px;}
+.stile-lbl{font-size:11px;color:var(--muted);}
+/* PERM MATRIX */
+.perm-t{width:100%;border-collapse:collapse;font-size:11.5px;}
+.perm-t th{padding:9px 12px;background:var(--surface2);color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);font-size:11px;text-align:center;}
+.perm-t th:first-child{text-align:left;}
+.perm-t td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;}
+.perm-t td:first-child{text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;}
+.ck{color:var(--green);font-size:14px;}
+.cx{color:var(--red);font-size:14px;}
+.cp{color:var(--yellow);font-size:12px;}
+/* JWT */
+.jwt-sec{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:15px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;}
+.jwt-part{margin-bottom:8px;}
+.jwt-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;}
+.jwt-content{background:rgba(255,255,255,.04);border-radius:5px;padding:8px 12px;line-height:1.7;}
+/* RESP ENVELOPE */
+.envelope{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:15px 18px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.8;}
+/* SERVICE DEP */
+.dep-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;}
+.dep-from{font-family:'JetBrains Mono',monospace;color:var(--bluel);min-width:200px;font-size:11px;}
+.dep-arr{color:var(--border2);}
+.dep-to{color:var(--muted);}
+/* SCROLLABLE */
+.scroll{overflow-x:auto;}
+/* check */
+.check{color:var(--green);}
+.cross{color:var(--red);}
+code{font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px;color:var(--purple);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo-pill">⚡</div>
+  <div>
+    <div class="logo-name">SkillSphere</div>
+  </div>
+  <span class="logo-tag">Centralized Student Skill &amp; Placement Intelligence Platform</span>
+  <div class="hdr-right">
+    <span class="chip chip-g">v2.0 SRS</span>
+    <span class="chip chip-b">Production Design</span>
+    <span class="chip chip-p">9-Month SDLC</span>
+    <span class="chip chip-y">15 Modules</span>
+  </div>
+</div>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('db',this)"><span class="tab-icon">🗃</span> Database Design</button>
+  <button class="tab-btn" onclick="switchTab('arch',this)"><span class="tab-icon">🏗</span> Backend Architecture</button>
+  <button class="tab-btn" onclick="switchTab('svc',this)"><span class="tab-icon">🔌</span> Services &amp; Integrations</button>
+  <button class="tab-btn" onclick="switchTab('files',this)"><span class="tab-icon">📁</span> File Distribution</button>
+</div>
+
+<!-- ========== TAB 1: DATABASE ========== -->
+<div id="panel-db" class="panel active">
+  <div class="sec-title">Database Design — Full Schema Reference</div>
+  <div class="sec-desc">MongoDB document collections. ObjectId refs enforce referential integrity at application layer. All timestamps are UTC. Indexes listed per collection.</div>
+
+  <div class="stats">
+    <div class="stile"><div class="stile-val" style="color:var(--blue)">15</div><div class="stile-lbl">Collections</div></div>
+    <div class="stile"><div class="stile-val" style="color:var(--green)">150+</div><div class="stile-lbl">Fields Defined</div></div>
+    <div class="stile"><div class="stile-val" style="color:var(--yellow)">22</div><div class="stile-lbl">Compound Indexes</div></div>
+    <div class="stile"><div class="stile-val" style="color:var(--purple)">8</div><div class="stile-lbl">Enum Types</div></div>
+    <div class="stile"><div class="stile-val" style="color:var(--teal)">5</div><div class="stile-lbl">Roles (RBAC)</div></div>
+  </div>
+
+  <div class="note"><span class="note-lbl">Legend:</span>
+    <span class="ftag ftag-pk">PK</span> Primary Key &nbsp;
+    <span class="ftag ftag-fk">FK</span> Foreign Key &nbsp;
+    <span class="ftag ftag-idx">IDX</span> Indexed &nbsp;
+    <span class="ftag ftag-unq">UNQ</span> Unique &nbsp;
+    <span class="ftag ftag-imm">IMM</span> Immutable &nbsp;
+    <span class="ftag ftag-enc">ENC</span> Encrypted at rest
+  </div>
+
+  <!-- SECTION: CORE ENTITIES -->
+  <div class="sub-title">⬡ Core User Entities</div>
+  <div class="g3">
+
+    <!-- users -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--blue)"></div><span class="sc-name">users</span><span class="sc-count">15 fields</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn unq idx">email</span><span class="ft">String</span><span class="ftag ftag-unq">UNQ</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">password_hash</span><span class="ft">String</span><span class="ftag ftag-enc">ENC</span><span class="fc">bcrypt s≥10</span></div>
+        <div class="frow"><span class="fn">role</span><span class="ft">Enum</span><span class="fc">student|faculty|placement_officer|hod|admin</span></div>
+        <div class="frow"><span class="fn fk">department_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→Dept</span></div>
+        <div class="frow"><span class="fn">is_mfa_enabled</span><span class="ft">Boolean</span><span class="fc">mandatory: admin, hod</span></div>
+        <div class="frow"><span class="fn">mfa_secret</span><span class="ft">String</span><span class="ftag ftag-enc">ENC</span><span class="fc">TOTP base32</span></div>
+        <div class="frow"><span class="fn">mfa_backup_codes</span><span class="ft">String[]</span><span class="ftag ftag-enc">ENC</span><span class="fc">hashed, 8 codes</span></div>
+        <div class="frow"><span class="fn">refresh_token_hash</span><span class="ft">String</span><span class="ftag ftag-enc">ENC</span><span class="fc">30d lifetime</span></div>
+        <div class="frow"><span class="fn">last_login</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">failed_login_count</span><span class="ft">Number</span><span class="fc">lockout at 5</span></div>
+        <div class="frow"><span class="fn">is_locked</span><span class="ft">Boolean</span><span class="fc">auto after 5 fails</span></div>
+        <div class="frow"><span class="fn">is_active</span><span class="ft">Boolean</span><span class="fc">soft delete</span></div>
+        <div class="frow"><span class="fn">created_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">updated_at</span><span class="ft">Date</span></div>
+      </div>
+    </div>
+
+    <!-- students -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--green)"></div><span class="sc-name">students</span><span class="sc-count">22 fields</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn fk unq">user_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→User</span><span class="ftag ftag-unq">UNQ</span></div>
+        <div class="frow"><span class="fn unq idx">roll_number</span><span class="ft">String</span><span class="ftag ftag-unq">UNQ</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn idx">full_name</span><span class="ft">String</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn idx">batch_year</span><span class="ft">Number</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn idx">section</span><span class="ft">String</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">semester</span><span class="ft">Number</span><span class="fc">1–8</span></div>
+        <div class="frow"><span class="fn idx">cgpa</span><span class="ft">Number</span><span class="ftag ftag-idx">IDX</span><span class="fc">0.0–10.0</span></div>
+        <div class="frow"><span class="fn idx">department</span><span class="ft">String</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">photo_url</span><span class="ft">String</span><span class="fc">CDN path, 400×400</span></div>
+        <div class="frow"><span class="fn">career_objective</span><span class="ft">String</span><span class="fc">max 500 chars</span></div>
+        <div class="frow"><span class="fn idx">readiness_score</span><span class="ft">Number</span><span class="ftag ftag-idx">IDX</span><span class="fc">0–100</span></div>
+        <div class="frow"><span class="fn">readiness_tier</span><span class="ft">Enum</span><span class="fc">beginner|developing|placement_ready|industry_ready</span></div>
+        <div class="frow"><span class="fn">profile_completeness</span><span class="ft">Number</span><span class="fc">0–100 %</span></div>
+        <div class="frow"><span class="fn">links</span><span class="ft">Object</span><span class="fc">{github,linkedin,portfolio,leetcode,hackerrank,codechef,skillrack,codeforces}</span></div>
+        <div class="frow"><span class="fn">score_breakdown</span><span class="ft">Object</span><span class="fc">{skills,certs,projects,ats,coding,faculty}</span></div>
+        <div class="frow"><span class="fn">phone</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">last_score_update</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">created_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">updated_at</span><span class="ft">Date</span></div>
+      </div>
+    </div>
+
+    <!-- faculty_profiles -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--orange)"></div><span class="sc-name">faculty_profiles</span><span class="sc-count">11 fields</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn fk unq">user_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→User</span><span class="ftag ftag-unq">UNQ</span></div>
+        <div class="frow"><span class="fn">full_name</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn unq">employee_id</span><span class="ft">String</span><span class="ftag ftag-unq">UNQ</span></div>
+        <div class="frow"><span class="fn">department</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">designation</span><span class="ft">String</span><span class="fc">Asst. Prof / Prof etc.</span></div>
+        <div class="frow"><span class="fn">specializations</span><span class="ft">String[]</span><span class="fc">skill areas</span></div>
+        <div class="frow"><span class="fn fk">mentored_students</span><span class="ft">ObjectId[]</span><span class="ftag ftag-fk">FK→Student[]</span></div>
+        <div class="frow"><span class="fn">max_mentees</span><span class="ft">Number</span><span class="fc">default 20</span></div>
+        <div class="frow"><span class="fn">pending_verifications</span><span class="ft">Number</span><span class="fc">cached count</span></div>
+        <div class="frow"><span class="fn">created_at</span><span class="ft">Date</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION: SKILL & CERT -->
+  <div class="sub-title">⬡ Skill &amp; Certification Data</div>
+  <div class="g3">
+    <!-- skill_taxonomy -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--teal)"></div><span class="sc-name">skill_taxonomy</span><span class="sc-count">200+ entries</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn unq">name</span><span class="ft">String</span><span class="ftag ftag-unq">UNQ</span><span class="fc">e.g. "React", "AWS EC2"</span></div>
+        <div class="frow"><span class="fn unq">slug</span><span class="ft">String</span><span class="ftag ftag-unq">UNQ</span><span class="fc">url-safe</span></div>
+        <div class="frow"><span class="fn idx">category</span><span class="ft">Enum</span><span class="ftag ftag-idx">IDX</span><span class="fc">programming|cloud|ai_ml|cybersecurity|design|soft_skills|domain|database</span></div>
+        <div class="frow"><span class="fn">description</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn idx">is_trending</span><span class="ft">Boolean</span><span class="ftag ftag-idx">IDX</span><span class="fc">highlighted to students</span></div>
+        <div class="frow"><span class="fn">demand_score</span><span class="ft">Number</span><span class="fc">0–100 from JD analysis</span></div>
+        <div class="frow"><span class="fn fk">related_skills</span><span class="ft">ObjectId[]</span><span class="ftag ftag-fk">FK→SkillTaxonomy[]</span></div>
+        <div class="frow"><span class="fn fk">created_by</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→User(Admin)</span></div>
+        <div class="frow"><span class="fn">is_active</span><span class="ft">Boolean</span></div>
+        <div class="frow"><span class="fn">created_at</span><span class="ft">Date</span></div>
+      </div>
+    </div>
+
+    <!-- skills -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--purple)"></div><span class="sc-name">skills</span><span class="sc-count">student skills</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn fk idx">student_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→Student</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn fk idx">taxonomy_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→SkillTaxonomy</span></div>
+        <div class="frow"><span class="fn">proficiency</span><span class="ft">Enum</span><span class="fc">beginner|intermediate|advanced|expert</span></div>
+        <div class="frow"><span class="fn idx">status</span><span class="ft">Enum</span><span class="ftag ftag-idx">IDX</span><span class="fc">pending|verified|rejected|needs_clarification</span></div>
+        <div class="frow"><span class="fn">evidence_type</span><span class="ft">Enum</span><span class="fc">certification|project|none</span></div>
+        <div class="frow"><span class="fn fk">evidence_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK (polymorphic)</span></div>
+        <div class="frow"><span class="fn fk">verified_by</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→User(Faculty)</span></div>
+        <div class="frow"><span class="fn">verified_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">rejection_reason</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">clarification_message</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">endorsements</span><span class="ft">Object[]</span><span class="fc">[{faculty_id, endorsed_at}]</span></div>
+        <div class="frow"><span class="fn">endorsement_count</span><span class="ft">Number</span><span class="fc">cached</span></div>
+        <div class="frow"><span class="fn">submitted_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">updated_at</span><span class="ft">Date</span></div>
+      </div>
+    </div>
+
+    <!-- certificates -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--yellow)"></div><span class="sc-name">certificates</span><span class="sc-count">21 fields</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn fk idx">student_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→Student</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">title</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn idx">issuer</span><span class="ft">String</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">issuer_tier</span><span class="ft">Enum</span><span class="fc">tier1(Google/AWS/MS)|tier2|tier3</span></div>
+        <div class="frow"><span class="fn">category</span><span class="ft">Enum</span><span class="fc">technical|language|soft_skills|domain|academic</span></div>
+        <div class="frow"><span class="fn">issue_date</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn idx">expiry_date</span><span class="ft">Date</span><span class="ftag ftag-idx">IDX</span><span class="fc">expiry cron uses this</span></div>
+        <div class="frow"><span class="fn">credential_id</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">verification_url</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">file_url</span><span class="ft">String</span><span class="fc">S3 key, encrypted</span></div>
+        <div class="frow"><span class="fn">url_reachable</span><span class="ft">Boolean</span><span class="fc">auto pre-check</span></div>
+        <div class="frow"><span class="fn">url_checked_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">ocr_extracted</span><span class="ft">Object</span><span class="fc">{name, issuer, date} from OCR</span></div>
+        <div class="frow"><span class="fn idx">status</span><span class="ft">Enum</span><span class="ftag ftag-idx">IDX</span><span class="fc">pending|verified|rejected|expired|needs_clarification</span></div>
+        <div class="frow"><span class="fn fk">reviewed_by</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→User</span></div>
+        <div class="frow"><span class="fn">reviewed_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">rejection_reason</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">clarification_message</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">clarification_count</span><span class="ft">Number</span><span class="fc">max 2 rounds</span></div>
+        <div class="frow"><span class="fn">submitted_at</span><span class="ft">Date</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION: PORTFOLIO & CODING -->
+  <div class="sub-title">⬡ Portfolio &amp; Coding Performance</div>
+  <div class="g2">
+    <div class="g2" style="display:contents">
+    <!-- resumes -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--pink)"></div><span class="sc-name">resumes</span><span class="sc-count">17 fields</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn fk idx">student_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→Student</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">version</span><span class="ft">Number</span><span class="fc">auto-increment per student</span></div>
+        <div class="frow"><span class="fn">original_filename</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">file_url</span><span class="ft">String</span><span class="fc">S3 key</span></div>
+        <div class="frow"><span class="fn">file_type</span><span class="ft">Enum</span><span class="fc">pdf|docx</span></div>
+        <div class="frow"><span class="fn">file_size</span><span class="ft">Number</span><span class="fc">bytes, max 5MB</span></div>
+        <div class="frow"><span class="fn idx">is_latest</span><span class="ft">Boolean</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">ats_score</span><span class="ft">Number</span><span class="fc">0–100</span></div>
+        <div class="frow"><span class="fn">score_breakdown</span><span class="ft">Object</span><span class="fc">{keyword_density, formatting, section_completeness, action_verbs, quantified_achievements, length_appropriateness}</span></div>
+        <div class="frow"><span class="fn">keyword_gaps</span><span class="ft">String[]</span><span class="fc">missing high-priority terms</span></div>
+        <div class="frow"><span class="fn">recommendations</span><span class="ft">Object[]</span><span class="fc">[{category, impact:high|med|low, message}]</span></div>
+        <div class="frow"><span class="fn">word_count</span><span class="ft">Number</span></div>
+        <div class="frow"><span class="fn">pages</span><span class="ft">Number</span></div>
+        <div class="frow"><span class="fn">analysis_status</span><span class="ft">Enum</span><span class="fc">pending|processing|complete|failed</span></div>
+        <div class="frow"><span class="fn">uploaded_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">analyzed_at</span><span class="ft">Date</span></div>
+      </div>
+    </div>
+
+    <!-- projects -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--orange)"></div><span class="sc-name">projects</span><span class="sc-count">18 fields</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn idx">title</span><span class="ft">String</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">description</span><span class="ft">String</span><span class="fc">max 1000 chars</span></div>
+        <div class="frow"><span class="fn fk">tech_stack</span><span class="ft">ObjectId[]</span><span class="ftag ftag-fk">FK→SkillTaxonomy[]</span></div>
+        <div class="frow"><span class="fn">github_url</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">demo_url</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">thumbnail_url</span><span class="ft">String</span><span class="fc">S3 key</span></div>
+        <div class="frow"><span class="fn">complexity_tier</span><span class="ft">Enum</span><span class="fc">basic|intermediate|advanced</span></div>
+        <div class="frow"><span class="fn">is_featured</span><span class="ft">Boolean</span></div>
+        <div class="frow"><span class="fn idx">status</span><span class="ft">Enum</span><span class="ftag ftag-idx">IDX</span><span class="fc">pending|verified|rejected</span></div>
+        <div class="frow"><span class="fn">github_stats</span><span class="ft">Object</span><span class="fc">{commits,stars,forks,languages{},last_activity,open_issues}</span></div>
+        <div class="frow"><span class="fn">github_last_fetched</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">faculty_rating</span><span class="ft">Number</span><span class="fc">1–5 weighted avg</span></div>
+        <div class="frow"><span class="fn">faculty_scores</span><span class="ft">Object</span><span class="fc">{functionality,code_quality,documentation,innovation,complexity}</span></div>
+        <div class="frow"><span class="fn">faculty_feedback</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn fk">rated_by</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→User(Faculty)</span></div>
+        <div class="frow"><span class="fn">rated_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">submitted_at</span><span class="ft">Date</span></div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-top:14px;">
+    <!-- project_members -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--orange)"></div><span class="sc-name">project_members</span><span class="sc-count">join table</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn fk idx">project_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→Project</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn fk idx">student_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→Student</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">role</span><span class="ft">String</span><span class="fc">Lead Dev / Backend Dev / etc.</span></div>
+        <div class="frow"><span class="fn">contribution_pct</span><span class="ft">Number</span><span class="fc">0–100</span></div>
+        <div class="frow"><span class="fn">joined_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">— compound index —</span><span class="ft"></span><span class="fc">project_id + student_id (unique)</span></div>
+      </div>
+    </div>
+
+    <!-- coding_profiles -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--teal)"></div><span class="sc-name">coding_profiles</span><span class="sc-count">per platform</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn fk idx">student_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→Student</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">platform</span><span class="ft">Enum</span><span class="fc">leetcode|hackerrank|codechef|skillrack|github|codeforces</span></div>
+        <div class="frow"><span class="fn">username</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">is_linked</span><span class="ft">Boolean</span></div>
+        <div class="frow"><span class="fn">oauth_token</span><span class="ft">String</span><span class="ftag ftag-enc">ENC</span><span class="fc">where OAuth available</span></div>
+        <div class="frow"><span class="fn">stats</span><span class="ft">Object</span><span class="fc">{problems_solved,easy,medium,hard,contest_rating,global_rank,badges[],streak}</span></div>
+        <div class="frow"><span class="fn">github_stats</span><span class="ft">Object</span><span class="fc">{repos,total_commits,stars,followers,contributions_ytd}</span></div>
+        <div class="frow"><span class="fn">platform_score</span><span class="ft">Number</span><span class="fc">0–100 normalized</span></div>
+        <div class="frow"><span class="fn idx">last_synced</span><span class="ft">Date</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">sync_status</span><span class="ft">Enum</span><span class="fc">success|failed|pending|rate_limited</span></div>
+        <div class="frow"><span class="fn">sync_error_msg</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">— compound index —</span><span class="ft"></span><span class="fc">student_id + platform (unique)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION: PLACEMENT -->
+  <div class="sub-title">⬡ Placement Management</div>
+  <div class="g2">
+    <!-- placement_drives -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--red)"></div><span class="sc-name">placement_drives</span><span class="sc-count">20 fields</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn idx">company_name</span><span class="ft">String</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn idx">role</span><span class="ft">String</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">jd_url</span><span class="ft">String</span><span class="fc">S3 key for JD PDF</span></div>
+        <div class="frow"><span class="fn">ctc</span><span class="ft">String</span><span class="fc">display string</span></div>
+        <div class="frow"><span class="fn">ctc_min</span><span class="ft">Number</span><span class="fc">for range filtering</span></div>
+        <div class="frow"><span class="fn">ctc_max</span><span class="ft">Number</span></div>
+        <div class="frow"><span class="fn">location</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">drive_type</span><span class="ft">Enum</span><span class="fc">on_campus|off_campus|pool</span></div>
+        <div class="frow"><span class="fn idx">drive_date</span><span class="ft">Date</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn idx">application_deadline</span><span class="ft">Date</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">openings</span><span class="ft">Number</span></div>
+        <div class="frow"><span class="fn">eligibility_rules</span><span class="ft">Object</span><span class="fc">{min_cgpa,max_backlogs,required_skills[],min_readiness_score,batch_years[],sections[]}</span></div>
+        <div class="frow"><span class="fn idx">status</span><span class="ft">Enum</span><span class="ftag ftag-idx">IDX</span><span class="fc">draft|active|completed|cancelled</span></div>
+        <div class="frow"><span class="fn fk">created_by</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→User(PlacementOfficer)</span></div>
+        <div class="frow"><span class="fn">total_eligible</span><span class="ft">Number</span><span class="fc">cached</span></div>
+        <div class="frow"><span class="fn">total_applicants</span><span class="ft">Number</span></div>
+        <div class="frow"><span class="fn">total_shortlisted</span><span class="ft">Number</span></div>
+        <div class="frow"><span class="fn">total_selected</span><span class="ft">Number</span></div>
+        <div class="frow"><span class="fn">notification_sent</span><span class="ft">Boolean</span></div>
+      </div>
+    </div>
+
+    <!-- applications -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--pink)"></div><span class="sc-name">applications</span><span class="sc-count">pipeline tracking</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn fk idx">student_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→Student</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn fk idx">drive_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→PlacementDrive</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn idx">status</span><span class="ft">Enum</span><span class="ftag ftag-idx">IDX</span><span class="fc">eligible|applied|shortlisted|round_1|round_2|selected|rejected|withdrawn</span></div>
+        <div class="frow"><span class="fn">readiness_score_at_apply</span><span class="ft">Number</span><span class="fc">score snapshot at application time</span></div>
+        <div class="frow"><span class="fn">cgpa_at_apply</span><span class="ft">Number</span><span class="fc">cgpa snapshot</span></div>
+        <div class="frow"><span class="fn">applied_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">shortlisted_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">selected_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn fk">updated_by</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→User</span></div>
+        <div class="frow"><span class="fn">notes</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">status_history</span><span class="ft">Object[]</span><span class="fc">[{status,changed_at,changed_by,note}]</span></div>
+        <div class="frow"><span class="fn">— compound index —</span><span class="ft"></span><span class="fc">student_id + drive_id (unique)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION: SYSTEM & AUDIT -->
+  <div class="sub-title">⬡ System, Audit &amp; Analytics</div>
+  <div class="g3">
+    <!-- verification_logs -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--red)"></div><span class="sc-name">verification_logs</span><span class="sc-count">immutable audit trail</span></div>
+      <div class="sc-body">
+        <div class="note" style="margin-bottom:8px;font-size:10px;"><span class="note-lbl">IMM:</span> No update/delete operations. Append-only enforced at ODM layer via pre-hooks.</div>
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn">item_type</span><span class="ft">Enum</span><span class="fc">certificate|skill|project</span></div>
+        <div class="frow"><span class="fn fk idx">item_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK (polymorphic)</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn fk idx">student_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→Student</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn fk idx">actor_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→User</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">action</span><span class="ft">Enum</span><span class="fc">submitted|approved|rejected|clarification_requested|resubmitted|escalated|expired</span></div>
+        <div class="frow"><span class="fn">comment</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">metadata</span><span class="ft">Object</span><span class="fc">URL ping result, OCR match score, etc.</span></div>
+        <div class="frow"><span class="fn">ip_address</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn idx">timestamp</span><span class="ft">Date</span><span class="ftag ftag-idx">IDX</span><span class="ftag ftag-imm">IMM</span></div>
+      </div>
+    </div>
+
+    <!-- notifications -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--blue)"></div><span class="sc-name">notifications</span><span class="sc-count">multi-channel</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn fk idx">user_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→User</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">type</span><span class="ft">Enum</span><span class="fc">verification_complete|cert_expiry|drive_eligible|score_change|sla_breach|clarification_needed|application_update</span></div>
+        <div class="frow"><span class="fn">title</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">message</span><span class="ft">String</span></div>
+        <div class="frow"><span class="fn">data</span><span class="ft">Object</span><span class="fc">contextual payload {item_id, drive_id...}</span></div>
+        <div class="frow"><span class="fn idx">is_read</span><span class="ft">Boolean</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">email_sent</span><span class="ft">Boolean</span></div>
+        <div class="frow"><span class="fn">email_sent_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn">push_sent</span><span class="ft">Boolean</span></div>
+        <div class="frow"><span class="fn">push_sent_at</span><span class="ft">Date</span></div>
+        <div class="frow"><span class="fn idx">created_at</span><span class="ft">Date</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">expires_at</span><span class="ft">Date</span></div>
+      </div>
+    </div>
+
+    <!-- readiness_score_history -->
+    <div class="sc">
+      <div class="sc-head"><div class="sc-dot" style="background:var(--green)"></div><span class="sc-name">readiness_score_history</span><span class="sc-count">trend data</span></div>
+      <div class="sc-body">
+        <div class="frow"><span class="fn pk">_id</span><span class="ft">ObjectId</span><span class="ftag ftag-pk">PK</span></div>
+        <div class="frow"><span class="fn fk idx">student_id</span><span class="ft">ObjectId</span><span class="ftag ftag-fk">FK→Student</span><span class="ftag ftag-idx">IDX</span></div>
+        <div class="frow"><span class="fn">score</span><span class="ft">Number</span><span class="fc">0–100</span></div>
+        <div class="frow"><span class="fn">tier</span><span class="ft">String</span><span class="fc">tier name at this point</span></div>
+        <div class="frow"><span class="fn">breakdown</span><span class="ft">Object</span><span class="fc">{skills,certs,projects,ats,coding,faculty}</span></div>
+        <div class="frow"><span class="fn">triggered_by</span><span class="ft">Enum</span><span class="fc">skill_verified|cert_verified|project_rated|resume_uploaded|coding_synced|manual</span></div>
+        <div class="frow"><span class="fn idx">calculated_at</span><span class="ft">Date</span><span class="ftag ftag-idx">IDX</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RELATIONSHIP TABLE -->
+  <div class="sub-title">⬡ Entity Relationships Summary</div>
+  <div class="scroll">
+  <table class="tbl">
+    <thead><tr><th>From Entity</th><th>Relationship</th><th>To Entity</th><th>Cardinality</th><th>Join Strategy</th></tr></thead>
+    <tbody>
+      <tr><td>User</td><td>has one</td><td>Student / Faculty Profile</td><td>1 : 1</td><td>FK user_id on child</td></tr>
+      <tr><td>Student</td><td>has many</td><td>Skills</td><td>1 : N</td><td>FK student_id on Skills</td></tr>
+      <tr><td>Student</td><td>has many</td><td>Certificates</td><td>1 : N</td><td>FK student_id on Certificates</td></tr>
+      <tr><td>Student</td><td>has many</td><td>Resumes</td><td>1 : N</td><td>FK student_id on Resumes</td></tr>
+      <tr><td>Student</td><td>many-to-many</td><td>Projects</td><td>M : N</td><td>project_members join table</td></tr>
+      <tr><td>Student</td><td>has many</td><td>CodingProfiles</td><td>1 : 6</td><td>FK student_id (1 per platform)</td></tr>
+      <tr><td>Student</td><td>many-to-many</td><td>PlacementDrives</td><td>M : N</td><td>Applications join table</td></tr>
+      <tr><td>Skill</td><td>belongs to</td><td>SkillTaxonomy</td><td>N : 1</td><td>FK taxonomy_id</td></tr>
+      <tr><td>Project</td><td>has many refs to</td><td>SkillTaxonomy</td><td>N : M</td><td>tech_stack array on Project</td></tr>
+      <tr><td>Faculty</td><td>verifies</td><td>Skills / Certs / Projects</td><td>1 : N</td><td>verified_by FK on each entity</td></tr>
+      <tr><td>User</td><td>generates</td><td>VerificationLogs</td><td>1 : N</td><td>actor_id FK on Log</td></tr>
+      <tr><td>Student</td><td>has many</td><td>ReadinessScoreHistory</td><td>1 : N</td><td>FK student_id</td></tr>
+      <tr><td>PlacementDrive</td><td>has many</td><td>Applications</td><td>1 : N</td><td>FK drive_id on Applications</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<!-- ========== TAB 2: ARCHITECTURE ========== -->
+<div id="panel-arch" class="panel">
+  <div class="sec-title">Backend Architecture &amp; Workflow</div>
+  <div class="sec-desc">Full system layer breakdown, authentication flows, middleware chains, the readiness score engine, verification state machine, and background job architecture.</div>
+
+  <!-- 2.1 SYSTEM LAYERS -->
+  <div class="sub-title">🏗 2.1 System Architecture — Layer Diagram</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;">
+    <div class="arch-row">
+      <div class="arch-lbl">▸ CLIENT LAYER</div>
+      <div class="arch-boxes">
+        <div class="abox abox-b"><div class="abox-title">React 18 SPA</div><div class="abox-sub">TypeScript + Tailwind CSS<br>React Query (data fetching)<br>Zustand (state management)</div><div class="abox-tag">Port: 3000 (dev) / CDN (prod)</div></div>
+        <div class="abox abox-b"><div class="abox-title">Mobile PWA</div><div class="abox-sub">Service Worker<br>Offline support for dashboards<br>FCM push notifications</div><div class="abox-tag">Phase 2: React Native</div></div>
+      </div>
+    </div>
+    <div class="conn">↓</div>
+    <div class="arch-row">
+      <div class="arch-lbl">▸ CDN + STATIC ASSETS</div>
+      <div class="arch-boxes">
+        <div class="abox abox-t"><div class="abox-title">CloudFront / Cloudflare</div><div class="abox-sub">Static asset delivery (JS, CSS, images)<br>Resume / certificate thumbnails via presigned URLs<br>Profile photo serving (400×400 WebP)</div><div class="abox-tag">Cache-Control: public, max-age=31536000</div></div>
+      </div>
+    </div>
+    <div class="conn">↓</div>
+    <div class="arch-row">
+      <div class="arch-lbl">▸ LOAD BALANCER</div>
+      <div class="arch-boxes">
+        <div class="abox abox-t"><div class="abox-title">nginx / AWS ALB</div><div class="abox-sub">Round-robin across API instances<br>SSL termination (TLS 1.3)<br>Health check: GET /health every 30s<br>Auto-failover on 3 consecutive failures</div><div class="abox-tag">Target: 99.5% uptime</div></div>
+      </div>
+    </div>
+    <div class="conn">↓</div>
+    <div class="arch-row">
+      <div class="arch-lbl">▸ API GATEWAY / EXPRESS APP</div>
+      <div class="arch-boxes">
+        <div class="abox abox-p"><div class="abox-title">Rate Limiter</div><div class="abox-sub">100 req/min (auth'd)<br>10 req/min (unauth'd)<br>Redis-backed counters</div><div class="abox-tag">express-rate-limit</div></div>
+        <div class="abox abox-p"><div class="abox-title">CORS + Helmet</div><div class="abox-sub">Allowlist: dept. domain<br>CSP headers<br>HSTS enforced</div><div class="abox-tag">helmet.js + cors</div></div>
+        <div class="abox abox-p"><div class="abox-title">Auth Middleware</div><div class="abox-sub">JWT RS256 validation<br>Token blacklist check (Redis)<br>8h expiry, 30d refresh</div><div class="abox-tag">jsonwebtoken</div></div>
+        <div class="abox abox-p"><div class="abox-title">RBAC Middleware</div><div class="abox-sub">Role check per endpoint<br>Ownership verification<br>Dynamic role resolution</div><div class="abox-tag">custom middleware</div></div>
+      </div>
+    </div>
+    <div class="conn">↓</div>
+    <div class="arch-row">
+      <div class="arch-lbl">▸ SERVICE LAYER (Stateless API Nodes)</div>
+      <div class="arch-boxes">
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Auth Service</div><div class="abox-sub">SSO/OAuth2<br>JWT issue<br>MFA/TOTP</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Profile Service</div><div class="abox-sub">Student CRUD<br>Photo upload<br>Links mgmt</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Skill Service</div><div class="abox-sub">Taxonomy<br>Proficiency<br>Endorsements</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Cert Service</div><div class="abox-sub">Upload+OCR<br>URL check<br>Expiry mgmt</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Resume Service</div><div class="abox-sub">ATS Engine<br>Keyword gap<br>Versioning</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Project Service</div><div class="abox-sub">GitHub sync<br>Complexity<br>Rating rubric</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Coding Service</div><div class="abox-sub">Platform sync<br>Score calc<br>Leaderboard</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Score Engine</div><div class="abox-sub">Formula calc<br>Tier classify<br>History log</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Drive Service</div><div class="abox-sub">Eligibility<br>Shortlisting<br>Pipeline mgmt</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Search Service</div><div class="abox-sub">Elasticsearch<br>Multi-filter<br>Boolean query</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Analytics Svc</div><div class="abox-sub">HOD dashboard<br>Heatmaps<br>At-risk alerts</div></div>
+        <div class="abox abox-g" style="min-width:110px"><div class="abox-title">Notification Svc</div><div class="abox-sub">Email/push<br>In-app alerts<br>Digest emails</div></div>
+      </div>
+    </div>
+    <div class="conn">↓</div>
+    <div class="arch-row">
+      <div class="arch-lbl">▸ BACKGROUND JOBS (Bull Queue + Redis)</div>
+      <div class="arch-boxes">
+        <div class="abox abox-y"><div class="abox-title">Coding Sync Job</div><div class="abox-sub">Every 6hrs — all platforms<br>Manual trigger available</div></div>
+        <div class="abox abox-y"><div class="abox-title">ATS Analysis Job</div><div class="abox-sub">Triggered on resume upload<br>Async PDF/DOCX processing</div></div>
+        <div class="abox abox-y"><div class="abox-title">Cert Expiry Checker</div><div class="abox-sub">Daily 2AM — checks expiry_date<br>Sends 30d and 7d alerts</div></div>
+        <div class="abox abox-y"><div class="abox-title">SLA Escalation Job</div><div class="abox-sub">Every 4hrs — checks 48h timer<br>Auto-escalates to HOD</div></div>
+        <div class="abox abox-y"><div class="abox-title">Report Generator</div><div class="abox-sub">Scheduled weekly/monthly<br>PDF via Puppeteer → S3 → Email</div></div>
+        <div class="abox abox-y"><div class="abox-title">Notification Dispatcher</div><div class="abox-sub">Bull consumer workers<br>SendGrid + FCM dispatch</div></div>
+      </div>
+    </div>
+    <div class="conn">↓</div>
+    <div class="arch-row">
+      <div class="arch-lbl">▸ DATA LAYER</div>
+      <div class="arch-boxes">
+        <div class="abox abox-o"><div class="abox-title">MongoDB (Primary)</div><div class="abox-sub">Primary + Read Replicas<br>Replica set for HA<br>15 collections, all schemas above</div><div class="abox-tag">via Mongoose ORM</div></div>
+        <div class="abox abox-o"><div class="abox-title">Elasticsearch 8.x</div><div class="abox-sub">3-node cluster<br>students_index, skills_index<br>Sub-1.5s multi-filter search</div><div class="abox-tag">Synced from MongoDB</div></div>
+        <div class="abox abox-o"><div class="abox-title">Redis 7</div><div class="abox-sub">Sessions + JWT blacklist<br>Leaderboard (sorted sets)<br>Rate limit counters<br>Bull Queue backing store</div><div class="abox-tag">ioredis</div></div>
+        <div class="abox abox-o"><div class="abox-title">S3 / MinIO</div><div class="abox-sub">Certificates (encrypted)<br>Resumes (encrypted)<br>Project thumbnails<br>Profile photos, JD PDFs</div><div class="abox-tag">AES-256 at rest</div></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <!-- 2.2 AUTH FLOW -->
+  <div class="sub-title">🔐 2.2 Authentication Flow (SSO + JWT + MFA)</div>
+  <div class="flow">
+    <div class="fstep"><div class="fstep-box"><div class="fstep-num">1</div><div class="fstep-title">SSO Redirect</div><div class="fstep-desc">User hits /auth/sso<br>Redirect to institution IdP<br>OAuth2 / SAML 2.0</div></div></div>
+    <div class="farrow">→</div>
+    <div class="fstep"><div class="fstep-box"><div class="fstep-num">2</div><div class="fstep-title">IdP Callback</div><div class="fstep-desc">Institution verifies user<br>Sends auth code<br>Back to /auth/callback</div></div></div>
+    <div class="farrow">→</div>
+    <div class="fstep"><div class="fstep-box"><div class="fstep-num">3</div><div class="fstep-title">User Lookup</div><div class="fstep-desc">Match email in users<br>Auto-create if 1st login<br>Assign role from IdP attr</div></div></div>
+    <div class="farrow">→</div>
+    <div class="fstep"><div class="fstep-box"><div class="fstep-num">4</div><div class="fstep-title">MFA Check</div><div class="fstep-desc">If Admin/HOD: TOTP required<br>TOTP 6-digit code verify<br>Backup codes fallback</div></div></div>
+    <div class="farrow">→</div>
+    <div class="fstep"><div class="fstep-box"><div class="fstep-num">5</div><div class="fstep-title">JWT Issue</div><div class="fstep-desc">Access token (8h)<br>Refresh token (30d)<br>RS256 signed</div></div></div>
+    <div class="farrow">→</div>
+    <div class="fstep"><div class="fstep-box"><div class="fstep-num">6</div><div class="fstep-title">Token Storage</div><div class="fstep-desc">Access → memory<br>Refresh → httpOnly cookie<br>Hash stored in Redis</div></div></div>
+    <div class="farrow">→</div>
+    <div class="fstep"><div class="fstep-box"><div class="fstep-num">7</div><div class="fstep-title">Audit Log</div><div class="fstep-desc">Login event logged<br>IP address captured<br>VerificationLog entry</div></div></div>
+  </div>
+
+  <div class="g2" style="margin-top:14px;">
+    <div>
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;">JWT PAYLOAD STRUCTURE</div>
+      <div class="jwt-sec">
+        <div class="jwt-part">
+          <div class="jwt-label">HEADER</div>
+          <div class="jwt-content" style="color:var(--red)">{ "alg": "RS256", "typ": "JWT" }</div>
+        </div>
+        <div class="jwt-part">
+          <div class="jwt-label">PAYLOAD</div>
+          <div class="jwt-content" style="color:var(--purple)">{<br>&nbsp;&nbsp;"sub": "user_id",<br>&nbsp;&nbsp;"email": "student@college.edu",<br>&nbsp;&nbsp;"role": "student",<br>&nbsp;&nbsp;"department_id": "dept_id",<br>&nbsp;&nbsp;"iat": 1718000000,<br>&nbsp;&nbsp;"exp": 1718028800,<br>&nbsp;&nbsp;"jti": "unique_token_id"<br>}</div>
+        </div>
+        <div class="jwt-part">
+          <div class="jwt-label">SIGNATURE</div>
+          <div class="jwt-content" style="color:var(--green)">RS256(base64(header)+"."+base64(payload), privateKey)</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;">API RESPONSE ENVELOPE</div>
+      <div class="envelope" style="color:var(--text)">
+        <span style="color:var(--green)">// SUCCESS</span><br>
+        {<br>
+        &nbsp;&nbsp;<span style="color:var(--bluel)">"success"</span>: <span style="color:var(--green)">true</span>,<br>
+        &nbsp;&nbsp;<span style="color:var(--bluel)">"data"</span>: { ... },<br>
+        &nbsp;&nbsp;<span style="color:var(--bluel)">"meta"</span>: { "page": 1, "total": 250 }<br>
+        }<br><br>
+        <span style="color:var(--red)">// ERROR</span><br>
+        {<br>
+        &nbsp;&nbsp;<span style="color:var(--bluel)">"success"</span>: <span style="color:var(--red)">false</span>,<br>
+        &nbsp;&nbsp;<span style="color:var(--bluel)">"error"</span>: {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--bluel)">"code"</span>: <span style="color:var(--yellow)">"CERT_ALREADY_VERIFIED"</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--bluel)">"message"</span>: "Human-readable msg",<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--bluel)">"field"</span>: "credential_id"<br>
+        &nbsp;&nbsp;}<br>
+        }
+      </div>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <!-- 2.3 MIDDLEWARE CHAIN -->
+  <div class="sub-title">🔗 2.3 Request Middleware Chain (Every API Call)</div>
+  <div class="mw-chain">
+    <div class="mw abox-t"><div class="mw-title">morgan</div><div class="mw-sub">HTTP logging</div></div>
+    <div class="mw-arr">→</div>
+    <div class="mw abox-p"><div class="mw-title">helmet</div><div class="mw-sub">Security headers</div></div>
+    <div class="mw-arr">→</div>
+    <div class="mw abox-p"><div class="mw-title">cors</div><div class="mw-sub">Origin allowlist</div></div>
+    <div class="mw-arr">→</div>
+    <div class="mw abox-y"><div class="mw-title">rateLimiter</div><div class="mw-sub">Redis counters</div></div>
+    <div class="mw-arr">→</div>
+    <div class="mw abox-b"><div class="mw-title">body-parser</div><div class="mw-sub">JSON + multipart</div></div>
+    <div class="mw-arr">→</div>
+    <div class="mw abox-r"><div class="mw-title">verifyJWT</div><div class="mw-sub">RS256 validate<br>Blacklist check</div></div>
+    <div class="mw-arr">→</div>
+    <div class="mw abox-r"><div class="mw-title">checkRole</div><div class="mw-sub">RBAC role gate<br>Per-endpoint</div></div>
+    <div class="mw-arr">→</div>
+    <div class="mw abox-o"><div class="mw-title">fileScanner</div><div class="mw-sub">Malware check<br>(uploads only)</div></div>
+    <div class="mw-arr">→</div>
+    <div class="mw abox-g"><div class="mw-title">Route Handler</div><div class="mw-sub">validate → service → respond</div></div>
+    <div class="mw-arr">→</div>
+    <div class="mw abox-p"><div class="mw-title">errorHandler</div><div class="mw-sub">Normalize errors<br>Envelope format</div></div>
+  </div>
+
+  <hr class="div">
+
+  <!-- 2.4 SCORE ENGINE -->
+  <div class="sub-title">📊 2.4 Readiness Score Engine</div>
+  <div class="formula">
+    <span style="color:var(--muted)">Placement Readiness Score =</span><br>
+    <span style="color:var(--fv)">(Verified Skills × <span class="fw">0.20</span>)</span> + 
+    <span style="color:var(--teal)">(Certifications × <span class="fw">0.20</span>)</span> + 
+    <span style="color:var(--orange)">(Projects × <span class="fw">0.25</span>)</span> +<br>
+    <span style="color:var(--pink)">(ATS Score × <span class="fw">0.15</span>)</span> + 
+    <span style="color:var(--green)">(Coding Performance × <span class="fw">0.15</span>)</span> + 
+    <span style="color:var(--purple)">(Faculty Assessment × <span class="fw">0.05</span>)</span>
+  </div>
+
+  <div class="g3" style="margin-bottom:16px;">
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--bluel)"></div><span class="sc-name">Skills (20pts)</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">Verified count</span><span class="fc">base score</span></div>
+      <div class="frow"><span class="fn">Category diversity</span><span class="fc">+bonus for spread</span></div>
+      <div class="frow"><span class="fn">Proficiency levels</span><span class="fc">Expert weighs 4×</span></div>
+      <div class="frow"><span class="fn">Endorsements</span><span class="fc">+weight multiplier</span></div>
+      <div class="frow"><span class="fn">Trending skills</span><span class="fc">+demand bonus</span></div>
+    </div></div>
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--teal)"></div><span class="sc-name">Certifications (20pts)</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">Verified count</span><span class="fc">base score</span></div>
+      <div class="frow"><span class="fn">Issuer tier</span><span class="fc">Tier1 (Google/AWS) = 3×</span></div>
+      <div class="frow"><span class="fn">Recency</span><span class="fc">&lt;1yr full, &lt;2yr 0.8×</span></div>
+      <div class="frow"><span class="fn">Category</span><span class="fc">Technical &gt; Soft Skills</span></div>
+      <div class="frow"><span class="fn">Relevance to drives</span><span class="fc">+bonus if in JD keywords</span></div>
+    </div></div>
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--orange)"></div><span class="sc-name">Projects (25pts)</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">Complexity tier</span><span class="fc">Advanced=full, Basic=0.4×</span></div>
+      <div class="frow"><span class="fn">Faculty rating</span><span class="fc">5-point rubric avg</span></div>
+      <div class="frow"><span class="fn">GitHub activity</span><span class="fc">commits, stars, last active</span></div>
+      <div class="frow"><span class="fn">Deployed vs prototype</span><span class="fc">live demo +bonus</span></div>
+      <div class="frow"><span class="fn">Featured project</span><span class="fc">+visibility bonus</span></div>
+    </div></div>
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--pink)"></div><span class="sc-name">ATS Score (15pts)</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">Keyword density</span><span class="fc">vs top 50 drive skills</span></div>
+      <div class="frow"><span class="fn">Formatting score</span><span class="fc">section structure</span></div>
+      <div class="frow"><span class="fn">Action verbs</span><span class="fc">NLP detection</span></div>
+      <div class="frow"><span class="fn">Quantified achievements</span><span class="fc">number detection</span></div>
+      <div class="frow"><span class="fn">Latest version only</span><span class="fc">normalized to 15pts</span></div>
+    </div></div>
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--green)"></div><span class="sc-name">Coding (15pts)</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">Problems solved</span><span class="fc">across all platforms</span></div>
+      <div class="frow"><span class="fn">Difficulty mix</span><span class="fc">Hard=3×, Med=2×, Easy=1×</span></div>
+      <div class="frow"><span class="fn">Contest rating</span><span class="fc">CF/CC/LC percentile</span></div>
+      <div class="frow"><span class="fn">GitHub contributions</span><span class="fc">streak + commit count</span></div>
+      <div class="frow"><span class="fn">Badges earned</span><span class="fc">platform achievements</span></div>
+    </div></div>
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--purple)"></div><span class="sc-name">Faculty (5pts)</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">Avg faculty rating</span><span class="fc">all evaluations</span></div>
+      <div class="frow"><span class="fn">Endorsement count</span><span class="fc">across all skills</span></div>
+      <div class="frow"><span class="fn">Assessment comments</span><span class="fc">qualitative weight</span></div>
+      <div class="frow"><span class="fn">Trigger events</span><span class="fc">re-calc on any change</span></div>
+    </div></div>
+  </div>
+
+  <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;">READINESS TIER CLASSIFICATION</div>
+  <div class="tier" style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);"><span class="tier-name" style="color:var(--green)">🏆 Industry Ready</span><span class="tier-range" style="color:var(--green)">85 – 100</span><span class="tier-desc">Exceptional profile. Prioritize for premium drives. Recommend leadership roles and research opportunities.</span></div>
+  <div class="tier" style="background:rgba(56,139,253,.08);border:1px solid rgba(56,139,253,.2);"><span class="tier-name" style="color:var(--bluel)">✅ Placement Ready</span><span class="tier-range" style="color:var(--bluel)">65 – 84</span><span class="tier-desc">Strong candidate for most drives. Minor skill/resume gaps. Flag for targeted drives immediately.</span></div>
+  <div class="tier" style="background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.2);"><span class="tier-name" style="color:var(--yellow)">📈 Developing</span><span class="tier-range" style="color:var(--yellow)">40 – 64</span><span class="tier-desc">Foundational skills present. Needs project depth and certifications. Faculty mentoring recommended.</span></div>
+  <div class="tier" style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);"><span class="tier-name" style="color:var(--red)">⚠ Beginner</span><span class="tier-range" style="color:var(--red)">0 – 39</span><span class="tier-desc">Critical intervention needed. Alert HOD. Assign faculty mentor. Create 90-day improvement plan.</span></div>
+
+  <div class="note" style="margin-top:14px;"><span class="note-lbl">Recalculation Triggers:</span> Score is recalculated synchronously on: skill verified, cert verified, project rated, resume uploaded (async ATS score arrives), coding sync complete, faculty assessment added. Each recalculation writes a new ReadinessScoreHistory entry.</div>
+
+  <hr class="div">
+
+  <!-- 2.5 VERIFICATION STATE MACHINE -->
+  <div class="sub-title">⚙ 2.5 Verification Workflow — State Machine</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;overflow-x:auto;">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <div class="state" style="background:rgba(56,139,253,.1);border-color:rgba(56,139,253,.3);"><div class="state-name" style="color:var(--bluel)">DRAFT</div><div class="state-desc">Student filling<br>form/upload</div></div>
+      <div class="sm-arrow">→</div>
+      <div class="state" style="background:rgba(210,153,34,.1);border-color:rgba(210,153,34,.3);"><div class="state-name" style="color:var(--yellow)">PENDING</div><div class="state-desc">Submitted<br>Awaiting review<br>SLA timer starts</div></div>
+      <div class="sm-arrow">→</div>
+      <div class="state" style="background:rgba(163,113,247,.1);border-color:rgba(163,113,247,.3);"><div class="state-name" style="color:var(--purple)">UNDER REVIEW</div><div class="state-desc">Faculty opened<br>in queue</div></div>
+      <div class="sm-arrow">→</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="state" style="background:rgba(63,185,80,.1);border-color:rgba(63,185,80,.3);"><div class="state-name" style="color:var(--green)">VERIFIED ✓</div><div class="state-desc">Contributes to<br>readiness score</div></div>
+        <div class="state" style="background:rgba(248,81,73,.1);border-color:rgba(248,81,73,.3);"><div class="state-name" style="color:var(--red)">REJECTED ✗</div><div class="state-desc">Reason required<br>Student notified</div></div>
+        <div class="state" style="background:rgba(57,197,207,.1);border-color:rgba(57,197,207,.3);"><div class="state-name" style="color:var(--teal)">NEEDS CLARIFICATION</div><div class="state-desc">Max 2 rounds<br>Student resubmits</div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);"><span class="chip chip-y">24h</span> Yellow SLA warning on faculty dashboard</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);"><span class="chip chip-r">36h</span> Red warning — urgent escalation pending</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);"><span class="chip chip-r">48h</span> Auto-escalate to HOD via notification</div>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <!-- 2.6 RBAC -->
+  <div class="sub-title">🛡 2.6 RBAC Permission Matrix</div>
+  <div class="scroll">
+  <table class="perm-t">
+    <thead>
+      <tr>
+        <th>Capability</th>
+        <th>Student</th>
+        <th>Faculty</th>
+        <th>Placement Officer</th>
+        <th>HOD</th>
+        <th>Admin</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>View own profile</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td></tr>
+      <tr><td>Edit own profile</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td></tr>
+      <tr><td>View any student profile</td><td class="cx">✗</td><td class="ck">✓ (mentees)</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td></tr>
+      <tr><td>Submit certificate/skill</td><td class="ck">✓</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td></tr>
+      <tr><td>Verify/Reject submissions</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="cp">✓ (override)</td><td class="ck">✓</td></tr>
+      <tr><td>Create placement drive</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td></tr>
+      <tr><td>Generate shortlist</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td></tr>
+      <tr><td>Update application status</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td></tr>
+      <tr><td>View analytics dashboard</td><td class="cx">✗</td><td class="cp">limited</td><td class="cp">drive-level</td><td class="ck">✓ (full)</td><td class="ck">✓</td></div></tr>
+      <tr><td>Generate NAAC reports</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td><td class="ck">✓</td></tr>
+      <tr><td>Manage user accounts</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td></tr>
+      <tr><td>Access audit logs</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓ (read)</td><td class="ck">✓</td></tr>
+      <tr><td>Manage skill taxonomy</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="cx">✗</td><td class="ck">✓</td></tr>
+      <tr><td>Bulk verify certifications</td><td class="cx">✗</td><td class="ck">✓</td><td class="cx">✗</td><td class="ck">✓</td><td class="ck">✓</td></tr>
+      <tr><td>Export data (CSV/PDF)</td><td class="cp">own data</td><td class="cp">mentee data</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<!-- ========== TAB 3: SERVICES ========== -->
+<div id="panel-svc" class="panel">
+  <div class="sec-title">Services &amp; Integrations</div>
+  <div class="sec-desc">All external APIs, internal service pipelines, caching strategies, notification systems, queue architecture, and data synchronization flows.</div>
+
+  <!-- 3.1 EXTERNAL CODING PLATFORMS -->
+  <div class="sub-title">💻 3.1 External Coding Platform Integrations</div>
+  <div class="g3">
+    <div class="int-card">
+      <div class="int-hdr"><div class="int-ico" style="background:rgba(255,161,22,.15)">⚡</div><div><div class="int-name">LeetCode</div><div class="int-type">Username-based · Public API + Scraper</div></div></div>
+      <div class="int-body">
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Student links username in profile</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Fetch via GraphQL API: <span class="int-data">leetcode.com/graphql</span></span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Data: totalSolved, easy/medium/hard, submitStats, contestRating, ranking, recentSubmissions</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Sync frequency: every 6hrs (Bull cron) + manual refresh</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Circuit breaker: skip sync if 3 consecutive fails, alert admin</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Score contribution: problems×weight + contest percentile</span></div>
+      </div>
+    </div>
+    <div class="int-card">
+      <div class="int-hdr"><div class="int-ico" style="background:rgba(32,178,170,.15)">🎯</div><div><div class="int-name">HackerRank</div><div class="int-type">OAuth 2.0 · Official REST API</div></div></div>
+      <div class="int-body">
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">OAuth flow: student grants access via HackerRank OAuth</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">API: <span class="int-data">hackerrank.com/rest/contests/master/hackers/{username}/scores</span></span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Data: badges[], certificates[], domains mastered, contest scores, skills track completion</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Token stored encrypted in coding_profiles.oauth_token</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Token refresh on 401 response automatically</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Badges can auto-verify corresponding skills</span></div>
+      </div>
+    </div>
+    <div class="int-card">
+      <div class="int-hdr"><div class="int-ico" style="background:rgba(130,186,72,.15)">🍴</div><div><div class="int-name">CodeChef</div><div class="int-type">Username-based · Public API</div></div></div>
+      <div class="int-body">
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Fetch: <span class="int-data">codechef.com/api/rankings/{username}</span></span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Data: current rating, highest rating, star level (1–7), problems solved, global/country rank</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Contest history: last 10 contests with rating delta</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Star level maps to score weight in composite</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Rate limit: 100 req/hr — queue with delay</span></div>
+      </div>
+    </div>
+    <div class="int-card">
+      <div class="int-hdr"><div class="int-ico" style="background:rgba(88,166,255,.15)">🐙</div><div><div class="int-name">GitHub</div><div class="int-type">OAuth 2.0 · REST + GraphQL API</div></div></div>
+      <div class="int-body">
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">OAuth scopes: <span class="int-data">read:user, public_repo</span></span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">REST: <span class="int-data">api.github.com/users/{username}</span> — repos, followers, public_gists</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">GraphQL: contribution calendar, streak, pinned repos, language breakdown</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Per-project: commits, stars, forks, last_push, open issues, license</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Auto-fetch when project GitHub URL is submitted</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Webhooks: push events refresh project stats in realtime</span></div>
+      </div>
+    </div>
+    <div class="int-card">
+      <div class="int-hdr"><div class="int-ico" style="background:rgba(163,113,247,.15)">🔷</div><div><div class="int-name">Codeforces</div><div class="int-type">Username-based · Public REST API</div></div></div>
+      <div class="int-body">
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">API: <span class="int-data">codeforces.com/api/user.info?handles={handle}</span></span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Data: rating, maxRating, rank (pupil/specialist/expert/etc), contribution</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Contest history: <span class="int-data">user.rating?handle={handle}</span></span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Problems solved via submissions API</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">CF rank maps to tier multiplier in score calculation</span></div>
+      </div>
+    </div>
+    <div class="int-card">
+      <div class="int-hdr"><div class="int-ico" style="background:rgba(219,109,40,.15)">🎓</div><div><div class="int-name">SkillRack</div><div class="int-type">Institution API · Custom Integration</div></div></div>
+      <div class="int-body">
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Institution-specific internal platform</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Integration via institutional API key or scraping</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Data: practice problems solved, test scores, daily challenge streaks</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Student links using institution roll number</span></div>
+        <div class="int-row"><span class="int-icon">→</span><span class="int-text">Score contribution: tests passed × difficulty weight</span></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <!-- 3.2 FILE PIPELINE -->
+  <div class="sub-title">📂 3.2 File Handling Pipeline</div>
+  <div class="pipe">
+    <div class="pipe-stage"><div class="pipe-stage-t">Client Upload</div><div class="pipe-stage-s">multipart/form-data<br>PDF/DOCX/PNG/JPG<br>Max: 10MB cert, 5MB resume</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Multer / S3 Middleware</div><div class="pipe-stage-s">Buffer in memory<br>Type validation<br>Size enforcement</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Malware Scanner</div><div class="pipe-stage-s">ClamAV / cloud scan<br>Quarantine on detect<br>Alert admin</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Image Processing</div><div class="pipe-stage-s">Photos: sharp.js<br>Resize 400×400<br>Convert to WebP</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">OCR (Certs only)</div><div class="pipe-stage-s">Tesseract.js / AWS Textract<br>Extract name, issuer, date<br>Compare vs metadata</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">URL Ping (Certs)</div><div class="pipe-stage-s">HTTP HEAD request<br>Check verification URL<br>Flag if unreachable</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">S3 / MinIO Store</div><div class="pipe-stage-s">AES-256 at rest<br>Versioned bucket<br>Lifecycle: 7yr retention</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">CDN Distribution</div><div class="pipe-stage-s">Presigned URLs (15min)<br>Private access only<br>CloudFront cache</div></div>
+  </div>
+
+  <hr class="div">
+
+  <!-- 3.3 ATS PIPELINE -->
+  <div class="sub-title">📄 3.3 ATS Resume Analysis Pipeline</div>
+  <div class="pipe">
+    <div class="pipe-stage"><div class="pipe-stage-t">Upload Resume</div><div class="pipe-stage-s">PDF or DOCX<br>Up to 5MB<br>Queued for analysis</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Text Extraction</div><div class="pipe-stage-s">PDF: pdfplumber<br>DOCX: mammoth.js<br>Raw text + structure</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Section Detection</div><div class="pipe-stage-s">NLP section classifier<br>Education, Work, Skills,<br>Projects, Summary, Contact</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Keyword Analysis</div><div class="pipe-stage-s">Top 50 skills from<br>recent drive JDs<br>TF-IDF scoring</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Quality Checks</div><div class="pipe-stage-s">Action verbs regex<br>Number quantification<br>Length check (1-2 pages)</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Score Calculation</div><div class="pipe-stage-s">6 dimensions 0-100<br>Weighted composite<br>Benchmarked vs dept</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Recommendations</div><div class="pipe-stage-s">Min 5 suggestions<br>High/Med/Low impact<br>Priority ordered</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Update DB + Score</div><div class="pipe-stage-s">Save to resumes collection<br>Trigger readiness recalc<br>Notify student</div></div>
+  </div>
+  <div class="g3" style="margin-top:10px;">
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--pink)"></div><span class="sc-name">ATS Score Dimensions</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">Keyword Density</span><span class="fc">Top 50 JD skills present</span></div>
+      <div class="frow"><span class="fn">Formatting</span><span class="fc">Headers, bullets, fonts</span></div>
+      <div class="frow"><span class="fn">Section Completeness</span><span class="fc">All 6 required sections</span></div>
+      <div class="frow"><span class="fn">Action Verbs</span><span class="fc">Developed, Built, Led...</span></div>
+      <div class="frow"><span class="fn">Quantified Achievements</span><span class="fc">Improved by X%, led N people</span></div>
+      <div class="frow"><span class="fn">Length Appropriateness</span><span class="fc">1-2 pages optimal</span></div>
+    </div></div>
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--blue)"></div><span class="sc-name">Benchmark Comparison</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">Dept Median</span><span class="fc">Compared realtime</span></div>
+      <div class="frow"><span class="fn">Top 10th Percentile</span><span class="fc">Target reference line</span></div>
+      <div class="frow"><span class="fn">Drive Minimum</span><span class="fc">Minimum ATS for active drives</span></div>
+      <div class="frow"><span class="fn">Version Delta</span><span class="fc">Score change from v1</span></div>
+    </div></div>
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--green)"></div><span class="sc-name">Processing Stack</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">PDF Parser</span><span class="fc">pdfplumber / pdf-parse</span></div>
+      <div class="frow"><span class="fn">DOCX Parser</span><span class="fc">mammoth.js</span></div>
+      <div class="frow"><span class="fn">NLP</span><span class="fc">compromise.js / custom regex</span></div>
+      <div class="frow"><span class="fn">Queue</span><span class="fc">Bull → Redis-backed workers</span></div>
+      <div class="frow"><span class="fn">Timeout</span><span class="fc">&lt;10s SLA enforced</span></div>
+    </div></div>
+  </div>
+
+  <hr class="div">
+
+  <!-- 3.4 SEARCH -->
+  <div class="sub-title">🔍 3.4 Search Infrastructure (Elasticsearch)</div>
+  <div class="pipe">
+    <div class="pipe-stage"><div class="pipe-stage-t">Data Sync</div><div class="pipe-stage-s">MongoDB change streams<br>or scheduled bulk sync<br>students + skills indexes</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">ES Index Structure</div><div class="pipe-stage-s">students_index<br>skills_index<br>Sharded by dept</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Search Query Built</div><div class="pipe-stage-s">Multi-filter query<br>Boolean must/should/not<br>Range filters (CGPA, score)</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Relevance Scoring</div><div class="pipe-stage-s">ES _score ×<br>readiness_score boost<br>Custom script scoring</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Results Returned</div><div class="pipe-stage-s">&lt;1.5s P95 (10k students)<br>Cursor pagination<br>Hit highlights</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Saved Searches</div><div class="pipe-stage-s">Stored in MongoDB<br>Reusable as drive<br>eligibility criteria</div></div>
+  </div>
+  <div class="note"><span class="note-lbl">ES Indexes:</span> <code>students</code> — full_name, roll_number, cgpa, readiness_score, skills[], certifications[], batch_year, section, department. <code>projects</code> — title, description, tech_stack[], complexity_tier. Boolean skill queries: <code>React AND Node.js NOT Angular</code> map to ES must/must_not clauses.</div>
+
+  <hr class="div">
+
+  <!-- 3.5 NOTIFICATIONS -->
+  <div class="sub-title">🔔 3.5 Notification System</div>
+  <div class="pipe">
+    <div class="pipe-stage"><div class="pipe-stage-t">Event Trigger</div><div class="pipe-stage-s">Verification complete<br>Cert expiry (30d/7d)<br>Drive eligible<br>SLA breach<br>Score change</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Event Published</div><div class="pipe-stage-s">EventEmitter or<br>Bull Queue job<br>notification:send</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Notification Created</div><div class="pipe-stage-s">Write to notifications<br>collection in MongoDB<br>mark email_sent=false</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Channel Router</div><div class="pipe-stage-s">Check user prefs<br>Select: email, push,<br>in-app, all</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Email (SendGrid/SES)</div><div class="pipe-stage-s">Template-based HTML<br>Transactional emails<br>Open/click tracking</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Push (FCM)</div><div class="pipe-stage-s">Firebase Cloud Msg<br>Web + mobile push<br>Click-to-action</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Delivery Confirmed</div><div class="pipe-stage-s">Mark email_sent=true<br>push_sent=true<br>Retry on failure</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--blue)"></div><span class="sc-name">Notification Types &amp; Recipients</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">verification_complete</span><span class="fc">→ Student</span></div>
+      <div class="frow"><span class="fn">cert_expiry (30d/7d)</span><span class="fc">→ Student</span></div>
+      <div class="frow"><span class="fn">drive_eligible</span><span class="fc">→ Student (bulk)</span></div>
+      <div class="frow"><span class="fn">score_change</span><span class="fc">→ Student</span></div>
+      <div class="frow"><span class="fn">clarification_needed</span><span class="fc">→ Student</span></div>
+      <div class="frow"><span class="fn">sla_breach (48h)</span><span class="fc">→ HOD + Faculty</span></div>
+      <div class="frow"><span class="fn">sla_warning (24h)</span><span class="fc">→ Faculty</span></div>
+      <div class="frow"><span class="fn">application_update</span><span class="fc">→ Student</span></div>
+      <div class="frow"><span class="fn">daily_digest</span><span class="fc">→ Faculty (pending queue)</span></div>
+      <div class="frow"><span class="fn">weekly_report</span><span class="fc">→ HOD (PDF email)</span></div>
+    </div></div>
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--yellow)"></div><span class="sc-name">Email Templates</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">cert_verified</span><span class="fc">Subject, badge, score impact</span></div>
+      <div class="frow"><span class="fn">cert_expiry_alert</span><span class="fc">30d/7d countdown, renew link</span></div>
+      <div class="frow"><span class="fn">drive_invitation</span><span class="fc">Company, role, CTC, deadline</span></div>
+      <div class="frow"><span class="fn">shortlisted</span><span class="fc">Congratulations + next steps</span></div>
+      <div class="frow"><span class="fn">selected</span><span class="fc">Offer details, documents needed</span></div>
+      <div class="frow"><span class="fn">faculty_digest</span><span class="fc">N pending verifications table</span></div>
+      <div class="frow"><span class="fn">sla_escalation</span><span class="fc">HOD: items beyond 48h</span></div>
+      <div class="frow"><span class="fn">weekly_dept_report</span><span class="fc">KPIs, at-risk students, PDF</span></div>
+    </div></div>
+  </div>
+
+  <hr class="div">
+
+  <!-- 3.6 CACHING -->
+  <div class="sub-title">⚡ 3.6 Redis Caching Strategy</div>
+  <div class="sc">
+    <div class="sc-body" style="padding:14px;">
+      <div class="cache-row"><span class="cache-key">session:{user_id}</span><span class="cache-ttl">8 hours</span><span class="cache-desc">JWT metadata — role, dept, last_active. Invalidated on logout or role change.</span></div>
+      <div class="cache-row"><span class="cache-key">jwt:blacklist:{jti}</span><span class="cache-ttl">Until exp</span><span class="cache-desc">Revoked tokens. Checked on every request to catch forced logouts.</span></div>
+      <div class="cache-row"><span class="cache-key">rate:{ip}:{window}</span><span class="cache-ttl">1 minute</span><span class="cache-desc">Rate limit counter per IP/user. INCR with EXPIRE. Sliding window.</span></div>
+      <div class="cache-row"><span class="cache-key">leaderboard:{batch}:{section}</span><span class="cache-ttl">15 minutes</span><span class="cache-desc">Sorted set (ZSET) of student_id:coding_score. ZREVRANGE for top-10. Updated on each coding sync.</span></div>
+      <div class="cache-row"><span class="cache-key">score:{student_id}</span><span class="cache-ttl">5 minutes</span><span class="cache-desc">Cached readiness score + breakdown. Invalidated immediately on any score-triggering event.</span></div>
+      <div class="cache-row"><span class="cache-key">dashboard:hod:{dept_id}</span><span class="cache-ttl">10 minutes</span><span class="cache-desc">HOD executive KPIs (avg score, tier distribution, pending verifications). Expensive aggregation.</span></div>
+      <div class="cache-row"><span class="cache-key">search:filter:{hash}</span><span class="cache-ttl">2 minutes</span><span class="cache-desc">Cached search results keyed by filter hash. Invalidated on any student data change.</span></div>
+      <div class="cache-row"><span class="cache-key">trending:skills</span><span class="cache-ttl">1 hour</span><span class="cache-desc">Top 20 trending skills from recent drive JDs. Expensive text analysis.</span></div>
+      <div class="cache-row"><span class="cache-key">github:stats:{repo}</span><span class="cache-ttl">30 minutes</span><span class="cache-desc">GitHub API responses cached to avoid rate limits (5000 req/hr OAuth).</span></div>
+      <div class="cache-row"><span class="cache-key">bull:queue:*</span><span class="cache-ttl">Persistent</span><span class="cache-desc">Bull Queue job state — pending, active, completed, failed. Persisted to Redis RDB/AOF.</span></div>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <!-- 3.7 REPORT GENERATION -->
+  <div class="sub-title">📊 3.7 Report Generation Service</div>
+  <div class="pipe">
+    <div class="pipe-stage"><div class="pipe-stage-t">Report Request</div><div class="pipe-stage-s">HOD triggers via dashboard<br>or scheduled weekly/monthly<br>NAAC/NBA format option</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Data Aggregation</div><div class="pipe-stage-s">MongoDB aggregation pipelines<br>Placement rates, avg CTC<br>Skill coverage, at-risk count</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Chart Generation</div><div class="pipe-stage-s">Chart.js / D3 server-side<br>Readiness histogram<br>Skill heatmap SVG</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">PDF Render</div><div class="pipe-stage-s">Puppeteer headless Chrome<br>HTML template → PDF<br>Dept letterhead + logo</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Store to S3</div><div class="pipe-stage-s">reports/{dept}/{date}.pdf<br>7-year retention policy<br>Versioned</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-stage"><div class="pipe-stage-t">Deliver</div><div class="pipe-stage-s">Presigned URL to HOD<br>Email with PDF attachment<br>&lt;30s total generation</div></div>
+  </div>
+
+  <hr class="div">
+
+  <!-- 3.8 SSO -->
+  <div class="sub-title">🏛 3.8 Institution SSO Integration</div>
+  <div class="g2">
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--blue)"></div><span class="sc-name">SSO Flow Details</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">Protocol</span><span class="fc">OAuth2 (preferred) / SAML 2.0</span></div>
+      <div class="frow"><span class="fn">IdP</span><span class="fc">Institution's Active Directory / LDAP</span></div>
+      <div class="frow"><span class="fn">Callback URL</span><span class="fc">/api/v1/auth/sso/callback</span></div>
+      <div class="frow"><span class="fn">Claims extracted</span><span class="fc">email, full_name, role, department, employee_id / roll_number</span></div>
+      <div class="frow"><span class="fn">Role mapping</span><span class="fc">IdP group → SkillSphere role</span></div>
+      <div class="frow"><span class="fn">Fallback</span><span class="fc">Email/password for non-SSO users</span></div>
+      <div class="frow"><span class="fn">Passport.js strategy</span><span class="fc">passport-saml or passport-oauth2</span></div>
+    </div></div>
+    <div class="sc"><div class="sc-head"><div class="sc-dot" style="background:var(--green)"></div><span class="sc-name">External Service Registry</span></div><div class="sc-body">
+      <div class="frow"><span class="fn">SendGrid / AWS SES</span><span class="fc">Transactional email delivery</span></div>
+      <div class="frow"><span class="fn">Firebase FCM</span><span class="fc">Web + mobile push notifications</span></div>
+      <div class="frow"><span class="fn">AWS S3 / MinIO</span><span class="fc">File object storage</span></div>
+      <div class="frow"><span class="fn">CloudFront / Cloudflare</span><span class="fc">CDN for static assets + presigned</span></div>
+      <div class="frow"><span class="fn">ClamAV / AWS GuardDuty</span><span class="fc">Malware scanning on uploads</span></div>
+      <div class="frow"><span class="fn">Tesseract / AWS Textract</span><span class="fc">OCR for certificate text extraction</span></div>
+      <div class="frow"><span class="fn">Puppeteer</span><span class="fc">PDF generation for reports + export</span></div>
+      <div class="frow"><span class="fn">Grafana / DataDog</span><span class="fc">Production monitoring + alerting</span></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ========== TAB 4: FILES ========== -->
+<div id="panel-files" class="panel">
+  <div class="sec-title">File Distribution &amp; System Map</div>
+  <div class="sec-desc">Complete backend and frontend directory structure, API endpoint registry grouped by module, service dependency graph, and module-to-feature mapping.</div>
+
+  <div class="g2">
+    <!-- BACKEND TREE -->
+    <div>
+      <div class="sub-title">📦 Backend File Structure (Node.js / Express)</div>
+      <div class="ftree">
+        <div class="ti"><span class="ti-folder">📁</span><span class="ti-label">backend/</span></div>
+        <div class="ti"><span class="ti-indent">│</span><span class="ti-folder">📁</span><span class="ti-label">src/</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">config/</span><span class="ti-note">Environment-aware config</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">database.js</span><span class="ti-note">Mongoose connect, replica set</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">redis.js</span><span class="ti-note">ioredis client, cluster config</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">elasticsearch.js</span><span class="ti-note">ES client, index bootstrap</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">storage.js</span><span class="ti-note">AWS S3 / MinIO client init</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">mail.js</span><span class="ti-note">SendGrid / SES client</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-js">📄</span><span class="ti-label">firebase.js</span><span class="ti-note">FCM admin SDK init</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">models/</span><span class="ti-note">Mongoose schemas</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">User.model.js</span><span class="ti-note">Auth, roles, MFA</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">Student.model.js</span><span class="ti-note">Profile, scores, links</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">Faculty.model.js</span><span class="ti-note">Faculty profile, mentees</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">SkillTaxonomy.model.js</span><span class="ti-note">200+ skills catalog</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">Skill.model.js</span><span class="ti-note">Student skill, verification</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">Certificate.model.js</span><span class="ti-note">Cert upload, OCR, expiry</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">Resume.model.js</span><span class="ti-note">ATS score, versions, recs</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">Project.model.js</span><span class="ti-note">Portfolio, GitHub stats, rating</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">ProjectMember.model.js</span><span class="ti-note">Team project join table</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">CodingProfile.model.js</span><span class="ti-note">Per-platform stats</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">PlacementDrive.model.js</span><span class="ti-note">Drive, eligibility rules</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">Application.model.js</span><span class="ti-note">Pipeline status tracking</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">VerificationLog.model.js</span><span class="ti-note">Immutable audit trail (pre-hooks)</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">Notification.model.js</span><span class="ti-note">Multi-channel notifications</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-js">📄</span><span class="ti-label">ReadinessHistory.model.js</span><span class="ti-note">Score trend history</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">middleware/</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">auth.middleware.js</span><span class="ti-note">JWT verify, RS256, blacklist check</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">rbac.middleware.js</span><span class="ti-note">Role check, ownership verify</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">rateLimiter.middleware.js</span><span class="ti-note">Redis sliding window</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">upload.middleware.js</span><span class="ti-note">Multer config, type/size validate</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">fileScanner.middleware.js</span><span class="ti-note">Malware scan before S3 upload</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">validate.middleware.js</span><span class="ti-note">Joi/Zod schema validation</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-js">📄</span><span class="ti-label">errorHandler.middleware.js</span><span class="ti-note">Normalize errors → envelope format</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">routes/</span><span class="ti-note">Express routers, all /api/v1/*</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">auth.routes.js</span><span class="ti-note">login, sso, refresh, logout, mfa</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">student.routes.js</span><span class="ti-note">profile CRUD, photo, links</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">skill.routes.js</span><span class="ti-note">add/edit/delete skills, taxonomy</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">certificate.routes.js</span><span class="ti-note">upload, status, renewal</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">resume.routes.js</span><span class="ti-note">upload, versions, ATS score</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">project.routes.js</span><span class="ti-note">CRUD, github sync, featured</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">coding.routes.js</span><span class="ti-note">link profiles, manual sync, score</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">verification.routes.js</span><span class="ti-note">faculty queue, approve/reject/clarify</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">placement.routes.js</span><span class="ti-note">drives, shortlist, applications</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">search.routes.js</span><span class="ti-note">multi-filter, boolean, saved</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">hod.routes.js</span><span class="ti-note">dashboard, heatmap, at-risk</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">faculty.routes.js</span><span class="ti-note">mentees, endorsements, ratings</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">notification.routes.js</span><span class="ti-note">list, mark read, preferences</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-js">📄</span><span class="ti-label">admin.routes.js</span><span class="ti-note">user mgmt, taxonomy, system</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">services/</span><span class="ti-note">Business logic layer</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">auth.service.js</span><span class="ti-note">SSO, JWT issue, MFA verify, token revoke</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">readinessScore.service.js</span><span class="ti-note">Formula engine, tier classify, history write</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">atsEngine.service.js</span><span class="ti-note">PDF/DOCX parse, NLP, 6-dim scoring</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">verification.service.js</span><span class="ti-note">Queue logic, SLA calc, escalation</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">codingSync.service.js</span><span class="ti-note">API fetchers, score aggregation</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">notification.service.js</span><span class="ti-note">Create notif, route to email/push/in-app</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">search.service.js</span><span class="ti-note">Build ES queries, execute, paginate</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">placement.service.js</span><span class="ti-note">Eligibility eval, shortlist rank, export</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">report.service.js</span><span class="ti-note">Data agg, Puppeteer PDF, S3 store</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">ocr.service.js</span><span class="ti-note">Tesseract / Textract wrapper</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">storage.service.js</span><span class="ti-note">S3 upload/download/presign/delete</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-js">📄</span><span class="ti-label">email.service.js</span><span class="ti-note">Template render + SendGrid dispatch</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">integrations/</span><span class="ti-note">External platform connectors</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">leetcode.integration.js</span><span class="ti-note">GraphQL queries, stats normalization</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">hackerrank.integration.js</span><span class="ti-note">OAuth + REST, badges, scores</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">codechef.integration.js</span><span class="ti-note">REST API, rating history</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">github.integration.js</span><span class="ti-note">OAuth + REST + GraphQL, webhooks</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">codeforces.integration.js</span><span class="ti-note">Public REST, rating, submissions</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-js">📄</span><span class="ti-label">skillrack.integration.js</span><span class="ti-note">Institution API / scraper</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">jobs/</span><span class="ti-note">Bull Queue workers + cron</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">queue.setup.js</span><span class="ti-note">Bull queue init, concurrency, retry policy</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">codingSync.job.js</span><span class="ti-note">Every 6hrs — sync all platforms</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">atsAnalysis.job.js</span><span class="ti-note">On resume upload — async ATS</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">certExpiry.job.js</span><span class="ti-note">Daily 2AM — scan expiry_date</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">slaEscalation.job.js</span><span class="ti-note">Every 4hrs — 48h SLA check</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">reportGeneration.job.js</span><span class="ti-note">Scheduled weekly/monthly</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-js">📄</span><span class="ti-label">notificationDispatch.job.js</span><span class="ti-note">Consumer: email + FCM workers</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">utils/</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">logger.js</span><span class="ti-note">Winston structured logging</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">pagination.js</span><span class="ti-note">Cursor + offset helpers</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">circuitBreaker.js</span><span class="ti-note">opossum wrapper for ext APIs</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-js">📄</span><span class="ti-label">cryptoUtils.js</span><span class="ti-note">AES-256 field encryption helpers</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-js">📄</span><span class="ti-label">validators.js</span><span class="ti-note">Joi/Zod schema definitions</span></div>
+
+        <div class="ti"><span class="ti-indent">│  ├─</span><span class="ti-js">📄</span><span class="ti-label">app.js</span><span class="ti-note">Express app, middleware chain, route mount</span></div>
+        <div class="ti"><span class="ti-indent">│  └─</span><span class="ti-js">📄</span><span class="ti-label">server.js</span><span class="ti-note">HTTP server start, graceful shutdown</span></div>
+
+        <div class="ti"><span class="ti-indent">├─</span><span class="ti-folder">📁</span><span class="ti-label">tests/</span></div>
+        <div class="ti"><span class="ti-indent">│  ├─</span><span class="ti-folder">📁</span><span class="ti-label">unit/</span><span class="ti-note">readinessScore, atsEngine, validators</span></div>
+        <div class="ti"><span class="ti-indent">│  ├─</span><span class="ti-folder">📁</span><span class="ti-label">integration/</span><span class="ti-note">API routes with in-memory MongoDB</span></div>
+        <div class="ti"><span class="ti-indent">│  └─</span><span class="ti-folder">📁</span><span class="ti-label">factories/</span><span class="ti-note">Test data builders</span></div>
+
+        <div class="ti"><span class="ti-indent">├─</span><span class="ti-env">📄</span><span class="ti-label">.env</span><span class="ti-note">Secrets — never committed</span></div>
+        <div class="ti"><span class="ti-indent">├─</span><span class="ti-env">📄</span><span class="ti-label">.env.example</span><span class="ti-note">Template for all required vars</span></div>
+        <div class="ti"><span class="ti-indent">├─</span><span class="ti-yml">📄</span><span class="ti-label">docker-compose.yml</span><span class="ti-note">Local: app + mongo + redis + ES</span></div>
+        <div class="ti"><span class="ti-indent">├─</span><span class="ti-yml">📄</span><span class="ti-label">Dockerfile</span><span class="ti-note">Multi-stage build, node:20-alpine</span></div>
+        <div class="ti"><span class="ti-indent">├─</span><span class="ti-yml">📄</span><span class="ti-label">.github/workflows/ci.yml</span><span class="ti-note">Lint + test + build on PR</span></div>
+        <div class="ti"><span class="ti-indent">└─</span><span class="ti-json">📄</span><span class="ti-label">package.json</span><span class="ti-note">Dependencies, scripts</span></div>
+      </div>
+    </div>
+
+    <!-- FRONTEND TREE -->
+    <div>
+      <div class="sub-title">🖥 Frontend File Structure (React 18 + TypeScript)</div>
+      <div class="ftree">
+        <div class="ti"><span class="ti-folder">📁</span><span class="ti-label">frontend/</span></div>
+        <div class="ti"><span class="ti-indent">│</span><span class="ti-folder">📁</span><span class="ti-label">src/</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">pages/</span><span class="ti-note">Route-level page components</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">LoginPage.tsx</span><span class="ti-note">SSO redirect + email/pass fallback</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">StudentDashboard.tsx</span><span class="ti-note">Readiness score, quick actions</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">StudentProfile.tsx</span><span class="ti-note">Full profile view/edit</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">SkillsPage.tsx</span><span class="ti-note">Add/view skills, taxonomy browser</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">CertificatesPage.tsx</span><span class="ti-note">Upload, status tracking</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">ResumePage.tsx</span><span class="ti-note">Upload, ATS score display, versions</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">ProjectsPage.tsx</span><span class="ti-note">Portfolio, GitHub stats cards</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">CodingPage.tsx</span><span class="ti-note">Platform links, scores, leaderboard</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">FacultyDashboard.tsx</span><span class="ti-note">Verification queue, SLA timers</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">FacultyMentees.tsx</span><span class="ti-note">Mentee list, score trends</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">VerificationQueue.tsx</span><span class="ti-note">Certs + skills + projects review UI</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">PlacementDrives.tsx</span><span class="ti-note">Drive list, apply, status</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">DriveCreate.tsx</span><span class="ti-note">Create drive + eligibility builder</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">ShortlistPage.tsx</span><span class="ti-note">Generated shortlist, compare, export</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">HODDashboard.tsx</span><span class="ti-note">Executive KPIs, analytics</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">SkillHeatmap.tsx</span><span class="ti-note">Dept skill coverage grid</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">AtRiskStudents.tsx</span><span class="ti-note">Intervention dashboard</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">SearchPage.tsx</span><span class="ti-note">Multi-filter talent search</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-ts">📄</span><span class="ti-label">AdminPanel.tsx</span><span class="ti-note">User mgmt, taxonomy editor</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">components/</span><span class="ti-note">Reusable UI components</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-folder">📁</span><span class="ti-label">auth/</span><span class="ti-note">LoginForm, MFAInput, SSOButton</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-folder">📁</span><span class="ti-label">student/</span><span class="ti-note">ScoreGauge, SkillCard, CertCard, ProjectCard</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-folder">📁</span><span class="ti-label">verification/</span><span class="ti-note">ReviewPanel, SLATimer, BulkApprove</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-folder">📁</span><span class="ti-label">placement/</span><span class="ti-note">DriveCard, EligibilityBuilder, CompareTable</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-folder">📁</span><span class="ti-label">analytics/</span><span class="ti-note">ReadinessHistogram, HeatmapGrid, KPICard</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-folder">📁</span><span class="ti-label">search/</span><span class="ti-note">FilterPanel, StudentGrid, SavedSearches</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-folder">📁</span><span class="ti-label">shared/</span><span class="ti-note">Navbar, Sidebar, Badge, Modal, Pagination, Toast</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">hooks/</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">useAuth.ts</span><span class="ti-note">Auth state, login, logout</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">useReadinessScore.ts</span><span class="ti-note">React Query — score + history</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">useVerificationQueue.ts</span><span class="ti-note">Pending items + SLA</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">useSearch.ts</span><span class="ti-note">Debounced search + filter state</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-ts">📄</span><span class="ti-label">useNotifications.ts</span><span class="ti-note">WebSocket/polling, unread count</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">services/</span><span class="ti-note">Axios API wrappers (typed)</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">api.client.ts</span><span class="ti-note">Axios instance, interceptors, refresh</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">student.api.ts</span><span class="ti-note">Profile, skills, certs, projects</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">placement.api.ts</span><span class="ti-note">Drives, applications, shortlist</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">verification.api.ts</span><span class="ti-note">Queue, approve/reject/clarify</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">analytics.api.ts</span><span class="ti-note">HOD dashboard, heatmap</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-ts">📄</span><span class="ti-label">search.api.ts</span><span class="ti-note">Multi-filter, boolean, saved</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">store/</span><span class="ti-note">Zustand global state</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">auth.store.ts</span><span class="ti-note">User, role, token</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-ts">📄</span><span class="ti-label">ui.store.ts</span><span class="ti-note">Sidebar open, theme</span></div>
+
+        <div class="ti"><span class="ti-indent">│  │</span><span class="ti-folder">📁</span><span class="ti-label">types/</span><span class="ti-note">TypeScript interfaces</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">student.types.ts</span></div>
+        <div class="ti"><span class="ti-indent">│  │  ├─</span><span class="ti-ts">📄</span><span class="ti-label">placement.types.ts</span></div>
+        <div class="ti"><span class="ti-indent">│  │  └─</span><span class="ti-ts">📄</span><span class="ti-label">api.types.ts</span></div>
+
+        <div class="ti"><span class="ti-indent">│  ├─</span><span class="ti-ts">📄</span><span class="ti-label">App.tsx</span><span class="ti-note">Router, auth guard, layout</span></div>
+        <div class="ti"><span class="ti-indent">│  └─</span><span class="ti-ts">📄</span><span class="ti-label">main.tsx</span><span class="ti-note">React root render, QueryClient</span></div>
+
+        <div class="ti"><span class="ti-indent">├─</span><span class="ti-json">📄</span><span class="ti-label">package.json</span></div>
+        <div class="ti"><span class="ti-indent">├─</span><span class="ti-ts">📄</span><span class="ti-label">tsconfig.json</span></div>
+        <div class="ti"><span class="ti-indent">└─</span><span class="ti-js">📄</span><span class="ti-label">vite.config.ts</span><span class="ti-note">Build tool, proxy to :4000</span></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <!-- API ENDPOINTS -->
+  <div class="sub-title">🔌 API Endpoint Registry — /api/v1/</div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">🔐 AUTH — /api/v1/auth</div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/login</span><span class="ep-auth chip chip-g">public</span><span class="ep-desc">Email+password login → JWT pair</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/sso</span><span class="ep-auth chip chip-g">public</span><span class="ep-desc">Redirect to institution SSO IdP</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/sso/callback</span><span class="ep-auth chip chip-g">public</span><span class="ep-desc">OAuth2 callback → issue JWT</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/refresh</span><span class="ep-auth chip chip-b">refresh</span><span class="ep-desc">Exchange refresh token → new access token</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/logout</span><span class="ep-auth chip chip-b">auth</span><span class="ep-desc">Revoke tokens, clear session</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/mfa/setup</span><span class="ep-auth chip chip-b">auth</span><span class="ep-desc">Generate TOTP QR code</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/mfa/verify</span><span class="ep-auth chip chip-b">auth</span><span class="ep-desc">Validate TOTP code</span></div>
+  </div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">👤 STUDENT PROFILE — /api/v1/students</div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/me</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Own full profile</span></div>
+    <div class="ep"><span class="method mPUT">PUT</span><span class="ep-path">/me</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Update profile fields</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/me/photo</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Upload profile photo (multipart)</span></div>
+    <div class="ep"><span class="method mPUT">PUT</span><span class="ep-path">/me/links</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Update platform links</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/:id</span><span class="ep-auth chip chip-p">faculty+</span><span class="ep-desc">View any student profile</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/:id/score/history</span><span class="ep-auth chip chip-p">faculty+</span><span class="ep-desc">Readiness score trend history</span></div>
+  </div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">🏷 SKILLS — /api/v1/skills</div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/taxonomy</span><span class="ep-auth chip chip-b">auth</span><span class="ep-desc">All skills by category + trending flags</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/mine</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Own skills with status</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Add skill with proficiency + evidence</span></div>
+    <div class="ep"><span class="method mPUT">PUT</span><span class="ep-path">/:id</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Update skill proficiency / evidence</span></div>
+    <div class="ep"><span class="method mDELETE">DELETE</span><span class="ep-path">/:id</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Remove skill from profile</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/:id/endorse</span><span class="ep-auth chip chip-p">faculty</span><span class="ep-desc">Faculty endorse a student skill</span></div>
+  </div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">📜 CERTIFICATES — /api/v1/certificates</div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/mine</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">All certs with status + expiry</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Upload cert (multipart) + metadata</span></div>
+    <div class="ep"><span class="method mPUT">PUT</span><span class="ep-path">/:id</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Update cert metadata</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/:id/renew</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Upload renewal cert to replace expired</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/:id/download</span><span class="ep-auth chip chip-p">faculty+</span><span class="ep-desc">Presigned S3 URL for cert file</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/:id/verify</span><span class="ep-auth chip chip-p">faculty</span><span class="ep-desc">Approve / Reject / Clarify</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/bulk-verify</span><span class="ep-auth chip chip-p">faculty</span><span class="ep-desc">Bulk approve same-provider certs</span></div>
+  </div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">📄 RESUME — /api/v1/resumes</div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/mine</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">All resume versions with ATS scores</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Upload resume → enqueue ATS analysis</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/:id/analysis</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">ATS score breakdown + recommendations</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/benchmark</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Score vs dept median/top 10th/drive min</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/export</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Generate dept-branded PDF from profile</span></div>
+  </div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">🚀 PROJECTS — /api/v1/projects</div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/mine</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Own projects with GitHub stats</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Create project, trigger GitHub fetch</span></div>
+    <div class="ep"><span class="method mPUT">PUT</span><span class="ep-path">/:id</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Update project details</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/:id/featured</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Toggle featured status</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/:id/rate</span><span class="ep-auth chip chip-p">faculty</span><span class="ep-desc">Submit 5-rubric faculty rating</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/:id/sync-github</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Manual refresh GitHub stats</span></div>
+  </div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">💻 CODING — /api/v1/coding</div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/mine</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">All linked platform stats + composite score</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/link</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Link platform {platform, username}</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/:platform/sync</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Manual sync single platform</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/leaderboard</span><span class="ep-auth chip chip-b">auth</span><span class="ep-desc">Top 10 by batch+section</span></div>
+  </div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">✅ VERIFICATION — /api/v1/verification</div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/queue</span><span class="ep-auth chip chip-p">faculty</span><span class="ep-desc">All pending items sorted by date/SLA</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/:type/:id/approve</span><span class="ep-auth chip chip-p">faculty</span><span class="ep-desc">Approve skill/cert/project</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/:type/:id/reject</span><span class="ep-auth chip chip-p">faculty</span><span class="ep-desc">Reject with mandatory reason</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/:type/:id/clarify</span><span class="ep-auth chip chip-p">faculty</span><span class="ep-desc">Request clarification from student</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/audit/:studentId</span><span class="ep-auth chip chip-y">hod+</span><span class="ep-desc">Full audit trail for a student</span></div>
+  </div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">🏢 PLACEMENT — /api/v1/placement</div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/drives</span><span class="ep-auth chip chip-b">auth</span><span class="ep-desc">All active drives (eligible flag per student)</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/drives</span><span class="ep-auth chip chip-p">placement_officer+</span><span class="ep-desc">Create new drive with JD upload</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/drives/:id/shortlist</span><span class="ep-auth chip chip-p">placement_officer+</span><span class="ep-desc">Generate ranked shortlist</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/drives/:id/export</span><span class="ep-auth chip chip-p">placement_officer+</span><span class="ep-desc">Export shortlist Excel/PDF</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/drives/:id/apply</span><span class="ep-auth chip chip-b">student</span><span class="ep-desc">Student applies to drive</span></div>
+    <div class="ep"><span class="method mPATCH">PATCH</span><span class="ep-path">/applications/:id/status</span><span class="ep-auth chip chip-p">placement_officer+</span><span class="ep-desc">Update application pipeline status</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/drives/:id/notify</span><span class="ep-auth chip chip-p">placement_officer+</span><span class="ep-desc">Bulk notify eligible students</span></div>
+  </div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">🔍 SEARCH — /api/v1/search</div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/students</span><span class="ep-auth chip chip-p">faculty+</span><span class="ep-desc">Multi-filter ES search (body: filters)</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/students/compare</span><span class="ep-auth chip chip-p">placement_officer+</span><span class="ep-desc">Side-by-side comparison (2–5 students)</span></div>
+    <div class="ep"><span class="method mPOST">POST</span><span class="ep-path">/saved</span><span class="ep-auth chip chip-p">placement_officer+</span><span class="ep-desc">Save filter config with name</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/saved</span><span class="ep-auth chip chip-p">placement_officer+</span><span class="ep-desc">List saved searches</span></div>
+  </div>
+
+  <div class="ep-group">
+    <div class="ep-group-hdr">📊 HOD ANALYTICS — /api/v1/hod</div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/dashboard</span><span class="ep-auth chip chip-y">hod+</span><span class="ep-desc">Executive KPIs (cached 10min)</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/heatmap</span><span class="ep-auth chip chip-y">hod+</span><span class="ep-desc">Skill coverage grid by category</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/distribution</span><span class="ep-auth chip chip-y">hod+</span><span class="ep-desc">Readiness score histogram</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/at-risk</span><span class="ep-auth chip chip-y">hod+</span><span class="ep-desc">Students: score&lt;40 AND final year</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/placement-outcomes</span><span class="ep-auth chip chip-y">hod+</span><span class="ep-desc">YoY placement rates, avg CTC</span></div>
+    <div class="ep"><span class="method mGET">GET</span><span class="ep-path">/report</span><span class="ep-auth chip chip-y">hod+</span><span class="ep-desc">Generate + download PDF report (&lt;30s)</span></div>
+  </div>
+
+  <hr class="div">
+
+  <!-- SERVICE DEPS -->
+  <div class="sub-title">🔗 Service Dependency Map</div>
+  <div class="sc">
+    <div class="sc-body">
+      <div class="dep-row"><span class="dep-from">readinessScore.service</span><span class="dep-arr">→ reads</span><span class="dep-to">Skills, Certificates, Resumes, Projects, CodingProfiles, Faculty ratings → Student</span></div>
+      <div class="dep-row"><span class="dep-from">atsEngine.service</span><span class="dep-arr">→ reads</span><span class="dep-to">Resume file (via storage.service + S3) → writes Resume.ats_score → triggers readinessScore.service</span></div>
+      <div class="dep-row"><span class="dep-from">verification.service</span><span class="dep-arr">→ writes</span><span class="dep-to">VerificationLog (append-only) → updates Skill/Cert/Project status → triggers readinessScore.service → notification.service</span></div>
+      <div class="dep-row"><span class="dep-from">codingSync.service</span><span class="dep-arr">→ calls</span><span class="dep-to">All 6 integration files → writes CodingProfiles → triggers readinessScore.service</span></div>
+      <div class="dep-row"><span class="dep-from">placement.service</span><span class="dep-arr">→ reads</span><span class="dep-to">Student (score, cgpa, skills) + PlacementDrive.eligibility_rules → writes Applications → notification.service</span></div>
+      <div class="dep-row"><span class="dep-from">search.service</span><span class="dep-arr">→ queries</span><span class="dep-to">Elasticsearch (students_index) + Redis cache → returns ranked Student list</span></div>
+      <div class="dep-row"><span class="dep-from">report.service</span><span class="dep-arr">→ reads</span><span class="dep-to">MongoDB aggregations → Chart.js → Puppeteer PDF → storage.service (S3) → email.service</span></div>
+      <div class="dep-row"><span class="dep-from">notification.service</span><span class="dep-arr">→ writes</span><span class="dep-to">Notification (MongoDB) → Bull Queue → notificationDispatch.job → email.service + FCM</span></div>
+      <div class="dep-row"><span class="dep-from">auth.service</span><span class="dep-arr">→ writes</span><span class="dep-to">User (last_login, failed_count) → Redis (session, JWT blacklist) → VerificationLog (login event)</span></div>
+      <div class="dep-row"><span class="dep-from">ocr.service</span><span class="dep-arr">→ called by</span><span class="dep-to">Certificate upload flow → Tesseract/Textract → updates Certificate.ocr_extracted</span></div>
+      <div class="dep-row"><span class="dep-from">storage.service</span><span class="dep-arr">→ used by</span><span class="dep-to">Certificate, Resume, Project, Photo uploads → S3 put/get/presign/delete</span></div>
+      <div class="dep-row"><span class="dep-from">certExpiry.job</span><span class="dep-arr">→ reads</span><span class="dep-to">Certificate (expiry_date index) → marks EXPIRED → notification.service (30d/7d alerts)</span></div>
+      <div class="dep-row"><span class="dep-from">slaEscalation.job</span><span class="dep-arr">→ reads</span><span class="dep-to">VerificationLog (PENDING items with age &gt;48h) → notification.service → HOD alert</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

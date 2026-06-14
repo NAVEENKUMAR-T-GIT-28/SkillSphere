@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Download, Eye } from 'lucide-react';
 import TierBadge from '../../components/TierBadge';
-import api from '../../services/api';
+import Drawer from '../../components/Drawer';
+import { useToast } from '../../contexts/ToastContext';
+import { UsersAPI } from '../../services/api';
 
 export default function HODSearch() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const toast = useToast();
+
   const [filters, setFilters] = useState({
-    cgpaMin: 6.0,
-    cgpaMax: 10,
-    batchYears: [2026],
-    sections: [],
-    tiers: [],
+    cgpaMin: parseFloat(searchParams.get('cgpa_min')) || 6.0,
+    cgpaMax: parseFloat(searchParams.get('cgpa_max')) || 10.0,
+    batchYears: searchParams.get('batch_year') ? searchParams.get('batch_year').split(',').map(Number) : [2026],
+    sections: searchParams.get('section') ? searchParams.get('section').split(',') : [],
+    tiers: searchParams.get('tier') ? searchParams.get('tier').split(',') : [],
   });
 
   const [sortBy, setSortBy] = useState('readiness_score');
@@ -17,6 +23,8 @@ export default function HODSearch() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [error, setError] = useState(null);
+
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   const fetchResults = async () => {
     try {
@@ -36,12 +44,14 @@ export default function HODSearch() {
       if (filters.sections.length > 0) params.append('section', filters.sections.join(','));
       if (filters.tiers.length > 0) params.append('tier', filters.tiers.join(','));
 
+      setSearchParams(params);
+
       params.append('sort_by', sortBy === 'name' ? 'full_name' : (sortBy === 'cgpa' ? 'cgpa' : 'readiness_score'));
       params.append('sort_order', 'desc');
 
-      const { data } = await api.get(`/search/students?${params.toString()}`);
+      const { data } = await UsersAPI.searchStudents(params.toString());
       
-      const students = Array.isArray(data) ? data : data.data || data.items || [];
+      const students = Array.isArray(data) ? data : data.items || [];
       
       setResults(students.map(s => ({
         id: s._id,
@@ -55,7 +65,7 @@ export default function HODSearch() {
       setSearched(true);
     } catch (err) {
       console.error('Search error:', err);
-      setError(err.message || 'Failed to perform search');
+      toast.error(err.message || 'Failed to perform search');
     } finally {
       setLoading(false);
     }
@@ -74,7 +84,26 @@ export default function HODSearch() {
       tiers: [],
     });
     setSearched(false);
-    setResults([]);
+    setSearchParams({});
+  };
+
+  const handleExport = () => {
+    if (!results.length) return;
+    const headers = ['Name', 'Roll Number', 'Section', 'CGPA', 'Readiness Score', 'Tier'];
+    const csvContent = [
+      headers.join(','),
+      ...results.map(s => `"${s.name}","${s.roll}","${s.section}","${s.cgpa}","${s.readinessScore}","${s.tier}"`)
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'skill_sphere_students.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Results exported to CSV');
   };
 
   const toggleBatchYear = (year) => {
@@ -237,7 +266,7 @@ export default function HODSearch() {
                     <option value="cgpa">Sort: CGPA</option>
                     <option value="name">Sort: Name</option>
                   </select>
-                  <button className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-primary rounded-md hover:bg-blue-100 transition-colors text-sm font-medium">
+                  <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-primary rounded-md hover:bg-blue-100 transition-colors text-sm font-medium">
                     <Download size={16} />
                     Export
                   </button>
@@ -295,7 +324,7 @@ export default function HODSearch() {
                           <TierBadge tier={student.tier} />
                         </td>
                         <td className="py-3 px-4">
-                          <button className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-primary rounded-md hover:bg-blue-100 transition-colors text-sm font-medium">
+                          <button onClick={() => setSelectedStudent(student)} className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-primary rounded-md hover:bg-blue-100 transition-colors text-sm font-medium">
                             <Eye size={14} />
                             View
                           </button>
@@ -309,6 +338,32 @@ export default function HODSearch() {
           </div>
         </div>
       </div>
+      <Drawer isOpen={!!selectedStudent} onClose={() => setSelectedStudent(null)} title="Student Details">
+        {selectedStudent && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-semibold text-text-primary text-lg">{selectedStudent.name}</h3>
+              <p className="text-text-secondary">{selectedStudent.roll} • Section {selectedStudent.section}</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-text-muted mb-1">CGPA</p>
+                <p className="text-xl font-bold text-text-primary">{selectedStudent.cgpa}</p>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-text-muted mb-1">Readiness Score</p>
+                <p className="text-xl font-bold text-text-primary">{selectedStudent.readinessScore}</p>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-text-primary mb-2">Readiness Tier</h4>
+              <TierBadge tier={selectedStudent.tier} />
+            </div>
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }
