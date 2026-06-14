@@ -12,7 +12,8 @@ const { requireRole } = require('../middleware/roleGuard');
 const { sanitizeField } = require('../utils/sanitize');
 const facultyController = require('../controllers/facultyController');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api/verification');
 
 router.get('/queue', authenticate, requireRole('faculty', 'hod'), facultyController.getVerificationQueue);
 

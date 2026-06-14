@@ -15,7 +15,8 @@ const { requireRole } = require('../middleware/roleGuard');
 const { sanitizeField } = require('../utils/sanitize');
 const placementController = require('../controllers/placementController');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api');
 
 router.get('/placement-drives', authenticate, placementController.getAllDrives);
 

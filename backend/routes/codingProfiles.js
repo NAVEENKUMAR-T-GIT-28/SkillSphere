@@ -14,7 +14,8 @@ const { recalculateScore } = require('../services/readinessScore');
 const { success, error } = require('../utils/response');
 const { httpsUrl } = require('../utils/validators');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api/students');
 
 /**
  * GET /api/students/:studentId/coding-profiles
@@ -146,7 +147,7 @@ router.delete(
       }
 
       await CodingProfile.findByIdAndDelete(req.params.profileId);
-      
+
       // Recalculate score
       await recalculateScore(req.params.studentId);
 

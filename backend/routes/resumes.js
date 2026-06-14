@@ -13,7 +13,8 @@ const { success, error } = require('../utils/response');
 const { driveLink } = require('../utils/validators');
 const { sanitizeField } = require('../utils/sanitize');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api/students');
 
 /**
  * GET /api/students/:studentId/resumes

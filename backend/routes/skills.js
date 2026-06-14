@@ -13,7 +13,8 @@ const { requireOwnerOrRole } = require('../middleware/ownerGuard');
 const { sanitizeField } = require('../utils/sanitize');
 const skillController = require('../controllers/skillController');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api');
 
 router.get('/skill-taxonomy', skillController.getAllTaxonomy);
 

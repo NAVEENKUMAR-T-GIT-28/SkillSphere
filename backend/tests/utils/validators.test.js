@@ -81,4 +81,120 @@ describe('validators utility', () => {
       expect(res.body.errors.length).toBeGreaterThan(0);
     });
   });
+
+  // ─── optionalDriveLink ─────────────────────────────────────────────────────
+
+  describe('optionalDriveLink()', () => {
+    const { optionalDriveLink } = require('../../utils/validators');
+
+    const makeApp = (chain) => {
+      const { validationResult } = require('express-validator');
+      const express = require('express');
+      const app = express();
+      app.use(express.json());
+      app.post('/test', [chain], (req, res) => {
+        const errors = validationResult(req);
+        res.json({ errors: errors.array() });
+      });
+      return app;
+    };
+
+    test('accepts a missing field (field is optional)', async () => {
+      const request = require('supertest');
+      const app = makeApp(optionalDriveLink('drive_link'));
+      const res = await request(app).post('/test').send({});
+      expect(res.body.errors).toHaveLength(0);
+    });
+
+    test('accepts null as value (nullable: true)', async () => {
+      const request = require('supertest');
+      const app = makeApp(optionalDriveLink('drive_link'));
+      const res = await request(app).post('/test').send({ drive_link: null });
+      expect(res.body.errors).toHaveLength(0);
+    });
+
+    test('accepts empty string (checkFalsy: true treats it as absent)', async () => {
+      const request = require('supertest');
+      const app = makeApp(optionalDriveLink('drive_link'));
+      const res = await request(app).post('/test').send({ drive_link: '' });
+      expect(res.body.errors).toHaveLength(0);
+    });
+
+    test('accepts a valid Google Drive link when provided', async () => {
+      const request = require('supertest');
+      const app = makeApp(optionalDriveLink('drive_link'));
+      const res = await request(app)
+        .post('/test')
+        .send({ drive_link: 'https://drive.google.com/file/d/xyz' });
+      expect(res.body.errors).toHaveLength(0);
+    });
+
+    test('rejects a non-Google link when provided', async () => {
+      const request = require('supertest');
+      const app = makeApp(optionalDriveLink('drive_link'));
+      const res = await request(app)
+        .post('/test')
+        .send({ drive_link: 'https://dropbox.com/file/abc' });
+      expect(res.body.errors.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ─── httpsUrl ──────────────────────────────────────────────────────────────
+
+  describe('httpsUrl()', () => {
+    const { httpsUrl } = require('../../utils/validators');
+
+    const makeApp = (chain) => {
+      const { validationResult } = require('express-validator');
+      const express = require('express');
+      const app = express();
+      app.use(express.json());
+      app.post('/test', [chain], (req, res) => {
+        const errors = validationResult(req);
+        res.json({ errors: errors.array() });
+      });
+      return app;
+    };
+
+    test('accepts a valid HTTPS URL', async () => {
+      const request = require('supertest');
+      const app = makeApp(httpsUrl('profile_url'));
+      const res = await request(app)
+        .post('/test')
+        .send({ profile_url: 'https://github.com/user' });
+      expect(res.body.errors).toHaveLength(0);
+    });
+
+    test('rejects an HTTP URL', async () => {
+      const request = require('supertest');
+      const app = makeApp(httpsUrl('profile_url'));
+      const res = await request(app)
+        .post('/test')
+        .send({ profile_url: 'http://github.com/user' });
+      expect(res.body.errors.length).toBeGreaterThan(0);
+    });
+
+    test('rejects a plain string (not a URL)', async () => {
+      const request = require('supertest');
+      const app = makeApp(httpsUrl('profile_url'));
+      const res = await request(app)
+        .post('/test')
+        .send({ profile_url: 'not-a-url' });
+      expect(res.body.errors.length).toBeGreaterThan(0);
+    });
+
+    test('accepts missing field when required=false (optional)', async () => {
+      const request = require('supertest');
+      const app = makeApp(httpsUrl('profile_url', false));
+      const res = await request(app).post('/test').send({});
+      expect(res.body.errors).toHaveLength(0);
+    });
+
+    test('rejects missing field when required=true (default)', async () => {
+      const request = require('supertest');
+      const app = makeApp(httpsUrl('profile_url', true));
+      const res = await request(app).post('/test').send({});
+      expect(res.body.errors.length).toBeGreaterThan(0);
+    });
+  });
 });

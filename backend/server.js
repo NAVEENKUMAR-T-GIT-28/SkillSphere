@@ -12,6 +12,9 @@ const express = require('express');
 const cors = require('cors');
 const { PORT, ALLOWED_ORIGINS, NODE_ENV } = require('./config/env');
 const connectDB = require('./config/database');
+const mongoose = require('mongoose');
+const { printStartupSummary } = require('./utils/startupLogger');
+
 
 // Middleware
 const { errorHandler } = require('./middleware/errorHandler');
@@ -104,9 +107,7 @@ app.use(errorHandler);
 // ─── MongoDB Connection + Server Start ──────────────────────────────────────
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`\n🚀 SkillSphere backend running on http://localhost:${PORT}`);
-    console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
-    console.log(`🌍 Environment: ${NODE_ENV || 'development'}\n`);
+    printStartupSummary(app, { NODE_ENV, PORT, ORIGIN: ALLOWED_ORIGINS }, mongoose);
   });
 });
 

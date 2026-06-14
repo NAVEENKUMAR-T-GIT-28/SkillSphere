@@ -15,7 +15,8 @@ const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleGuard');
 const hodController = require('../controllers/hodController');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api/hod');
 
 router.get('/dashboard', authenticate, requireRole('hod'), hodController.getDashboard);
 

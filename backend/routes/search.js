@@ -10,7 +10,8 @@ const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleGuard');
 const { success, error } = require('../utils/response');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api/search');
 
 /**
  * GET /api/search/students

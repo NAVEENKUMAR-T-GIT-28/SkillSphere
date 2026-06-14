@@ -16,7 +16,8 @@ const { driveLink } = require('../utils/validators');
 const { sanitizeField } = require('../utils/sanitize');
 const projectController = require('../controllers/projectController');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api');
 
 router.get('/students/:studentId/projects', authenticate, requireOwnerOrRole('faculty', 'hod'), projectController.getProjects);
 

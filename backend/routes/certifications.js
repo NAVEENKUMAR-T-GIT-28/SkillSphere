@@ -13,7 +13,8 @@ const { requireOwnerOrRole } = require('../middleware/ownerGuard');
 const { driveLink } = require('../utils/validators');
 const certificationController = require('../controllers/certificationController');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api/students');
 
 router.get('/:studentId/certifications', authenticate, requireOwnerOrRole('faculty', 'hod'), certificationController.getCertifications);
 

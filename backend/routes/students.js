@@ -14,7 +14,8 @@ const { requireOwnerOrRole } = require('../middleware/ownerGuard');
 const { sanitizeField } = require('../utils/sanitize');
 const studentController = require('../controllers/studentController');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api/students');
 
 router.get('/dashboard', authenticate, studentController.getDashboard);
 

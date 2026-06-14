@@ -9,7 +9,8 @@ const { body } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const authController = require('../controllers/authController');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api/auth');
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

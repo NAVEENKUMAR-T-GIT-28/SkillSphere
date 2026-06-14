@@ -5,7 +5,8 @@ const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleGuard');
 const { success, error } = require('../utils/response');
 
-const router = express.Router();
+const { trackRouter } = require('../utils/routeTracker');
+const router = trackRouter(express.Router(), '/api/my');
 
 // GET /api/my/mentees  — faculty: list students they mentor
 router.get('/mentees', authenticate, requireRole('faculty', 'hod'), async (req, res, next) => {
@@ -28,7 +29,7 @@ router.get('/class', authenticate, requireRole('faculty', 'student', 'hod'), asy
     if (!assignment) {
       return error(res, 'No class/section assigned', 403, 'ROLE_NOT_ASSIGNED');
     }
-    
+
     // Use structured scope_data if available, fall back to label parsing
     let filter = {};
     if (assignment.scope_data && assignment.scope_data.department) {
