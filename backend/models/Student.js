@@ -109,8 +109,8 @@ studentSchema.methods.calculateCompleteness = function () {
     { name: 'cgpa', weight: 15 }
   ];
 
-  const linkFields = ['github', 'linkedin', 'portfolio', 'leetcode', 'hackerrank', 'codechef', 'skillrack', 'codeforces'];
-  const linkWeight = 30; // 30% total for links
+  const linkFields = ['github', 'linkedin', 'portfolio'];
+  const linkWeight = 30; // 30% total for links (coding links are in CodingProfiles)
 
   let score = 0;
 

@@ -30,7 +30,7 @@ const recalculateScore = async (studentId) => {
   // 4. Coding score (max 15)
   // Non-SkillRack platforms contribute up to 7.5
   // SkillRack contributes up to 7.5 (scaled from its 0-10 score)
-  const codingProfiles = await codingProfileRepo.findByStudentId(studentId);
+  const codingProfiles = await codingProfileRepo.findAllLegacy(studentId);
   const nonSrProblems = codingProfiles
     .filter(cp => cp.platform !== 'skillrack')
     .reduce((sum, cp) => sum + (cp.problems_solved || 0), 0);

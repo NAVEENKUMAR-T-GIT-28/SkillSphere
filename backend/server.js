@@ -26,7 +26,7 @@ const skillRoutes = require('./routes/skills');
 const certificationRoutes = require('./routes/certifications');
 const projectRoutes = require('./routes/projects');
 const resumeRoutes = require('./routes/resumes');
-const codingProfileRoutes = require('./routes/codingProfiles');
+const codingProfileRoutes = require('./routes/codingProfile.routes');
 const facultyRoutes = require('./routes/faculty');
 const searchRoutes = require('./routes/search');
 const placementRoutes = require('./routes/placement');
@@ -84,7 +84,7 @@ app.use('/api', skillRoutes);                        // /api/skill-taxonomy + /a
 app.use('/api/students', certificationRoutes);       // /api/students/:id/certifications
 app.use('/api', projectRoutes);                      // /api/students/:id/projects + /api/projects/:id/rate
 app.use('/api/students', resumeRoutes);              // /api/students/:id/resumes
-app.use('/api/students', codingProfileRoutes);       // /api/students/:id/coding-profiles
+app.use('/api/students', codingProfileRoutes);       // /api/students/:id/coding-profile
 app.use('/api/verification', facultyRoutes);         // /api/verification/queue + approve/reject
 app.use('/api/search', searchRoutes);                // /api/search/students
 app.use('/api', placementRoutes);                     // /api/placement-drives/* + /api/applications/*

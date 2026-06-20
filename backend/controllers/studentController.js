@@ -73,10 +73,22 @@ exports.updateProfile = async (req, res, next) => {
 
     const allowedFields = ['full_name', 'phone', 'profile_photo_url', 'career_objective', 'cgpa', 'links'];
     const updateData = {};
+    // Coding platform keys that must NOT be stored in Student.links
+    const CODING_LINK_KEYS = ['leetcode', 'hackerrank', 'codechef', 'skillrack', 'codeforces'];
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
         if (field === 'links') {
-          updateData.links = { ...student.links?.toObject?.() || {}, ...req.body.links };
+          const incomingLinks = { ...req.body.links };
+          // Remove coding platform links — they belong in CodingProfiles
+          for (const key of CODING_LINK_KEYS) {
+            delete incomingLinks[key];
+          }
+          updateData.links = { ...student.links?.toObject?.() || {} };
+          // Also strip any existing coding keys from stored links
+          for (const key of CODING_LINK_KEYS) {
+            delete updateData.links[key];
+          }
+          Object.assign(updateData.links, incomingLinks);
         } else {
           updateData[field] = req.body[field];
         }
