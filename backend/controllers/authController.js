@@ -38,9 +38,42 @@ exports.register = async (req, res, next) => {
     let profile;
 
     if (base_role === 'student') {
-      const { roll_number, batch_year, graduation_year, section, semester, cgpa } = req.body;
+      const { roll_number, batch_year, graduation_year, section, semester, cgpa, class_id } = req.body;
+      const Class = require('../models/Class');
+
+      let cls;
+      if (class_id) {
+        cls = await Class.findById(class_id);
+        if (!cls) {
+          return error(res, 'Class not found', 404, 'CLASS_NOT_FOUND');
+        }
+      } else {
+        // Find or create the Class for this student's cohort
+        cls = await Class.findOne({ department, section: section || 'A', batch_year });
+        if (!cls) {
+          cls = await Class.create({
+            department,
+            section: section || 'A',
+            batch_year,
+            graduation_year: graduation_year || (batch_year + 4),
+            academic_year: Math.ceil((semester || 1) / 2),
+            semester: semester || 1
+          });
+        }
+      }
+
       profile = await studentRepo.create({
-        user_id: user._id, full_name, phone, roll_number, department, batch_year, graduation_year, section, semester, cgpa
+        user_id: user._id,
+        full_name,
+        phone,
+        roll_number,
+        class_id: cls._id,
+        department: cls.department,
+        section: cls.section,
+        batch_year: cls.batch_year,
+        graduation_year: cls.graduation_year,
+        semester: semester || cls.semester,
+        cgpa
       });
     } else {
       const { employee_id, designation } = req.body;

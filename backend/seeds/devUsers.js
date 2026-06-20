@@ -61,8 +61,22 @@ const seedUsers = async () => {
       password: defaultPassword,
       base_role: 'student'
     });
+    const Class = require('../models/Class');
+    let devClass = await Class.findOne({ department: 'Computer Science', section: 'A', batch_year: 2023 });
+    if (!devClass) {
+      devClass = await Class.create({
+        department: 'Computer Science',
+        section: 'A',
+        batch_year: 2023,
+        graduation_year: 2027,
+        academic_year: 3,
+        semester: 6
+      });
+    }
+
     const studentProfile = await Student.create({
       user_id: studentUser._id,
+      class_id: devClass._id,
       full_name: 'John Doe (Student)',
       roll_number: 'STU1001',
       department: 'Computer Science',

@@ -71,7 +71,7 @@ exports.updateProfile = async (req, res, next) => {
       return error(res, 'Student not found', 404, 'NOT_FOUND');
     }
 
-    const allowedFields = ['full_name', 'phone', 'profile_photo_url', 'career_objective', 'department', 'section', 'semester', 'cgpa', 'links'];
+    const allowedFields = ['full_name', 'phone', 'profile_photo_url', 'career_objective', 'cgpa', 'links'];
     const updateData = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
@@ -81,6 +81,19 @@ exports.updateProfile = async (req, res, next) => {
           updateData[field] = req.body[field];
         }
       }
+    }
+
+    if (req.body.class_id !== undefined) {
+      const Class = require('../models/Class');
+      const classDoc = await Class.findById(req.body.class_id);
+      if (!classDoc) {
+        return error(res, 'Class not found', 404, 'CLASS_NOT_FOUND');
+      }
+      updateData.class_id = classDoc._id;
+      updateData.department = classDoc.department;
+      updateData.section = classDoc.section;
+      updateData.batch_year = classDoc.batch_year;
+      // Note: we might also update graduation_year and semester here depending on business logic
     }
 
     student = await studentRepo.updateById(req.params.studentId, updateData);

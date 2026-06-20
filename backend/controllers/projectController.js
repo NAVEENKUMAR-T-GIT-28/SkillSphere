@@ -26,7 +26,7 @@ exports.addProject = async (req, res, next) => {
     }
 
     const projectData = {
-      ...req.body, created_by: req.user.userId, status: 'pending'
+      ...req.body, created_by: req.params.studentId, status: 'pending'
     };
     if (!projectData.student_ids || projectData.student_ids.length === 0) {
       projectData.student_ids = [req.params.studentId];

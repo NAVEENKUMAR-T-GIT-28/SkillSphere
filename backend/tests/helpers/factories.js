@@ -9,9 +9,8 @@ const Project = require('../../models/Project');
 const CodingProfile = require('../../models/CodingProfile');
 const RoleAssignment = require('../../models/RoleAssignment');
 const PlacementDrive = require('../../models/PlacementDrive');
+const Class = require('../../models/Class');
 const { generateToken } = require('./tokenHelper');
-
-// ─── Users ──────────────────────────────────────────────────────────────────
 
 const createUser = async (overrides = {}) => {
   const defaults = {
@@ -26,8 +25,25 @@ const createUser = async (overrides = {}) => {
 
 const createStudent = async (overrides = {}) => {
   const user = await createUser({ base_role: 'student' });
+  let class_id = overrides.class_id;
+  if (!class_id) {
+    const classData = {
+      department: overrides.department || 'Computer Science',
+      section: overrides.section || `A-${Math.floor(Math.random() * 100000)}`,
+      batch_year: overrides.batch_year || 2023,
+      graduation_year: overrides.graduation_year || 2027,
+      academic_year: 3,
+      semester: 6
+    };
+    let cls = await Class.findOne({ department: classData.department, section: classData.section, batch_year: classData.batch_year });
+    if (!cls) {
+      cls = await Class.create(classData);
+    }
+    class_id = cls._id;
+  }
   const student = await Student.create({
     user_id: user._id,
+    class_id,
     full_name: 'Test Student',
     roll_number: `ROLL${Date.now()}`,
     department: 'Computer Science',
@@ -155,8 +171,24 @@ const createPlacementDrive = async (createdBy, overrides = {}) => {
   });
 };
 
+// ─── Class ──────────────────────────────────────────────────────────────────
+
+const createClass = async (overrides = {}) => {
+  const uniqueId = Math.floor(Math.random() * 100000);
+  return Class.create({
+    department: 'Computer Science',
+    section: `A-${uniqueId}`,
+    batch_year: 2023,
+    graduation_year: 2027,
+    academic_year: 3,
+    semester: 6,
+    ...overrides
+  });
+};
+
 module.exports = {
   createUser, createStudent, createFaculty, createHOD,
   createTaxonomySkill, createSkill, createCertification,
-  createProject, createCodingProfile, createPlacementDrive
+  createProject, createCodingProfile, createPlacementDrive,
+  createClass
 };

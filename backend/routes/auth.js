@@ -40,7 +40,8 @@ router.post(
     body('department').notEmpty().trim().withMessage('Department is required'),
     body('batch_year').if(body('base_role').equals('student')).isInt().withMessage('Batch year is required for students'),
     body('graduation_year').if(body('base_role').equals('student')).isInt().withMessage('Graduation year is required for students'),
-    body('employee_id').if(body('base_role').isIn(['faculty', 'hod'])).notEmpty().withMessage('Employee ID is required for faculty')
+    body('employee_id').if(body('base_role').isIn(['faculty', 'hod'])).notEmpty().withMessage('Employee ID is required for faculty'),
+    body('class_id').optional().isMongoId().withMessage('Invalid class ID')
   ],
   authController.register
 );

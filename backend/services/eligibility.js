@@ -13,6 +13,7 @@ async function findEligibleStudents(drive) {
   if (elig.batch_years && elig.batch_years.length) filter.batch_year = { $in: elig.batch_years };
   if (elig.departments && elig.departments.length) filter.department = { $in: elig.departments };
   if (elig.sections && elig.sections.length) filter.section = { $in: elig.sections };
+  if (elig.class_ids && elig.class_ids.length) filter.class_id = { $in: elig.class_ids };
   if (elig.min_readiness_score) filter.readiness_score = { $gte: elig.min_readiness_score };
 
   let students = await studentRepo.findAll(filter, 'full_name roll_number department cgpa readiness_score readiness_tier user_id batch_year section');
@@ -55,6 +56,9 @@ async function checkStudentEligibility(student, drive) {
   }
   if (elig.sections && elig.sections.length && !elig.sections.includes(student.section)) {
     reasons.push(`Section ${student.section} not eligible`);
+  }
+  if (elig.class_ids && elig.class_ids.length && !elig.class_ids.includes(student.class_id?.toString())) {
+    reasons.push(`Class not eligible`);
   }
   if (elig.min_readiness_score && student.readiness_score < elig.min_readiness_score) {
     reasons.push(`Readiness score ${student.readiness_score} < required ${elig.min_readiness_score}`);

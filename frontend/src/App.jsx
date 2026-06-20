@@ -14,18 +14,22 @@ import StudentProjects from './pages/student/Projects';
 import StudentResumes from './pages/student/Resumes';
 import StudentCoding from './pages/student/Coding';
 import StudentDrives from './pages/student/Drives';
-import FacultyQueue from './pages/faculty/Queue';
-import FacultyMentees from './pages/faculty/Mentees';
+import FacultyDashboard from './pages/faculty/Dashboard';
+import SharedQueue from './pages/shared/Queue';
+import SharedMentees from './pages/shared/Mentees';
 import HODDashboard from './pages/hod/Dashboard';
 import HODSearch from './pages/hod/Search';
 import HODRoles from './pages/hod/Roles';
 import HODDrives from './pages/hod/Drives';
+import HODAuditLog from './pages/hod/AuditLog';
+import HODClasses from './pages/hod/Classes';
 import AdminDashboard from './pages/admin/Dashboard';
+import Notifications from './pages/shared/Notifications';
 
 const HomeRedirect = ({ user }) => {
   if (!user) return <Navigate to="/login" />;
   if (user.baseRole === 'hod') return <Navigate to="/hod/dashboard" />;
-  if (user.baseRole === 'faculty') return <Navigate to="/faculty/queue" />;
+  if (user.baseRole === 'faculty') return <Navigate to="/faculty/dashboard" />;
   if (user.baseRole === 'admin') return <Navigate to="/admin/dashboard" />;
   return <Navigate to="/dashboard" />;
 };
@@ -133,11 +137,21 @@ function AppContent() {
 
       {/* Faculty */}
       <Route
+        path="/faculty/dashboard"
+        element={
+          <ProtectedRoute requiredRoles={['faculty']}>
+            <Layout>
+              <FacultyDashboard />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/faculty/queue"
         element={
-          <ProtectedRoute requiredRoles={['faculty', 'hod']}>
+          <ProtectedRoute requiredRoles={['faculty']}>
             <Layout>
-              <FacultyQueue />
+              <SharedQueue />
             </Layout>
           </ProtectedRoute>
         }
@@ -145,9 +159,9 @@ function AppContent() {
       <Route
         path="/faculty/mentees"
         element={
-          <ProtectedRoute requiredRoles={['faculty', 'hod']}>
+          <ProtectedRoute requiredRoles={['faculty']}>
             <Layout>
-              <FacultyMentees />
+              <SharedMentees />
             </Layout>
           </ProtectedRoute>
         }
@@ -194,6 +208,46 @@ function AppContent() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/hod/audit"
+        element={
+          <ProtectedRoute requiredRoles={['hod']}>
+            <Layout>
+              <HODAuditLog />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hod/classes"
+        element={
+          <ProtectedRoute requiredRoles={['hod']}>
+            <Layout>
+              <HODClasses />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hod/queue"
+        element={
+          <ProtectedRoute requiredRoles={['hod']}>
+            <Layout>
+              <SharedQueue />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hod/mentees"
+        element={
+          <ProtectedRoute requiredRoles={['hod']}>
+            <Layout>
+              <SharedMentees />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin */}
       <Route
@@ -202,6 +256,18 @@ function AppContent() {
           <ProtectedRoute requiredRoles={['admin']}>
             <Layout>
               <AdminDashboard />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Shared */}
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute requiredRoles={['student', 'faculty', 'hod', 'admin']}>
+            <Layout>
+              <Notifications />
             </Layout>
           </ProtectedRoute>
         }

@@ -51,27 +51,21 @@ router.get(
         if (cgpa_max) filter.cgpa.$lte = parseFloat(cgpa_max);
       }
 
-      // Department filter
-      if (department) {
-        filter.department = department;
-      }
+      // Class filter resolution
+      if (department || section || batch_year || graduation_year) {
+        const { getClassIds } = require('../utils/classQuery');
+        
+        const classIds = await getClassIds({
+          department,
+          sections: section ? section.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+          batch_years: batch_year ? batch_year.split(',').map(Number).filter(Boolean) : undefined,
+          graduation_year: graduation_year ? graduation_year.split(',').map(Number).filter(Boolean)[0] : undefined
+        });
 
-      // Section filter
-      if (section) {
-        const sections = section.split(',').map(s => s.trim()).filter(Boolean);
-        filter.section = sections.length > 1 ? { $in: sections } : sections[0];
-      }
-
-      // Batch year filter
-      if (batch_year) {
-        const years = batch_year.split(',').map(Number).filter(Boolean);
-        filter.batch_year = years.length > 1 ? { $in: years } : years[0];
-      }
-
-      // Graduation year filter
-      if (graduation_year) {
-        const gradYears = graduation_year.split(',').map(Number).filter(Boolean);
-        filter.graduation_year = gradYears.length > 1 ? { $in: gradYears } : gradYears[0];
+        if (classIds.length === 0) {
+          return success(res, [], { total: 0, page: parseInt(page), limit: parseInt(limit), pages: 0 });
+        }
+        filter.class_id = { $in: classIds };
       }
 
       // Readiness tier filter

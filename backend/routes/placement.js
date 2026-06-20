@@ -30,7 +30,8 @@ router.post(
     body('drive_date').isISO8601().withMessage('Valid drive date is required'),
     body('application_deadline').isISO8601().withMessage('Valid application deadline is required'),
     body('drive_type').isIn(['oncampus', 'offcampus', 'internship']).withMessage('Drive type must be oncampus, offcampus, or internship'),
-    body('eligibility').optional().isObject()
+    body('eligibility').optional().isObject(),
+    body('eligibility.class_ids').optional().isArray()
   ],
   placementController.createDrive
 );

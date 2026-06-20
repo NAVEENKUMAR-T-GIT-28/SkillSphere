@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X, Bell } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Layout({ children }) {
@@ -14,30 +14,54 @@ export default function Layout({ children }) {
     navigate('/login');
   };
 
-  // Determine nav items based on role
   const getNavItems = () => {
-    const baseItems = [
-      { label: 'Dashboard', href: '/dashboard', roles: ['student'] },
-      { label: 'Profile', href: '/profile', roles: ['student'] },
-      { label: 'Skills', href: '/skills', roles: ['student'] },
-      { label: 'Certifications', href: '/certifications', roles: ['student'] },
-      { label: 'Projects', href: '/projects', roles: ['student'] },
-      { label: 'Resumes', href: '/resumes', roles: ['student'] },
-      { label: 'Coding', href: '/coding', roles: ['student'] },
-      { label: 'Drives', href: '/drives', roles: ['student'] },
-      
-      { label: 'Verification Queue', href: '/faculty/queue', roles: ['faculty', 'hod'] },
-      { label: 'Mentees', href: '/faculty/mentees', roles: ['faculty', 'hod'] },
-      
-      { label: 'Dashboard', href: '/hod/dashboard', roles: ['hod'] },
-      { label: 'Search Students', href: '/hod/search', roles: ['hod'] },
-      { label: 'Role Assignment', href: '/hod/roles', roles: ['hod'] },
-      { label: 'Placement Drives', href: '/hod/drives', roles: ['hod'] },
+    if (!user) return [];
 
-      { label: 'Admin Console', href: '/admin/dashboard', roles: ['admin'] },
-    ];
+    if (user.baseRole === 'student') {
+      return [
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Profile', href: '/profile' },
+        { label: 'Skills', href: '/skills' },
+        { label: 'Certifications', href: '/certifications' },
+        { label: 'Projects', href: '/projects' },
+        { label: 'Resumes', href: '/resumes' },
+        { label: 'Coding', href: '/coding' },
+        { label: 'Drives', href: '/drives' },
+        { label: 'Notifications', href: '/notifications' },
+      ];
+    }
 
-    return baseItems.filter(item => item.roles.includes(user?.baseRole));
+    if (user.baseRole === 'faculty') {
+      return [
+        { label: 'Dashboard', href: '/faculty/dashboard' },
+        { label: 'Verification Queue', href: '/faculty/queue' },
+        { label: 'Mentees', href: '/faculty/mentees' },
+        { label: 'Notifications', href: '/notifications' },
+      ];
+    }
+
+    if (user.baseRole === 'hod') {
+      return [
+        { label: 'Dashboard', href: '/hod/dashboard' },
+        { label: 'Search students', href: '/hod/search' },
+        { label: 'Role assignment', href: '/hod/roles' },
+        { label: 'Classes', href: '/hod/classes' },
+        { label: 'Placement drives', href: '/hod/drives' },
+        { label: 'Verification queue', href: '/hod/queue' },
+        { label: 'Mentees', href: '/hod/mentees' },
+        { label: 'Audit trail', href: '/hod/audit' },
+        { label: 'Notifications', href: '/notifications' },
+      ];
+    }
+
+    if (user.baseRole === 'admin') {
+      return [
+        { label: 'Admin Console', href: '/admin/dashboard' },
+        { label: 'Notifications', href: '/notifications' },
+      ];
+    }
+
+    return [];
   };
 
   const navItems = getNavItems();
@@ -106,8 +130,13 @@ export default function Layout({ children }) {
           <div className="text-lg font-semibold text-text-primary hidden md:block">
             SkillSphere
           </div>
-          <div className="text-sm text-text-secondary">
-            Welcome, {user?.name}
+          <div className="flex items-center gap-4">
+            <Link to="/notifications" className="text-text-secondary hover:text-primary transition-colors relative">
+              <Bell size={20} />
+            </Link>
+            <div className="text-sm text-text-secondary">
+              Welcome, {user?.name}
+            </div>
           </div>
         </header>
 

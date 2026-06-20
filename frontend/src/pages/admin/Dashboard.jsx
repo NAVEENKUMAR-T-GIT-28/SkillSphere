@@ -51,209 +51,184 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary tracking-tight">Admin Console</h1>
-          <p className="text-text-secondary mt-1">Manage institutional departments and administrators.</p>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-primary rounded-full text-xs font-semibold self-start md:self-auto">
-          <Shield size={14} />
-          System Administrator
-        </div>
+    <div className="space-y-6">
+      <div className="mb-5">
+        <h1 className="text-xl font-medium text-text-primary mb-1">Admin console</h1>
+        <p className="text-[13px] text-text-secondary">Create and manage HOD accounts</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Form Info / Context */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="card bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100 p-6">
-            <h2 className="text-lg font-semibold text-primary mb-3 flex items-center gap-2">
-              <UserPlus size={18} />
-              HOD Configuration
-            </h2>
-            <p className="text-sm text-text-secondary leading-relaxed mb-4">
-              Head of Department (HOD) accounts have administrative control over their respective departments. 
-              They can assign student roles (Mentors, CCs, Reps), create placement drives, and access overall departmental analytics.
-            </p>
-            <div className="border-t border-blue-200/50 pt-4 space-y-3">
-              <div className="flex items-start gap-2.5 text-xs text-text-secondary">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
-                <span>One HOD is typically created per academic department.</span>
-              </div>
-              <div className="flex items-start gap-2.5 text-xs text-text-secondary">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
-                <span>The credentials provided here will be active immediately.</span>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="border border-border rounded-lg p-4 bg-surface">
+          <h2 className="text-[15px] font-medium mb-4 border-b border-border pb-3">Create HOD account</h2>
+          
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-[13px] mb-4">
+              <AlertCircle size={16} />
+              <span>{error}</span>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Right Column: Creation Form */}
-        <div className="lg:col-span-2">
-          <div className="card p-6 md:p-8 space-y-6">
-            <div>
-              <h2 className="text-xl font-bold text-text-primary">Create HOD Account</h2>
-              <p className="text-sm text-text-secondary mt-1">Register a new Head of Department user and profile.</p>
+          {success && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-[13px] mb-4">
+              <CheckCircle size={16} />
+              <span>{success}</span>
             </div>
+          )}
 
-            {error && (
-              <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm animate-shake">
-                <AlertCircle className="shrink-0" size={18} />
-                <span>{error}</span>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[12px] font-medium text-text-secondary mb-1">Full name</label>
+                <input
+                  type="text"
+                  name="full_name"
+                  value={formData.full_name}
+                  onChange={handleChange}
+                  placeholder="Dr. Sarah Jenkins"
+                  className="input-field text-[13px] py-1.5 px-2.5"
+                  required
+                />
               </div>
-            )}
 
-            {success && (
-              <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm animate-fade-in">
-                <CheckCircle className="shrink-0" size={18} />
-                <span>{success}</span>
+              <div>
+                <label className="block text-[12px] font-medium text-text-secondary mb-1">Employee ID</label>
+                <input
+                  type="text"
+                  name="employee_id"
+                  value={formData.employee_id}
+                  onChange={handleChange}
+                  placeholder="EMP10045"
+                  className="input-field text-[13px] py-1.5 px-2.5"
+                  required
+                />
               </div>
-            )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="hod-fullname" className="block text-sm font-medium text-text-primary mb-1.5">
-                    Full Name
-                  </label>
+              <div>
+                <label className="block text-[12px] font-medium text-text-secondary mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="sarah@college.edu"
+                  className="input-field text-[13px] py-1.5 px-2.5"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[12px] font-medium text-text-secondary mb-1">Password</label>
+                <div className="relative">
                   <input
-                    type="text"
-                    id="hod-fullname"
-                    name="full_name"
-                    value={formData.full_name}
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
                     onChange={handleChange}
-                    placeholder="e.g. Dr. Sarah Jenkins"
-                    className="input-field"
+                    placeholder="Min 8 characters"
+                    className="input-field text-[13px] py-1.5 px-2.5 pr-8"
+                    minLength={8}
                     required
                   />
-                </div>
-
-                <div>
-                  <label htmlFor="hod-empid" className="block text-sm font-medium text-text-primary mb-1.5">
-                    Employee ID
-                  </label>
-                  <input
-                    type="text"
-                    id="hod-empid"
-                    name="employee_id"
-                    value={formData.employee_id}
-                    onChange={handleChange}
-                    placeholder="e.g. EMP10045"
-                    className="input-field"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="hod-email" className="block text-sm font-medium text-text-primary mb-1.5">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    id="hod-email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="e.g. sarah.j@college.edu"
-                    className="input-field"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="hod-password" className="block text-sm font-medium text-text-primary mb-1.5">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      id="hod-password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Min 8 characters"
-                      className="input-field pr-10"
-                      minLength={8}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="hod-dept" className="block text-sm font-medium text-text-primary mb-1.5">
-                    Department
-                  </label>
-                  <select
-                    id="hod-dept"
-                    name="department"
-                    value={formData.department}
-                    onChange={handleChange}
-                    className="input-field"
-                    required
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
                   >
-                    <option value="">Select Department</option>
-                    <option value="CSE">Computer Science & Engineering (CSE)</option>
-                    <option value="IT">Information Technology (IT)</option>
-                    <option value="ECE">Electronics & Communication (ECE)</option>
-                    <option value="EE">Electrical Engineering (EE)</option>
-                    <option value="ME">Mechanical Engineering (ME)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="hod-phone" className="block text-sm font-medium text-text-primary mb-1.5">
-                    Phone Number (Optional)
-                  </label>
-                  <input
-                    type="tel"
-                    id="hod-phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="e.g. +1 555-0199"
-                    className="input-field"
-                  />
+                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="hod-designation" className="block text-sm font-medium text-text-primary mb-1.5">
-                  Designation
-                </label>
-                <input
-                  type="text"
-                  id="hod-designation"
-                  name="designation"
-                  value={formData.designation}
+                <label className="block text-[12px] font-medium text-text-secondary mb-1">Department</label>
+                <select
+                  name="department"
+                  value={formData.department}
                   onChange={handleChange}
-                  placeholder="e.g. Professor & Head"
-                  className="input-field"
-                />
+                  className="input-field text-[13px] py-1.5 px-2.5"
+                  required
+                >
+                  <option value="">-- Select --</option>
+                  <option value="CSE">CSE</option>
+                  <option value="IT">IT</option>
+                  <option value="ECE">ECE</option>
+                  <option value="EE">EE</option>
+                  <option value="ME">ME</option>
+                </select>
               </div>
 
-              <div className="pt-4 border-t border-border flex justify-end">
-                <button
-                  type="submit"
-                  id="btn-create-hod"
-                  disabled={loading}
-                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 px-6"
-                >
-                  {loading ? 'Creating Account...' : 'Create HOD Account'}
-                </button>
+              <div>
+                <label className="block text-[12px] font-medium text-text-secondary mb-1">Phone</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+91 ..."
+                  className="input-field text-[13px] py-1.5 px-2.5"
+                />
               </div>
-            </form>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-medium text-text-secondary mb-1">Designation</label>
+              <input
+                type="text"
+                name="designation"
+                value={formData.designation}
+                onChange={handleChange}
+                placeholder="Head of Department"
+                className="input-field text-[13px] py-1.5 px-2.5"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary text-white text-[13px] font-medium py-2 rounded hover:bg-blue-700 transition-colors disabled:opacity-50 mt-2"
+            >
+              {loading ? 'Creating Account...' : 'Create HOD account'}
+            </button>
+          </form>
+        </div>
+
+        <div className="border border-border rounded-lg p-4 bg-surface">
+          <h2 className="text-[15px] font-medium mb-4 border-b border-border pb-3">Existing HOD accounts</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-gray-50/50">
+                  <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Name</th>
+                  <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Dept</th>
+                  <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Employee ID</th>
+                  <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Mock data for the layout demo */}
+                <tr className="border-b border-border hover:bg-gray-50">
+                  <td className="py-2.5 px-3 text-[13px] font-medium text-text-primary">Dr. Robert Brown</td>
+                  <td className="py-2.5 px-3 text-[13px] text-text-secondary">CSE</td>
+                  <td className="py-2.5 px-3 text-[13px] text-text-secondary">FAC2002</td>
+                  <td className="py-2.5 px-3"><span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 text-green-700">Active</span></td>
+                </tr>
+                <tr className="border-b border-border hover:bg-gray-50">
+                  <td className="py-2.5 px-3 text-[13px] font-medium text-text-primary">Prof. A. Menon</td>
+                  <td className="py-2.5 px-3 text-[13px] text-text-secondary">IT</td>
+                  <td className="py-2.5 px-3 text-[13px] text-text-secondary">FAC2008</td>
+                  <td className="py-2.5 px-3"><span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 text-green-700">Active</span></td>
+                </tr>
+                <tr className="border-b border-border hover:bg-gray-50">
+                  <td className="py-2.5 px-3 text-[13px] font-medium text-text-primary">Dr. P. Nair</td>
+                  <td className="py-2.5 px-3 text-[13px] text-text-secondary">ECE</td>
+                  <td className="py-2.5 px-3 text-[13px] text-text-secondary">FAC2015</td>
+                  <td className="py-2.5 px-3"><span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-700">Inactive</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="mt-4 text-center text-[12px] text-text-secondary">
+              Note: This list is currently mocked for layout preview.
+            </div>
           </div>
         </div>
       </div>

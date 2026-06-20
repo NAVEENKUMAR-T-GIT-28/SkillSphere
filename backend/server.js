@@ -34,6 +34,7 @@ const hodRoutes = require('./routes/hod');
 const notificationRoutes = require('./routes/notifications');
 const myAccessRoutes = require('./routes/myAccess');
 const adminRoutes = require('./routes/admin');
+const classRoutes = require('./routes/classes');
 
 const app = express();
 
@@ -91,6 +92,7 @@ app.use('/api/hod', hodRoutes);                      // /api/hod/*
 app.use('/api/notifications', notificationRoutes);   // /api/notifications
 app.use('/api/my', myAccessRoutes);                  // /api/my/*
 app.use('/api/admin', adminRoutes);                  // /api/admin/*
+app.use('/api/classes', classRoutes);                // /api/classes/*
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use('*', (req, res) => {
@@ -105,10 +107,12 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 // ─── MongoDB Connection + Server Start ──────────────────────────────────────
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    printStartupSummary(app, { NODE_ENV, PORT, ORIGIN: ALLOWED_ORIGINS }, mongoose);
+if (NODE_ENV !== 'test') {
+  connectDB().then(() => {
+    app.listen(PORT, () => {
+      printStartupSummary(app, { NODE_ENV, PORT, ORIGIN: ALLOWED_ORIGINS }, mongoose);
+    });
   });
-});
+}
 
 module.exports = app;

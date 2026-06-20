@@ -121,22 +121,23 @@ export default function AssignRoleModal({
     setError("");
     setSubmitting(true);
     try {
-      let scopeData = undefined;
-      if (roleType === "cc" || roleType === "rep") {
-        const matchedClass = classesList.find(c => c.label === scopeLabel);
-        if (matchedClass) {
-          scopeData = {
-            department: matchedClass.department,
-            section: matchedClass.section,
-            batch_year: matchedClass.batch_year
-          };
-        }
-      }
+      // For cc/rep, scopeLabel now holds the class _id
+      const isClassRole = roleType === 'cc' || roleType === 'rep';
+      const classId = isClassRole ? scopeLabel : undefined;
+      const matchedClass = isClassRole ? classesList.find(c => c._id === scopeLabel) : null;
+      const labelText = matchedClass
+        ? `${matchedClass.department}-${matchedClass.section}-${matchedClass.batch_year}`
+        : finalScopeLabel;
+
+      const scopeData = matchedClass
+        ? { department: matchedClass.department, section: matchedClass.section, batch_year: matchedClass.batch_year }
+        : undefined;
 
       await onAssign({ 
         userId: selected._id, 
-        scopeLabel: finalScopeLabel,
+        scopeLabel: labelText,
         studentId: finalStudentId,
+        class_id: classId,
         scopeData
       });
       onClose();
@@ -291,7 +292,7 @@ export default function AssignRoleModal({
             >
               <option value="">Select Class / Section</option>
               {classesList.map((c) => (
-                <option key={c.label} value={c.label}>
+                <option key={c._id} value={c._id}>
                   {c.department} - Section {c.section} ({c.batch_year})
                 </option>
               ))}

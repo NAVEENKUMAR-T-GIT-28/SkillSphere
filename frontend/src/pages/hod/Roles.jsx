@@ -14,18 +14,17 @@ export default function HODRoles() {
   const [modalRole, setModalRole] = useState(null);
 
   const roles = [
-    { id: 'cc', title: 'Class Coordinators', description: 'Faculty assigned to a class' },
-    { id: 'mentor', title: 'Mentors', description: 'Faculty mentoring individual students' },
-    { id: 'rep', title: 'Class Representatives', description: 'Students representing their section' },
+    { id: 'cc', title: 'Class coordinators' },
+    { id: 'mentor', title: 'Mentors' },
+    { id: 'rep', title: 'Class reps' },
   ];
 
   const fetchAssignments = async () => {
     try {
       setFetching(true);
       const { data } = await RolesAPI.getAssignments();
-      // API returns the array directly due to api interceptor
       const items = Array.isArray(data) ? data : [];
-      
+                                                                                                                              
       setAssignments(items.map(a => ({
         id: a._id,
         role: a.role,
@@ -59,15 +58,16 @@ export default function HODRoles() {
     }
   }, []);
 
-  const handleAssign = async ({ userId, scopeLabel, studentId, scopeData }) => {
+  const handleAssign = async ({ userId, scopeLabel, studentId, class_id, scopeData }) => {
     try {
       setProcessing(true);
       await RolesAPI.assignRole({
         user_id: userId,
         role: modalRole,
-        scope_type: modalRole === 'mentor' ? 'student' : 'class',
+        scope_type: modalRole === 'mentor' ? 'student' : (modalRole === 'rep' ? 'section' : 'class'),
         scope_id: modalRole === 'mentor' ? studentId : undefined,
         scope_label: scopeLabel,
+        class_id: class_id || undefined,
         scope_data: scopeData
       });
       toast.success('Role assigned successfully');
@@ -103,74 +103,86 @@ export default function HODRoles() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-text-primary">Role Assignment</h1>
-        <p className="text-text-secondary mt-1">Assign and manage faculty and student roles</p>
+      <div className="mb-5">
+        <h1 className="text-xl font-medium text-text-primary mb-1">Role assignment</h1>
+        <p className="text-[13px] text-text-secondary">Manage dynamic roles for faculty and students</p>
       </div>
 
-      {roles.map(role => {
-        const roleAssignments = getRoleAssignments(role.id);
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        {roles.map(role => {
+          const roleAssignments = getRoleAssignments(role.id);
 
-        return (
-          <div key={role.id} className="card">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-semibold text-text-primary">{role.title}</h2>
-                <p className="text-sm text-text-secondary mt-1">{role.description}</p>
+          return (
+            <div key={role.id} className="border border-border rounded-lg p-4 bg-surface">
+              <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+                <h2 className="text-[15px] font-medium">{role.title}</h2>
+                <button
+                  onClick={() => openAssignModal(role.id)}
+                  className="px-2 py-1 text-xs font-medium bg-primary text-white rounded hover:bg-blue-700 flex items-center gap-1"
+                >
+                  <Plus size={14} />
+                  Assign
+                </button>
               </div>
-              <button
-                onClick={() => openAssignModal(role.id)}
-                className="btn-primary flex items-center gap-2 flex-shrink-0"
-              >
-                <Plus size={16} />
-                Assign
-              </button>
-            </div>
 
-            <div className="border-t border-border pt-4">
-              {roleAssignments.length === 0 ? (
-                <p className="text-text-secondary text-sm">No assignments yet</p>
-              ) : (
-                <div className="space-y-3">
-                  {roleAssignments.map(assignment => (
-                    <div key={assignment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                      <div>
-                        {role.id === 'cc' && (
-                          <>
-                            <p className="font-medium text-text-primary">{assignment.faculty}</p>
-                            <p className="text-xs text-text-secondary">{assignment.class}</p>
-                          </>
-                        )}
-                        {role.id === 'mentor' && (
-                          <>
-                            <p className="font-medium text-text-primary">{assignment.faculty}</p>
-                            <p className="text-xs text-text-secondary">Mentoring: {assignment.mentee}</p>
-                          </>
-                        )}
-                        {role.id === 'rep' && (
-                          <>
-                            <p className="font-medium text-text-primary">{assignment.faculty}</p>
-                            <p className="text-xs text-text-secondary">{assignment.class}</p>
-                          </>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => deleteAssignment(assignment.id)}
-                        disabled={processing}
-                        className="p-2 hover:bg-red-50 rounded-md transition-colors text-red-600 disabled:opacity-50"
+              <div className="mt-1.5">
+                {roleAssignments.length === 0 ? (
+                  <p className="text-text-secondary text-[12px]">No assignments yet</p>
+                ) : (
+                  <div className="space-y-0">
+                    {roleAssignments.map((assignment, idx) => (
+                      <div 
+                        key={assignment.id} 
+                        className={`flex items-center justify-between py-2 ${idx !== roleAssignments.length - 1 ? 'border-b border-gray-100' : ''}`}
                       >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+                        <div>
+                          {role.id === 'cc' && (
+                            <>
+                              <p className="text-[13px] font-medium text-text-primary leading-tight">{assignment.faculty}</p>
+                              <p className="text-[11px] text-text-secondary">{assignment.class}</p>
+                            </>
+                          )}
+                          {role.id === 'mentor' && (
+                            <>
+                              <p className="text-[13px] font-medium text-text-primary leading-tight">{assignment.faculty}</p>
+                              <p className="text-[11px] text-text-secondary">Mentoring: {assignment.mentee}</p>
+                            </>
+                          )}
+                          {role.id === 'rep' && (
+                            <>
+                              <p className="text-[13px] font-medium text-text-primary leading-tight">{assignment.faculty}</p>
+                              <p className="text-[11px] text-text-secondary">{assignment.class}</p>
+                            </>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => deleteAssignment(assignment.id)}
+                          disabled={processing}
+                          className="px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
-      {/* Assign Role Modal */}
+      <div className="border border-border rounded-lg p-4 bg-surface">
+        <h2 className="text-[15px] font-medium mb-3 border-b border-border pb-3">Audit log</h2>
+        <div className="space-y-2 text-[13px]">
+          <div className="flex gap-4 p-2 border-b border-gray-100">
+            <div className="text-text-secondary w-24 flex-shrink-0">Just now</div>
+            <div className="text-text-primary">System logged activity will appear here</div>
+          </div>
+          {/* Note: In a full app, this would be fed by a backend audit log API endpoint */}
+        </div>
+      </div>
+
       <AssignRoleModal
         open={showModal}
         roleType={modalRole}

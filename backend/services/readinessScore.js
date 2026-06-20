@@ -7,6 +7,7 @@ const projectRepo = require('../repositories/projectRepo');
 const codingProfileRepo = require('../repositories/codingProfileRepo');
 const studentRepo = require('../repositories/studentRepo');
 const readinessHistoryRepo = require('../repositories/readinessHistoryRepo');
+const SkillRackScore = require('../models/SkillRackScore');
 
 const recalculateScore = async (studentId) => {
   // 1. Verified skills score (max 20)
@@ -27,9 +28,17 @@ const recalculateScore = async (studentId) => {
   projectScore = Math.min(projectScore, 25);
 
   // 4. Coding score (max 15)
+  // Non-SkillRack platforms contribute up to 7.5
+  // SkillRack contributes up to 7.5 (scaled from its 0-10 score)
   const codingProfiles = await codingProfileRepo.findByStudentId(studentId);
-  const totalProblems = codingProfiles.reduce((sum, cp) => sum + (cp.problems_solved || 0), 0);
-  const codingScore = Math.min(totalProblems / 20, 15);
+  const nonSrProblems = codingProfiles
+    .filter(cp => cp.platform !== 'skillrack')
+    .reduce((sum, cp) => sum + (cp.problems_solved || 0), 0);
+
+  const srScore = await SkillRackScore.findOne({ student_id: studentId });
+  const srContribution = srScore ? (srScore.final_score / 10) * 7.5 : 0;
+  const nonSrContribution = Math.min(nonSrProblems / 20, 7.5);
+  const codingScore = Math.min(srContribution + nonSrContribution, 15);
 
   // 5. Faculty assessment score (max 5)
   const ratedProjects = projects.filter(p => p.faculty_rating?.average);

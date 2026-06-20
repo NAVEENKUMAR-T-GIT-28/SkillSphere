@@ -9,7 +9,8 @@
     "seed": "node seeds/skillTaxonomy.js",
     "test": "cross-env NODE_ENV=test jest --runInBand",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
-    "test:coverage": "cross-env NODE_ENV=test jest --coverage --runInBand"
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage --runInBand",
+    "migrate:class": "node scripts/migrate_class.js"
   },
   "jest": {
     "testEnvironment": "node",

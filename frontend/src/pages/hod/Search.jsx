@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, Eye } from 'lucide-react';
+import { Download, Eye, Search, X } from 'lucide-react';
 import TierBadge from '../../components/TierBadge';
 import Drawer from '../../components/Drawer';
 import { useToast } from '../../contexts/ToastContext';
@@ -11,49 +11,40 @@ export default function HODSearch() {
   const toast = useToast();
 
   const [filters, setFilters] = useState({
-    cgpaMin: parseFloat(searchParams.get('cgpa_min')) || 6.0,
-    cgpaMax: parseFloat(searchParams.get('cgpa_max')) || 10.0,
-    batchYears: searchParams.get('batch_year') ? searchParams.get('batch_year').split(',').map(Number) : [2026],
-    sections: searchParams.get('section') ? searchParams.get('section').split(',') : [],
-    tiers: searchParams.get('tier') ? searchParams.get('tier').split(',') : [],
+    tier: searchParams.get('tier') || 'All',
+    section: searchParams.get('section') || 'All',
+    name: searchParams.get('name') || '',
   });
 
-  const [sortBy, setSortBy] = useState('readiness_score');
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
-  const [error, setError] = useState(null);
-
   const [selectedStudent, setSelectedStudent] = useState(null);
 
   const fetchResults = async () => {
     try {
       setLoading(true);
-      setError(null);
-
-      // Build query string based on filters
       const params = new URLSearchParams();
-      if (filters.cgpaMin) params.append('cgpa_min', filters.cgpaMin);
-      if (filters.cgpaMax) params.append('cgpa_max', filters.cgpaMax);
+      if (filters.tier !== 'All') params.append('tier', filters.tier);
+      if (filters.section !== 'All') params.append('section', filters.section);
+      if (filters.name) params.append('name', filters.name);
       
-      // In a real app we might pass arrays or multiple params. The backend might just accept a single value or comma-separated.
-      // The backend expects batch_year, section, tier as single values, or we can send the first one selected, or loop them.
-      // Looking at search.js: if (batch_year) filter.batch_year = parseInt(batch_year); - it expects single.
-      // For this prototype, if multiple are selected, we can just pass the first one, or modify the backend.
-      if (filters.batchYears.length > 0) params.append('batch_year', filters.batchYears.join(','));
-      if (filters.sections.length > 0) params.append('section', filters.sections.join(','));
-      if (filters.tiers.length > 0) params.append('tier', filters.tiers.join(','));
-
       setSearchParams(params);
 
-      params.append('sort_by', sortBy === 'name' ? 'full_name' : (sortBy === 'cgpa' ? 'cgpa' : 'readiness_score'));
+      // We still sort by readiness score desc
+      params.append('sort_by', 'readiness_score');
       params.append('sort_order', 'desc');
 
       const { data } = await UsersAPI.searchStudents(params.toString());
-      
       const students = Array.isArray(data) ? data : data.items || [];
       
-      setResults(students.map(s => ({
+      // Filter by name locally since the backend might not support it fully 
+      // or we just trust the backend. For safety, we can local filter if needed.
+      const filteredStudents = filters.name 
+        ? students.filter(s => s.full_name.toLowerCase().includes(filters.name.toLowerCase())) 
+        : students;
+
+      setResults(filteredStudents.map(s => ({
         id: s._id,
         name: s.full_name,
         roll: s.roll_number,
@@ -65,25 +56,16 @@ export default function HODSearch() {
       setSearched(true);
     } catch (err) {
       console.error('Search error:', err);
-      toast.error(err.message || 'Failed to perform search');
+      toast.error('Failed to perform search');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = () => {
-    fetchResults();
-  };
-
   const handleClear = () => {
-    setFilters({
-      cgpaMin: 6.0,
-      cgpaMax: 10,
-      batchYears: [2026],
-      sections: [],
-      tiers: [],
-    });
+    setFilters({ tier: 'All', section: 'All', name: '' });
     setSearched(false);
+    setResults([]);
     setSearchParams({});
   };
 
@@ -106,259 +88,148 @@ export default function HODSearch() {
     toast.success('Results exported to CSV');
   };
 
-  const toggleBatchYear = (year) => {
-    setFilters(prev => ({
-      ...prev,
-      batchYears: prev.batchYears.includes(year)
-        ? prev.batchYears.filter(y => y !== year)
-        : [...prev.batchYears, year]
-    }));
-  };
-
-  const toggleSection = (section) => {
-    setFilters(prev => ({
-      ...prev,
-      sections: prev.sections.includes(section)
-        ? prev.sections.filter(s => s !== section)
-        : [...prev.sections, section]
-    }));
-  };
-
-  const toggleTier = (tier) => {
-    setFilters(prev => ({
-      ...prev,
-      tiers: prev.tiers.includes(tier)
-        ? prev.tiers.filter(t => t !== tier)
-        : [...prev.tiers, tier]
-    }));
-  };
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-text-primary">Search Students</h1>
-        <p className="text-text-secondary mt-1">Find and filter students by various criteria</p>
+      <div className="mb-5">
+        <h1 className="text-xl font-medium text-text-primary mb-1">Search students</h1>
+        <p className="text-[13px] text-text-secondary">Find candidates by skills, score, or tier</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Filters */}
-        <div className="card lg:h-fit">
-          <h2 className="font-semibold text-text-primary mb-4">Filters</h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-text-primary mb-2 block">CGPA Range</label>
-              <div className="space-y-2">
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    className="input-field w-full text-sm"
-                    value={filters.cgpaMin}
-                    onChange={(e) => setFilters({...filters, cgpaMin: parseFloat(e.target.value)})}
-                  />
-                  <span className="text-text-secondary">-</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    className="input-field w-full text-sm"
-                    value={filters.cgpaMax}
-                    onChange={(e) => setFilters({...filters, cgpaMax: parseFloat(e.target.value)})}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-text-primary mb-2 block">Batch Year</label>
-              <div className="space-y-2">
-                {[2023, 2024, 2025, 2026].map(year => (
-                  <label key={year} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="rounded"
-                      checked={filters.batchYears.includes(year)}
-                      onChange={() => toggleBatchYear(year)}
-                    />
-                    <span className="text-sm text-text-secondary">{year}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-text-primary mb-2 block">Section</label>
-              <div className="space-y-2">
-                {['A', 'B', 'C'].map(section => (
-                  <label key={section} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="rounded"
-                      checked={filters.sections.includes(section)}
-                      onChange={() => toggleSection(section)}
-                    />
-                    <span className="text-sm text-text-secondary">Section {section}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-text-primary mb-2 block">Readiness Tier</label>
-              <div className="space-y-2">
-                {['beginner', 'developing', 'placement_ready', 'industry_ready'].map(tier => (
-                  <label key={tier} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="rounded"
-                      checked={filters.tiers.includes(tier)}
-                      onChange={() => toggleTier(tier)}
-                    />
-                    <span className="text-sm text-text-secondary capitalize">{tier.replace('_', ' ')}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <button onClick={handleSearch} disabled={loading} className="btn-primary w-full disabled:opacity-50">
-              {loading ? 'Searching...' : 'Search'}
-            </button>
-            <button onClick={handleClear} disabled={loading} className="btn-secondary w-full disabled:opacity-50">
-              Clear Filters
-            </button>
-            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+      <div className="bg-gray-50 rounded-md p-3.5 mb-5 border border-border">
+        <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-text-secondary">Tier</label>
+            <select 
+              className="text-[13px] px-2.5 py-1.5 border border-border rounded bg-surface w-32"
+              value={filters.tier}
+              onChange={(e) => setFilters({...filters, tier: e.target.value})}
+            >
+              <option value="All">All tiers</option>
+              <option value="industry_ready">Industry Ready</option>
+              <option value="placement_ready">Placement Ready</option>
+              <option value="developing">Developing</option>
+              <option value="beginner">Beginner</option>
+            </select>
           </div>
-        </div>
+          
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-text-secondary">Section</label>
+            <select 
+              className="text-[13px] px-2.5 py-1.5 border border-border rounded bg-surface w-24"
+              value={filters.section}
+              onChange={(e) => setFilters({...filters, section: e.target.value})}
+            >
+              <option value="All">All</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </div>
 
-        {/* Results */}
-        <div className="lg:col-span-3">
-          <div className="card">
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
-              <div>
-                <p className="text-text-secondary text-sm">
-                  {searched ? `${results.length} students match` : 'Run a search to see results'}
-                </p>
-              </div>
-              {searched && results.length > 0 && (
-                <div className="flex items-center gap-3">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => {
-                      setSortBy(e.target.value);
-                      // Since we sort on backend, we could trigger a re-fetch here if we want, or sort locally.
-                      // Local sort for now:
-                      const newSort = e.target.value;
-                      const sorted = [...results].sort((a, b) => {
-                        if (newSort === 'readiness_score') return b.readinessScore - a.readinessScore;
-                        if (newSort === 'cgpa') return b.cgpa - a.cgpa;
-                        if (newSort === 'name') return a.name.localeCompare(b.name);
-                        return 0;
-                      });
-                      setResults(sorted);
-                    }}
-                    className="input-field text-sm"
-                  >
-                    <option value="readiness_score">Sort: Readiness</option>
-                    <option value="cgpa">Sort: CGPA</option>
-                    <option value="name">Sort: Name</option>
-                  </select>
-                  <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-primary rounded-md hover:bg-blue-100 transition-colors text-sm font-medium">
-                    <Download size={16} />
-                    Export
-                  </button>
-                </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-text-secondary">Name</label>
+            <input 
+              type="text" 
+              placeholder="Search name..." 
+              className="text-[13px] px-2.5 py-1.5 border border-border rounded bg-surface w-40"
+              value={filters.name}
+              onChange={(e) => setFilters({...filters, name: e.target.value})}
+              onKeyDown={(e) => e.key === 'Enter' && fetchResults()}
+            />
+          </div>
+
+          <button onClick={fetchResults} disabled={loading} className="px-3 py-1.5 bg-primary text-white text-[13px] font-medium rounded hover:bg-blue-700 flex items-center gap-1">
+            <Search size={14} />
+            {loading ? 'Searching' : 'Search'}
+          </button>
+          <button onClick={handleClear} className="px-3 py-1.5 border border-border text-text-secondary text-[13px] font-medium rounded hover:bg-gray-100 flex items-center gap-1">
+            <X size={14} />
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center mb-2.5">
+        <span className="text-[13px] text-text-secondary">
+          {searched ? `${results.length} students match` : 'Enter criteria to search'}
+        </span>
+        {searched && results.length > 0 && (
+          <button onClick={handleExport} className="px-2.5 py-1.5 border border-border text-text-secondary text-[12px] font-medium rounded hover:bg-gray-50 flex items-center gap-1 bg-surface">
+            <Download size={14} /> Export CSV
+          </button>
+        )}
+      </div>
+
+      <div className="border border-border rounded-lg bg-surface">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-border bg-gray-50/50">
+                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Name</th>
+                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Roll</th>
+                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Section</th>
+                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">CGPA</th>
+                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Score</th>
+                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Tier</th>
+                <th className="text-left py-2 px-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {!searched ? (
+                <tr><td colSpan="7" className="py-8 text-center text-[13px] text-text-secondary">Run a search to display students.</td></tr>
+              ) : loading ? (
+                <tr><td colSpan="7" className="py-8 text-center text-[13px] text-text-secondary">Searching...</td></tr>
+              ) : results.length === 0 ? (
+                <tr><td colSpan="7" className="py-8 text-center text-[13px] text-text-secondary">No students matched the criteria.</td></tr>
+              ) : (
+                results.map(student => (
+                  <tr key={student.id} className="border-b border-border hover:bg-gray-50">
+                    <td className="py-2.5 px-3 text-[13px] font-medium text-text-primary">{student.name}</td>
+                    <td className="py-2.5 px-3 text-[13px] text-text-secondary">{student.roll}</td>
+                    <td className="py-2.5 px-3 text-[13px] text-text-secondary">{student.section}</td>
+                    <td className="py-2.5 px-3 text-[13px] font-medium text-text-primary">{student.cgpa}</td>
+                    <td className="py-2.5 px-3 text-[13px]"><strong className="text-blue-600">{student.readinessScore}</strong></td>
+                    <td className="py-2.5 px-3">
+                      <TierBadge tier={student.tier} />
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      <button 
+                        onClick={() => setSelectedStudent(student)} 
+                        className="p-1 text-text-secondary hover:text-primary hover:bg-blue-50 rounded transition-colors inline-flex"
+                        title="View profile"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
-            </div>
-
-            {!searched && !loading ? (
-              <div className="text-center py-12">
-                <p className="text-text-secondary">Adjust filters and click Search to see results</p>
-              </div>
-            ) : loading ? (
-              <div className="text-center py-12">
-                <p className="text-text-secondary">Searching...</p>
-              </div>
-            ) : results.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-text-secondary">No students match your criteria</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="border-b border-border">
-                    <tr>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-primary">Name</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-primary">Roll</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-primary">Section</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-primary">CGPA</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-primary">Readiness</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-primary">Tier</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-primary">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map(student => (
-                      <tr key={student.id} className="border-b border-border hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-4">
-                          <p className="font-medium text-text-primary">{student.name}</p>
-                        </td>
-                        <td className="py-3 px-4 text-text-secondary text-sm">{student.roll}</td>
-                        <td className="py-3 px-4 text-text-secondary text-sm">{student.section}</td>
-                        <td className="py-3 px-4 font-medium text-text-primary">{student.cgpa}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-24">
-                              <div
-                                className="bg-primary h-full rounded-full"
-                                style={{ width: `${student.readinessScore}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-sm font-medium text-text-primary min-w-8">{student.readinessScore}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <TierBadge tier={student.tier} />
-                        </td>
-                        <td className="py-3 px-4">
-                          <button onClick={() => setSelectedStudent(student)} className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-primary rounded-md hover:bg-blue-100 transition-colors text-sm font-medium">
-                            <Eye size={14} />
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+            </tbody>
+          </table>
         </div>
       </div>
+
       <Drawer isOpen={!!selectedStudent} onClose={() => setSelectedStudent(null)} title="Student Details">
         {selectedStudent && (
           <div className="space-y-6">
             <div>
-              <h3 className="font-semibold text-text-primary text-lg">{selectedStudent.name}</h3>
-              <p className="text-text-secondary">{selectedStudent.roll} • Section {selectedStudent.section}</p>
+              <h3 className="font-medium text-text-primary text-lg">{selectedStudent.name}</h3>
+              <p className="text-[13px] text-text-secondary">{selectedStudent.roll} • Section {selectedStudent.section}</p>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-text-muted mb-1">CGPA</p>
-                <p className="text-xl font-bold text-text-primary">{selectedStudent.cgpa}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-gray-50 border border-border rounded-md">
+                <p className="text-[12px] text-text-secondary mb-1">CGPA</p>
+                <p className="text-lg font-medium text-text-primary">{selectedStudent.cgpa}</p>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-text-muted mb-1">Readiness Score</p>
-                <p className="text-xl font-bold text-text-primary">{selectedStudent.readinessScore}</p>
+              <div className="p-3 bg-gray-50 border border-border rounded-md">
+                <p className="text-[12px] text-text-secondary mb-1">Score</p>
+                <p className="text-lg font-medium text-blue-600">{selectedStudent.readinessScore}</p>
               </div>
             </div>
 
             <div>
-              <h4 className="font-medium text-text-primary mb-2">Readiness Tier</h4>
+              <h4 className="text-[13px] font-medium text-text-primary mb-2">Readiness Tier</h4>
               <TierBadge tier={selectedStudent.tier} />
             </div>
           </div>

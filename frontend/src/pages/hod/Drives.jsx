@@ -1,4 +1,4 @@
-import { Plus, Edit2, Trash2, Users } from 'lucide-react';
+import { Plus, Trash2, Users, FileText, CheckCircle, IndianRupee } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
 import Drawer from '../../components/Drawer';
@@ -42,8 +42,9 @@ export default function HODDrives() {
         ctc: d.ctc || 'N/A',
         driveDate: d.drive_date,
         openings: d.openings || 0,
-        applications: 0, // Mocked for now, backend could provide this or we fetch applications
+        applications: 0, 
         shortlisted: 0,
+        type: d.drive_type || 'oncampus'
       })));
     } catch (err) {
       toast.error('Failed to fetch drives');
@@ -93,6 +94,7 @@ export default function HODDrives() {
       });
       setShowModal(false);
       toast.success('Drive created successfully');
+      fetchDrives();
     } catch (err) {
       toast.error(err.message || 'Failed to create drive');
     } finally {
@@ -104,6 +106,7 @@ export default function HODDrives() {
     try {
       setProcessing(true);
       await DrivesAPI.deleteDrive(driveId);
+      setDrives(drives.filter(d => d.id !== driveId));
       toast.success('Drive deleted successfully');
     } catch (err) {
       toast.error(err.message || 'Failed to delete drive');
@@ -131,18 +134,67 @@ export default function HODDrives() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary">Placement Drives</h1>
-          <p className="text-text-secondary mt-1">Manage company placement drives ({drives.length})</p>
-        </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
-          <Plus size={18} />
-          Create Drive
+      <div className="mb-5">
+        <h1 className="text-xl font-medium text-text-primary mb-1">Placement drives</h1>
+        <p className="text-[13px] text-text-secondary">Create and manage company drives</p>
+      </div>
+      
+      <div className="mb-4">
+        <button onClick={() => setShowModal(true)} className="px-3 py-1.5 bg-primary text-white text-[13px] font-medium rounded hover:bg-blue-700 flex items-center gap-1.5">
+          <Plus size={14} />
+          Create drive
         </button>
       </div>
 
-      {/* Create Drive Modal */}
+      <div className="space-y-2.5">
+        {drives.length === 0 ? (
+          <div className="p-8 text-center border border-border rounded-lg bg-surface text-[13px] text-text-secondary">
+            No placement drives created yet
+          </div>
+        ) : (
+          drives.map(drive => (
+            <div key={drive.id} className="border border-border rounded-lg p-4 bg-surface flex flex-col gap-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[14px] font-medium text-text-primary">{drive.company} — {drive.role}</p>
+                  <p className="text-[12px] text-text-secondary capitalize">
+                    {drive.type.replace('-', ' ')} &middot; {new Date(drive.driveDate).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex gap-1.5 items-center">
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-700">Active</span>
+                  <button
+                    onClick={() => deleteDrive(drive.id)}
+                    disabled={processing}
+                    className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-4 text-[12px] text-text-secondary">
+                <span className="flex items-center gap-1"><Users size={14} className="text-text-muted" /> {drive.openings || 'Any'} eligible</span>
+                <span className="flex items-center gap-1"><FileText size={14} className="text-text-muted" /> {drive.applications} applied</span>
+                <span className="flex items-center gap-1"><CheckCircle size={14} className="text-text-muted" /> {drive.shortlisted} shortlisted</span>
+                <span className="flex items-center gap-1"><IndianRupee size={14} className="text-text-muted" /> {drive.ctc}</span>
+              </div>
+
+              <div>
+                <button 
+                  onClick={() => handleViewApplications(drive)} 
+                  disabled={fetchingApps} 
+                  className="px-2.5 py-1 border border-border text-text-primary text-[12px] font-medium rounded hover:bg-gray-50 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                >
+                  <Users size={14} />
+                  View applications & shortlist
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
@@ -152,20 +204,20 @@ export default function HODDrives() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Company Name *</label>
+              <label className="block text-[13px] font-medium text-text-primary mb-1">Company Name *</label>
               <input
                 type="text"
-                className="input-field"
+                className="input-field text-[13px]"
                 placeholder="e.g., Google"
                 value={formData.companyName}
                 onChange={(e) => setFormData({...formData, companyName: e.target.value})}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Role Title *</label>
+              <label className="block text-[13px] font-medium text-text-primary mb-1">Role Title *</label>
               <input
                 type="text"
-                className="input-field"
+                className="input-field text-[13px]"
                 placeholder="e.g., Software Engineer"
                 value={formData.roleTitle}
                 onChange={(e) => setFormData({...formData, roleTitle: e.target.value})}
@@ -175,30 +227,30 @@ export default function HODDrives() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">CTC</label>
+              <label className="block text-[13px] font-medium text-text-primary mb-1">CTC</label>
               <input
                 type="text"
-                className="input-field"
+                className="input-field text-[13px]"
                 placeholder="e.g., 12 LPA"
                 value={formData.ctc}
                 onChange={(e) => setFormData({...formData, ctc: e.target.value})}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Location</label>
+              <label className="block text-[13px] font-medium text-text-primary mb-1">Location</label>
               <input
                 type="text"
-                className="input-field"
+                className="input-field text-[13px]"
                 placeholder="e.g., Bangalore"
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Openings</label>
+              <label className="block text-[13px] font-medium text-text-primary mb-1">Openings</label>
               <input
                 type="number"
-                className="input-field"
+                className="input-field text-[13px]"
                 placeholder="e.g., 5"
                 value={formData.openings}
                 onChange={(e) => setFormData({...formData, openings: e.target.value})}
@@ -208,9 +260,9 @@ export default function HODDrives() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Drive Type *</label>
+              <label className="block text-[13px] font-medium text-text-primary mb-1">Drive Type *</label>
               <select
-                className="input-field"
+                className="input-field text-[13px]"
                 value={formData.driveType}
                 onChange={(e) => setFormData({...formData, driveType: e.target.value})}
               >
@@ -220,19 +272,19 @@ export default function HODDrives() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Drive Date *</label>
+              <label className="block text-[13px] font-medium text-text-primary mb-1">Drive Date *</label>
               <input
                 type="date"
-                className="input-field"
+                className="input-field text-[13px]"
                 value={formData.driveDate}
                 onChange={(e) => setFormData({...formData, driveDate: e.target.value})}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Application Deadline *</label>
+              <label className="block text-[13px] font-medium text-text-primary mb-1">Application Deadline *</label>
               <input
                 type="date"
-                className="input-field"
+                className="input-field text-[13px]"
                 value={formData.deadline}
                 onChange={(e) => setFormData({...formData, deadline: e.target.value})}
               />
@@ -241,21 +293,21 @@ export default function HODDrives() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Job Desc URL</label>
+              <label className="block text-[13px] font-medium text-text-primary mb-1">Job Desc URL</label>
               <input
                 type="url"
-                className="input-field"
+                className="input-field text-[13px]"
                 placeholder="https://..."
                 value={formData.jobDescUrl}
                 onChange={(e) => setFormData({...formData, jobDescUrl: e.target.value})}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">Min CGPA Requirement</label>
+              <label className="block text-[13px] font-medium text-text-primary mb-1">Min CGPA Requirement</label>
               <input
                 type="number"
                 step="0.1"
-                className="input-field"
+                className="input-field text-[13px]"
                 placeholder="e.g., 7.0"
                 value={formData.minCgpa}
                 onChange={(e) => setFormData({...formData, minCgpa: e.target.value})}
@@ -263,18 +315,18 @@ export default function HODDrives() {
             </div>
           </div>
 
-          <div className="flex gap-3 justify-end pt-4 border-t border-border">
+          <div className="flex gap-2 justify-end pt-4 border-t border-border">
             <button
               onClick={() => setShowModal(false)}
               disabled={processing}
-              className="btn-secondary disabled:opacity-50"
+              className="px-3 py-1.5 border border-border text-text-primary text-[13px] font-medium rounded hover:bg-gray-50 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={addDrive}
               disabled={processing}
-              className="btn-primary disabled:opacity-50"
+              className="px-3 py-1.5 bg-primary text-white text-[13px] font-medium rounded hover:bg-blue-700 disabled:opacity-50"
             >
               {processing ? 'Creating...' : 'Create Drive'}
             </button>
@@ -282,79 +334,22 @@ export default function HODDrives() {
         </div>
       </Modal>
 
-      {/* Drives List */}
-      {drives.length === 0 ? (
-        <div className="card text-center py-12">
-          <p className="text-text-secondary">No placement drives created yet</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {drives.map(drive => (
-            <div key={drive.id} className="card hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-text-primary">{drive.company}</h3>
-                  <p className="text-text-secondary">{drive.role}</p>
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => deleteDrive(drive.id)}
-                    disabled={processing}
-                    className="p-2 hover:bg-red-50 rounded-md transition-colors text-red-600 disabled:opacity-50"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 pb-4 border-b border-border">
-                <div>
-                  <p className="text-xs text-text-muted">CTC</p>
-                  <p className="text-sm font-medium text-text-primary">{drive.ctc}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-text-muted">Drive Date</p>
-                  <p className="text-sm font-medium text-text-primary">{new Date(drive.driveDate).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-text-muted">Openings</p>
-                  <p className="text-sm font-medium text-text-primary">{drive.openings}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-text-muted">Applications</p>
-                  <p className="text-sm font-medium text-text-primary">{drive.applications}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-text-muted">Shortlisted</p>
-                  <p className="text-sm font-medium text-primary">{drive.shortlisted}</p>
-                </div>
-              </div>
-
-              <button onClick={() => handleViewApplications(drive)} disabled={fetchingApps} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-primary rounded-md hover:bg-blue-100 transition-colors text-sm font-medium disabled:opacity-50">
-                <Users size={16} />
-                View Applications
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      {/* View Applications Drawer */}
       <Drawer isOpen={!!selectedDrive} onClose={() => setSelectedDrive(null)} title="Drive Applications">
         {selectedDrive && (
           <div className="space-y-6">
             <div>
               <h3 className="font-semibold text-text-primary text-lg">{selectedDrive.company}</h3>
-              <p className="text-text-secondary">{selectedDrive.role}</p>
+              <p className="text-[13px] text-text-secondary">{selectedDrive.role}</p>
             </div>
             {applications.length === 0 ? (
-              <p className="text-sm text-text-secondary">No applications for this drive yet.</p>
+              <p className="text-[13px] text-text-secondary">No applications for this drive yet.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {applications.map(app => (
-                  <div key={app._id} className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-medium text-text-primary">{app.student_id?.full_name}</p>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  <div key={app._id} className="p-3 bg-gray-50 border border-border rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-[13px] font-medium text-text-primary">{app.student_id?.full_name}</p>
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
                         app.status === 'shortlisted' ? 'bg-green-100 text-green-800' :
                         app.status === 'rejected' ? 'bg-red-100 text-red-800' :
                         'bg-blue-100 text-blue-800'
@@ -362,8 +357,8 @@ export default function HODDrives() {
                         {app.status}
                       </span>
                     </div>
-                    <p className="text-xs text-text-secondary">{app.student_id?.roll_number} • Dept: {app.student_id?.department}</p>
-                    <p className="text-xs text-text-secondary mt-1">CGPA: {app.student_id?.cgpa} • Readiness: {app.student_id?.readiness_score}</p>
+                    <p className="text-[12px] text-text-secondary">{app.student_id?.roll_number} • Dept: {app.student_id?.department}</p>
+                    <p className="text-[12px] text-text-secondary mt-1">CGPA: {app.student_id?.cgpa} • Readiness: <strong className="text-blue-600">{app.student_id?.readiness_score}</strong></p>
                   </div>
                 ))}
               </div>

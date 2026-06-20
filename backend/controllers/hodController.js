@@ -17,7 +17,26 @@ exports.getDashboard = async (req, res, next) => {
     const tierDistribution = await studentRepo.aggregate([{ $group: { _id: '$readiness_tier', count: { $sum: 1 } } }, { $sort: { count: -1 } }]);
     const avgScoreResult = await studentRepo.aggregate([{ $group: { _id: null, avg: { $avg: '$readiness_score' } } }]);
     const avgReadinessScore = avgScoreResult.length > 0 ? Math.round(avgScoreResult[0].avg * 100) / 100 : 0;
-    const departmentStats = await studentRepo.aggregate([{ $group: { _id: '$department', count: { $sum: 1 }, avg_score: { $avg: '$readiness_score' }, avg_cgpa: { $avg: '$cgpa' } } }, { $sort: { avg_score: -1 } }]);
+    const departmentStats = await studentRepo.aggregate([
+      {
+        $lookup: {
+          from:         'classes',
+          localField:   'class_id',
+          foreignField: '_id',
+          as:           'class'
+        }
+      },
+      { $unwind: '$class' },
+      {
+        $group: {
+          _id:       '$class.department',
+          count:     { $sum: 1 },
+          avg_score: { $avg: '$readiness_score' },
+          avg_cgpa:  { $avg: '$cgpa' }
+        }
+      },
+      { $sort: { avg_score: -1 } }
+    ]);
     const pendingSkills = await skillRepo.countDocuments({ status: 'pending' });
     const pendingCerts = await certificationRepo.countDocuments({ status: 'pending' });
     const pendingProjects = await projectRepo.countDocuments({ status: 'pending' });
@@ -49,9 +68,20 @@ exports.getAllStudents = async (req, res, next) => {
   try {
     const { department, batch_year, section, tier, page = 1, limit = 50 } = req.query;
     const filter = {};
-    if (department) filter.department = department;
-    if (batch_year) filter.batch_year = parseInt(batch_year);
-    if (section) filter.section = section;
+    const { getClassIds } = require('../utils/classQuery');
+
+    if (department || batch_year || section) {
+      const classIds = await getClassIds({
+        department,
+        batch_year:  batch_year  ? parseInt(batch_year) : undefined,
+        section
+      });
+      if (classIds.length === 0) {
+        return success(res, [], { total: 0, page: 1, limit: parseInt(limit), pages: 0 });
+      }
+      filter.class_id = { $in: classIds };
+    }
+
     if (tier) filter.readiness_tier = tier;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -69,7 +99,7 @@ exports.createRoleAssignment = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return error(res, errors.array().map(e => e.msg).join(', '), 400, 'VALIDATION_ERROR');
 
-    const { user_id, role, scope_type, scope_id, scope_label, scope_data } = req.body;
+    const { user_id, role, scope_type, scope_id, scope_label, scope_data, class_id } = req.body;
     const user = await userRepo.findById(user_id);
     if (!user) return error(res, 'User not found', 404, 'USER_NOT_FOUND');
 
@@ -77,7 +107,32 @@ exports.createRoleAssignment = async (req, res, next) => {
     const existing = await RoleAssignment.findOne({ user_id, role, scope_type, scope_label, revoked_at: null });
     if (existing) return error(res, `User already has an active ${role} role for ${scope_label}`, 409, 'ROLE_EXISTS');
 
-    const assignment = await RoleAssignment.create({ user_id, role, scope_type, scope_id, scope_label, scope_data, assigned_by: req.user.userId });
+    const Class = require('../models/Class');
+    let resolvedScopeData = scope_data;
+    if (class_id) {
+      const classDoc = await Class.findById(class_id);
+      if (!classDoc) {
+        return error(res, 'Class not found', 404, 'CLASS_NOT_FOUND');
+      }
+      resolvedScopeData = {
+        department: classDoc.department,
+        section: classDoc.section,
+        batch_year: classDoc.batch_year
+      };
+    }
+
+    const assignment = await RoleAssignment.create({
+      user_id,
+      role,
+      scope_type,
+      scope_id: role === 'mentor' ? scope_id : (class_id || scope_id),
+      scope_label: scope_label || (resolvedScopeData
+        ? `${resolvedScopeData.department}-${resolvedScopeData.section}-${resolvedScopeData.batch_year}`
+        : scope_label),
+      scope_data: resolvedScopeData,
+      class_id: class_id || null,
+      assigned_by: req.user.userId
+    });
     await notifyRoleAssigned(user_id, role, scope_label);
 
     success(res, assignment, {}, 201);
@@ -180,12 +235,59 @@ exports.searchUsers = async (req, res, next) => {
 
 exports.getClasses = async (req, res, next) => {
   try {
-    const classes = await studentRepo.aggregate([
-      { $group: { _id: { department: "$department", section: "$section", batch_year: "$batch_year" } } },
-      { $project: { _id: 0, department: "$_id.department", section: "$_id.section", batch_year: "$_id.batch_year", label: { $concat: ["$_id.department", "-", "$_id.section", "-", { $toString: "$_id.batch_year" }] } } },
-      { $sort: { department: 1, batch_year: 1, section: 1 } }
-    ]);
-    success(res, classes);
+    const Class = require('../models/Class');
+    const classes = await Class.find({})
+      .sort({ department: 1, batch_year: 1, section: 1 });
+
+    const formatted = classes.map(c => ({
+      _id:             c._id,
+      department:      c.department,
+      section:         c.section,
+      batch_year:      c.batch_year,
+      graduation_year: c.graduation_year,
+      academic_year:   c.academic_year,
+      semester:        c.semester,
+      is_active:       c.is_active,
+      label: `${c.department}-${c.section}-${c.batch_year}`
+    }));
+
+    success(res, formatted);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.updateClassSemester = async (req, res, next) => {
+  try {
+    const { validationResult } = require('express-validator');
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, data: null, error: { message: errors.array().map(e => e.msg).join(', '), code: 'VALIDATION_ERROR' } });
+    }
+
+    const Class = require('../models/Class');
+    const { semester } = req.body;
+    
+    const cls = await Class.findByIdAndUpdate(
+      req.params.classId,
+      { 
+        $set: { 
+          semester, 
+          academic_year: Math.ceil(semester / 2) 
+        } 
+      },
+      { new: true }
+    );
+
+    if (!cls) {
+      return res.status(404).json({ success: false, data: null, error: { message: 'Class not found', code: 'NOT_FOUND' } });
+    }
+
+    // Trigger recompute for SkillRack peer group
+    const { recomputePeerGroup } = require('../services/skillrackScoring');
+    await recomputePeerGroup(cls._id).catch(err => console.error('Failed to recompute peer group after semester update:', err));
+
+    success(res, cls);
   } catch (err) {
     next(err);
   }

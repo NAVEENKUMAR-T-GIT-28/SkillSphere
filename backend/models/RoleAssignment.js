@@ -38,6 +38,10 @@ const roleAssignmentSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    class_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Class'
+    },
     scope_data: {
       department: { type: String, trim: true },
       section: { type: String, trim: true },

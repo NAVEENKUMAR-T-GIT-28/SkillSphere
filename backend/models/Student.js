@@ -15,6 +15,11 @@ const studentSchema = new mongoose.Schema(
       required: true,
       unique: true
     },
+    class_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Class',
+      required: [true, 'Class assignment is required']
+    },
 
     // Personal
     full_name: {
@@ -41,28 +46,6 @@ const studentSchema = new mongoose.Schema(
       required: [true, 'Roll number is required'],
       unique: true,
       trim: true
-    },
-    department: {
-      type: String,
-      required: [true, 'Department is required'],
-      trim: true
-    },
-    batch_year: {
-      type: Number,
-      required: [true, 'Batch year is required']
-    },
-    graduation_year: {
-      type: Number,
-      required: [true, 'Graduation year is required']
-    },
-    section: {
-      type: String,
-      trim: true
-    },
-    semester: {
-      type: Number,
-      min: 1,
-      max: 8
     },
     cgpa: {
       type: Number,
@@ -109,7 +92,7 @@ const studentSchema = new mongoose.Schema(
 );
 
 // Indexes (user_id and roll_number already have unique:true in schema)
-studentSchema.index({ department: 1, batch_year: 1, section: 1 });
+studentSchema.index({ class_id: 1 });
 studentSchema.index({ cgpa: 1 });
 studentSchema.index({ readiness_score: -1 });
 
@@ -119,17 +102,11 @@ studentSchema.index({ readiness_score: -1 });
  */
 studentSchema.methods.calculateCompleteness = function () {
   const fields = [
-    { name: 'full_name', weight: 10 },
-    { name: 'phone', weight: 5 },
-    { name: 'profile_photo_url', weight: 5 },
-    { name: 'career_objective', weight: 10 },
-    { name: 'roll_number', weight: 5 },
-    { name: 'department', weight: 5 },
-    { name: 'batch_year', weight: 5 },
-    { name: 'graduation_year', weight: 5 },
-    { name: 'section', weight: 5 },
-    { name: 'semester', weight: 5 },
-    { name: 'cgpa', weight: 10 }
+    { name: 'full_name', weight: 15 },
+    { name: 'phone', weight: 15 },
+    { name: 'profile_photo_url', weight: 15 },
+    { name: 'career_objective', weight: 15 },
+    { name: 'cgpa', weight: 15 }
   ];
 
   const linkFields = ['github', 'linkedin', 'portfolio', 'leetcode', 'hackerrank', 'codechef', 'skillrack', 'codeforces'];

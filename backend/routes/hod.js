@@ -35,7 +35,11 @@ router.post(
     body('scope_data').optional().isObject(),
     body('scope_data.department').optional().trim(),
     body('scope_data.section').optional().trim(),
-    body('scope_data.batch_year').optional().isInt()
+    body('scope_data.batch_year').optional().isInt(),
+    body('class_id')
+      .if(body('role').isIn(['cc', 'rep']))
+      .isMongoId()
+      .withMessage('class_id is required for cc and rep roles')
   ],
   hodController.createRoleAssignment
 );
@@ -49,5 +53,15 @@ router.get('/verification-logs', authenticate, requireRole('hod'), hodController
 router.get('/users', authenticate, requireRole('hod'), hodController.searchUsers);
 
 router.get('/classes', authenticate, requireRole('hod'), hodController.getClasses);
+
+router.patch(
+  '/classes/:classId/semester',
+  authenticate,
+  requireRole('hod'),
+  [
+    body('semester').isInt({ min: 1, max: 8 }).withMessage('Semester must be 1-8')
+  ],
+  hodController.updateClassSemester
+);
 
 module.exports = router;
