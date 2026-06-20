@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
-import { UsersAPI } from '../../services/api';
+import { UsersAPI, CodingAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+
+// Coding platform keys — stored in CodingProfiles, NOT Student
+const CODING_LINK_KEYS = ['leetcode', 'hackerrank', 'skillrack'];
+// General link keys — stored in Student collection
+const GENERAL_LINK_KEYS = ['github', 'linkedin', 'portfolio'];
 
 export default function StudentProfile() {
   const { user } = useAuth();
@@ -24,7 +29,7 @@ export default function StudentProfile() {
       portfolio: '',
       leetcode: '',
       hackerrank: '',
-      codechef: ''
+      skillrack: ''
     }
   });
 
@@ -32,22 +37,39 @@ export default function StudentProfile() {
     const fetchProfile = async () => {
       try {
         if (!user?.profileId) return;
-        const { data } = await UsersAPI.getProfile(user.profileId);
-        setStudentInfo(data);
+
+        // Load student profile (general links only)
+        const { data: studentData } = await UsersAPI.getProfile(user.profileId);
+        setStudentInfo(studentData);
+
+        // Load coding profile URLs from CodingProfiles collection
+        let codingLinks = { leetcode: '', hackerrank: '', skillrack: '' };
+        try {
+          const { data: codingData } = await CodingAPI.getCodingProfile(user.profileId);
+          if (codingData) {
+            codingLinks = {
+              leetcode: codingData.leetcode?.profile_url || '',
+              hackerrank: codingData.hackerrank?.profile_url || '',
+              skillrack: codingData.skillrack?.profile_url || ''
+            };
+          }
+        } catch (err) {
+          // CodingProfile may not exist yet — that's fine
+          console.warn('Could not load coding profile:', err);
+        }
+
         setFormData({
-          fullName: data.full_name || '',
-          phone: data.phone || '',
-          careerObjective: data.career_objective || '',
-          cgpa: data.cgpa || '',
-          batchYear: data.batch_year || '',
-          rollNumber: data.roll_number || '',
+          fullName: studentData.full_name || '',
+          phone: studentData.phone || '',
+          careerObjective: studentData.career_objective || '',
+          cgpa: studentData.cgpa || '',
+          batchYear: studentData.batch_year || '',
+          rollNumber: studentData.roll_number || '',
           links: {
-            github: data.links?.github || '',
-            linkedin: data.links?.linkedin || '',
-            portfolio: data.links?.portfolio || '',
-            leetcode: data.links?.leetcode || '',
-            hackerrank: data.links?.hackerrank || '',
-            codechef: data.links?.codechef || ''
+            github: studentData.links?.github || '',
+            linkedin: studentData.links?.linkedin || '',
+            portfolio: studentData.links?.portfolio || '',
+            ...codingLinks
           }
         });
       } catch (err) {
@@ -64,18 +86,37 @@ export default function StudentProfile() {
     setLoading(true);
     setMessage('');
     try {
-      const payload = {};
       if (section === 'personal') {
-        payload.full_name = formData.fullName;
-        payload.phone = formData.phone;
-        payload.career_objective = formData.careerObjective;
+        const payload = {
+          full_name: formData.fullName,
+          phone: formData.phone,
+          career_objective: formData.careerObjective,
+        };
+        await UsersAPI.updateProfile(user.profileId, payload);
       } else if (section === 'academic') {
-        payload.cgpa = formData.cgpa ? parseFloat(formData.cgpa) : undefined;
+        const payload = {
+          cgpa: formData.cgpa ? parseFloat(formData.cgpa) : undefined,
+        };
+        await UsersAPI.updateProfile(user.profileId, payload);
       } else if (section === 'links') {
-        payload.links = formData.links;
+        // Split: general links → Student API, coding links → Coding Profile API
+        const generalLinks = {};
+        for (const key of GENERAL_LINK_KEYS) {
+          generalLinks[key] = formData.links[key] || '';
+        }
+
+        const codingLinks = {};
+        for (const key of CODING_LINK_KEYS) {
+          codingLinks[key] = formData.links[key] || '';
+        }
+
+        // Save general links to Student collection
+        await UsersAPI.updateProfile(user.profileId, { links: generalLinks });
+
+        // Save coding links to CodingProfiles collection
+        await CodingAPI.updateCodingLinks(user.profileId, codingLinks);
       }
 
-      await UsersAPI.updateProfile(user.profileId, payload);
       setMessage('✓ Changes saved successfully');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
@@ -224,20 +265,47 @@ export default function StudentProfile() {
             )}
 
             {activeSection === 'links' && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-text-primary">Social & Coding Links</h2>
-                {['github', 'linkedin', 'portfolio', 'leetcode', 'hackerrank', 'codechef'].map(link => (
-                  <div key={link}>
-                    <label className="block text-sm font-medium text-text-primary mb-2 capitalize">{link}</label>
-                    <input 
-                      type="url" 
-                      className="input-field" 
-                      placeholder={`https://${link}.com/...`} 
-                      value={formData.links[link]}
-                      onChange={(e) => handleLinkChange(link, e.target.value)}
-                    />
-                  </div>
-                ))}
+              <div className="space-y-6">
+                {/* General Links */}
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-text-primary">Social Links</h2>
+                  <p className="text-sm text-text-muted -mt-2">These are stored in your student profile.</p>
+                  {GENERAL_LINK_KEYS.map(link => (
+                    <div key={link}>
+                      <label className="block text-sm font-medium text-text-primary mb-2 capitalize">{link}</label>
+                      <input 
+                        type="url" 
+                        className="input-field" 
+                        placeholder={`https://${link}.com/...`} 
+                        value={formData.links[link]}
+                        onChange={(e) => handleLinkChange(link, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Coding Links */}
+                <div className="space-y-4 pt-4 border-t border-border">
+                  <h2 className="text-lg font-semibold text-text-primary">Coding Platform Links</h2>
+                  <p className="text-sm text-text-muted -mt-2">These are synced with your coding profile.</p>
+                  {CODING_LINK_KEYS.map(link => (
+                    <div key={link}>
+                      <label className="block text-sm font-medium text-text-primary mb-2 capitalize">{link}</label>
+                      <input 
+                        type="url" 
+                        className="input-field" 
+                        placeholder={
+                          link === 'skillrack'
+                            ? 'https://www.skillrack.com/faces/resume.xhtml?id=...&key=...'
+                            : `https://${link}.com/...`
+                        } 
+                        value={formData.links[link]}
+                        onChange={(e) => handleLinkChange(link, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+
                 <button
                   onClick={() => handleSave('links')}
                   disabled={loading}
