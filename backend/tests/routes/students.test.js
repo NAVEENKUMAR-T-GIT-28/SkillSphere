@@ -105,6 +105,46 @@ describe('Students Routes', () => {
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
     });
 
+    test('owner can update new Phase 1 profile fields (personal/academic/preferences)', async () => {
+      const res = await request(app)
+        .patch(`/api/students/${student1._id}/profile`)
+        .set('Authorization', `Bearer ${token1}`)
+        .send({
+          date_of_birth: '2003-05-10',
+          city: 'Chennai',
+          state: 'Tamil Nadu',
+          languages_known: ['English', 'Tamil'],
+          current_backlogs: 0,
+          backlog_history: 1,
+          tenth_percentage: 92.5,
+          twelfth_percentage: 88.2,
+          preferred_job_role: 'Backend Developer',
+          preferred_work_location: 'Bengaluru'
+        });
+      expect(res.status).toBe(200);
+      expect(res.body.data.city).toBe('Chennai');
+      expect(res.body.data.preferred_job_role).toBe('Backend Developer');
+      expect(res.body.data.languages_known).toEqual(['English', 'Tamil']);
+    });
+
+    test('fails when tenth_percentage is out of range', async () => {
+      const res = await request(app)
+        .patch(`/api/students/${student1._id}/profile`)
+        .set('Authorization', `Bearer ${token1}`)
+        .send({ tenth_percentage: 150 });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    test('fails when current_backlogs is negative', async () => {
+      const res = await request(app)
+        .patch(`/api/students/${student1._id}/profile`)
+        .set('Authorization', `Bearer ${token1}`)
+        .send({ current_backlogs: -1 });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
     test('faculty CANNOT update student profile', async () => {
       const res = await request(app)
         .patch(`/api/students/${student1._id}/profile`)

@@ -10,6 +10,10 @@ const CodingProfile = require('../../models/CodingProfile');
 const RoleAssignment = require('../../models/RoleAssignment');
 const PlacementDrive = require('../../models/PlacementDrive');
 const Class = require('../../models/Class');
+const Achievement = require('../../models/Achievement');
+const Internship = require('../../models/Internship');
+const Resume = require('../../models/Resume');
+const StudentSearch = require('../../models/StudentSearch');
 const { generateToken } = require('./tokenHelper');
 
 const createUser = async (overrides = {}) => {
@@ -186,9 +190,72 @@ const createClass = async (overrides = {}) => {
   });
 };
 
+// ─── Achievement ────────────────────────────────────────────────────────────
+
+const createAchievement = async (studentId, overrides = {}) => {
+  return Achievement.create({
+    student_id: studentId,
+    title: 'Won Smart India Hackathon',
+    category: 'hackathon',
+    description: 'National level hackathon winner',
+    certificate_url: 'https://drive.google.com/file/d/achievement123',
+    status: 'pending',
+    ...overrides
+  });
+};
+
+// ─── Internship ─────────────────────────────────────────────────────────────
+
+const createInternship = async (studentId, overrides = {}) => {
+  return Internship.create({
+    student_id: studentId,
+    company: 'Acme Corp',
+    role: 'Software Engineering Intern',
+    start_date: new Date('2024-05-01'),
+    end_date: new Date('2024-07-01'),
+    duration_months: 2,
+    status: 'pending',
+    ...overrides
+  });
+};
+
+// ─── Resume ─────────────────────────────────────────────────────────────────
+
+const createResume = async (studentId, overrides = {}) => {
+  return Resume.create({
+    student_id: studentId,
+    version: 1,
+    drive_link: 'https://drive.google.com/file/d/resume123',
+    is_latest: true,
+    ...overrides
+  });
+};
+
+// ─── StudentSearch (denormalized cache) ────────────────────────────────────
+
+const createStudentSearchDoc = async (studentId, overrides = {}) => {
+  return StudentSearch.create({
+    student_id: studentId,
+    name: 'Searchable Student',
+    cgpa: 8.5,
+    department: 'Computer Science',
+    batch_year: 2023,
+    section: 'A',
+    readiness_score: 70,
+    readiness_tier: 'developing',
+    verified_skills: [],
+    verified_certifications: [],
+    tech_stack: [],
+    internship_count: 0,
+    project_count: 0,
+    ...overrides
+  });
+};
+
 module.exports = {
   createUser, createStudent, createFaculty, createHOD,
   createTaxonomySkill, createSkill, createCertification,
   createProject, createCodingProfile, createPlacementDrive,
-  createClass
+  createClass, createAchievement, createInternship, createResume,
+  createStudentSearchDoc
 };

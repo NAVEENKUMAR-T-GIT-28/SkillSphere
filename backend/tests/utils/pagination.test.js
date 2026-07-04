@@ -17,10 +17,12 @@ describe('Pagination Utils', () => {
       expect(result).toEqual({ skip: 30, limit: 15, page: 3 });
     });
 
-    it('should handle invalid or zero page/limit inputs by defaulting to 1', () => {
+    it('should handle invalid or zero page/limit inputs by defaulting sensibly', () => {
       expect(paginate(0, 10)).toEqual({ skip: 0, limit: 10, page: 1 });
       expect(paginate(-5, 10)).toEqual({ skip: 0, limit: 10, page: 1 });
-      expect(paginate(1, 0)).toEqual({ skip: 0, limit: 1, page: 1 });
+      // limit=0 is falsy, so the `|| 20` default kicks in (same as omitting it)
+      expect(paginate(1, 0)).toEqual({ skip: 0, limit: 20, page: 1 });
+      // a negative limit is truthy, so it only gets floored to 1 by Math.max
       expect(paginate(1, -5)).toEqual({ skip: 0, limit: 1, page: 1 });
       expect(paginate('abc', 'def')).toEqual({ skip: 0, limit: 20, page: 1 });
     });

@@ -80,6 +80,34 @@ describe('Skills Routes', () => {
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('EVIDENCE_REQUIRED');
     });
+
+    test('accepts and stores years_experience', async () => {
+      const tax3 = await createTaxonomySkill({ name: 'Go' });
+      const res = await request(app)
+        .post(`/api/students/${student._id}/skills`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          taxonomy_id: tax3._id,
+          proficiency: 'intermediate',
+          years_experience: 2.5
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.data.years_experience).toBe(2.5);
+    });
+
+    test('rejects years_experience above the allowed max', async () => {
+      const tax4 = await createTaxonomySkill({ name: 'Rust' });
+      const res = await request(app)
+        .post(`/api/students/${student._id}/skills`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          taxonomy_id: tax4._id,
+          proficiency: 'intermediate',
+          years_experience: 500
+        });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
   });
 
   describe('GET /api/students/:studentId/skills', () => {

@@ -28,6 +28,8 @@ import HODClasses from './pages/hod/Classes';
 import AdminDashboard from './pages/admin/Dashboard';
 import Notifications from './pages/shared/Notifications';
 
+import StudentProfileV2 from "./pages/student/profile/index";
+
 const HomeRedirect = ({ user }) => {
   if (!user) return <Navigate to="/login" />;
   if (user.baseRole === 'hod') return <Navigate to="/hod/dashboard" />;
@@ -72,6 +74,16 @@ function AppContent() {
           <ProtectedRoute requiredRoles={['student']}>
             <Layout>
               <StudentProfile />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile-v2"
+        element={
+          <ProtectedRoute requiredRoles={["student"]}>
+            <Layout>
+              <StudentProfileV2 />
             </Layout>
           </ProtectedRoute>
         }

@@ -4,7 +4,7 @@ const app = require('../../server');
 const Class = require('../../models/Class');
 const Student = require('../../models/Student');
 const User = require('../../models/User');
-const { generateToken } = require('../../utils/jwtKeys');
+const { generateToken } = require('../helpers/tokenHelper');
 const { createClass } = require('../helpers/factories');
 
 let hodToken, facultyToken, studentToken;
@@ -15,9 +15,9 @@ beforeAll(async () => {
   facultyUser = await User.create({ email: 'faculty@test.com', password: 'password123', base_role: 'faculty' });
   studentUser = await User.create({ email: 'student@test.com', password: 'password123', base_role: 'student' });
 
-  hodToken = generateToken(hodUser);
-  facultyToken = generateToken(facultyUser);
-  studentToken = generateToken(studentUser);
+  hodToken = generateToken(hodUser._id, 'hod');
+  facultyToken = generateToken(facultyUser._id, 'faculty');
+  studentToken = generateToken(studentUser._id, 'student');
 });
 
 afterAll(async () => {

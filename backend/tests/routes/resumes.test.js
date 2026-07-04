@@ -72,6 +72,16 @@ describe('Resumes Routes - Comprehensive', () => {
       expect(res.status).toBe(201);
       resumeId = res.body.data._id;
     });
+
+    test('Success owner creates with resume_version_name', async () => {
+      const res = await request(app).post(`/api/students/${s1._id}/resumes`).set('Authorization', `Bearer ${s1Token}`).send({
+        drive_link: 'https://drive.google.com/file/d/test5678', resume_version_name: 'Backend-focused resume'
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.data.resume_version_name).toBe('Backend-focused resume');
+      // Newest resume becomes the only latest one
+      expect(res.body.data.is_latest).toBe(true);
+    });
   });
 
   describe('GET /api/students/:studentId/resumes', () => {
