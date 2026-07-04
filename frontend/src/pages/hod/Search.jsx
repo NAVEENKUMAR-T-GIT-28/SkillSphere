@@ -16,6 +16,8 @@ export default function HODSearch() {
     name: searchParams.get('name') || '',
   });
 
+  const [useV2, setUseV2] = useState(false);
+
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
@@ -35,7 +37,15 @@ export default function HODSearch() {
       params.append('sort_by', 'readiness_score');
       params.append('sort_order', 'desc');
 
-      const { data } = await UsersAPI.searchStudents(params.toString());
+      let data;
+      if (useV2) {
+        const response = await UsersAPI.searchStudentsV2(params.toString());
+        data = response.data;
+      } else {
+        const response = await UsersAPI.searchStudents(params.toString());
+        data = response.data;
+      }
+      
       const students = Array.isArray(data) ? data : data.items || [];
       
       // Filter by name locally since the backend might not support it fully 
@@ -146,6 +156,17 @@ export default function HODSearch() {
             <X size={14} />
             Clear
           </button>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <input 
+              type="checkbox" 
+              id="v2-toggle" 
+              checked={useV2} 
+              onChange={(e) => setUseV2(e.target.checked)} 
+              className="rounded border-border text-primary focus:ring-primary"
+            />
+            <label htmlFor="v2-toggle" className="text-[12px] text-text-secondary cursor-pointer">Use V2 Search Engine</label>
+          </div>
         </div>
       </div>
 

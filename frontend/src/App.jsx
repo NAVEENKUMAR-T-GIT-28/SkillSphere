@@ -11,6 +11,8 @@ import StudentProfile from './pages/student/Profile';
 import StudentSkills from './pages/student/Skills';
 import StudentCertifications from './pages/student/Certifications';
 import StudentProjects from './pages/student/Projects';
+import StudentInternships from './pages/student/Internships';
+import StudentAchievements from './pages/student/Achievements';
 import StudentResumes from './pages/student/Resumes';
 import StudentCoding from './pages/student/Coding';
 import StudentDrives from './pages/student/Drives';
@@ -100,6 +102,26 @@ function AppContent() {
           <ProtectedRoute requiredRoles={['student']}>
             <Layout>
               <StudentProjects />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/internships"
+        element={
+          <ProtectedRoute requiredRoles={['student']}>
+            <Layout>
+              <StudentInternships />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/achievements"
+        element={
+          <ProtectedRoute requiredRoles={['student']}>
+            <Layout>
+              <StudentAchievements />
             </Layout>
           </ProtectedRoute>
         }

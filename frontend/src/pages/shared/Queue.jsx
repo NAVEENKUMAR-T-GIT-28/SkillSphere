@@ -85,6 +85,46 @@ export default function SharedQueue() {
         });
       }
 
+      if (data.internships?.items) {
+        data.internships.items.forEach(i => {
+          combinedQueue.push({
+            id: i._id,
+            type: 'internship',
+            studentName: i.student_id?.full_name || 'Unknown',
+            studentRoll: i.student_id?.roll_number || 'N/A',
+            itemName: `${i.role} @ ${i.company}`,
+            company: i.company,
+            role: i.role,
+            duration: `${formatDate(i.start_date)} - ${i.end_date ? formatDate(i.end_date) : 'Present'} ${i.duration_months ? `(${i.duration_months} months)` : ''}`,
+            description: i.description,
+            offerLink: i.offer_letter_url,
+            certLink: i.certificate_url,
+            submittedDate: i.created_at,
+            status: i.status,
+          });
+        });
+      }
+
+      if (data.achievements?.items) {
+        data.achievements.items.forEach(a => {
+          combinedQueue.push({
+            id: a._id,
+            type: 'achievement',
+            studentName: a.student_id?.full_name || 'Unknown',
+            studentRoll: a.student_id?.roll_number || 'N/A',
+            itemName: a.title,
+            category: a.category,
+            customCategory: a.custom_category,
+            issuer: a.issuer,
+            date: a.date,
+            description: a.description,
+            proofLink: a.proof_url,
+            submittedDate: a.created_at,
+            status: a.status,
+          });
+        });
+      }
+
       combinedQueue.sort((a, b) => new Date(a.submittedDate) - new Date(b.submittedDate));
       
       setQueue(combinedQueue);
@@ -103,18 +143,24 @@ export default function SharedQueue() {
     certifications: queue.filter(item => item.type === 'certification').length,
     skills: queue.filter(item => item.type === 'skill').length,
     projects: queue.filter(item => item.type === 'project').length,
+    internships: queue.filter(item => item.type === 'internship').length,
+    achievements: queue.filter(item => item.type === 'achievement').length,
   };
 
   const tabs = [
     { id: 'certifications', label: 'Certifications', count: counts.certifications },
     { id: 'skills', label: 'Skills', count: counts.skills },
     { id: 'projects', label: 'Projects', count: counts.projects },
+    { id: 'internships', label: 'Internships', count: counts.internships },
+    { id: 'achievements', label: 'Achievements', count: counts.achievements },
   ];
 
   const filteredQueue = queue.filter(item => {
     if (activeTab === 'certifications') return item.type === 'certification';
     if (activeTab === 'skills') return item.type === 'skill';
     if (activeTab === 'projects') return item.type === 'project';
+    if (activeTab === 'internships') return item.type === 'internship';
+    if (activeTab === 'achievements') return item.type === 'achievement';
     return true;
   });
 
@@ -386,6 +432,83 @@ export default function SharedQueue() {
                         </div>
                       </div>
                     </div>
+                  </>
+                )}
+
+                {selectedItem.type === 'internship' && (
+                  <>
+                    <div>
+                      <p className="text-xs text-text-muted">Company</p>
+                      <p className="text-sm font-medium text-text-primary">{selectedItem.company}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted">Role</p>
+                      <p className="text-sm font-medium text-text-primary">{selectedItem.role}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted">Duration</p>
+                      <p className="text-sm font-medium text-text-primary">{selectedItem.duration}</p>
+                    </div>
+                    {selectedItem.description && (
+                      <div>
+                        <p className="text-xs text-text-muted">Description</p>
+                        <p className="text-sm font-medium text-text-primary">{selectedItem.description}</p>
+                      </div>
+                    )}
+                    {(selectedItem.offerLink || selectedItem.certLink) && (
+                      <div className="flex gap-2 mt-2">
+                        {selectedItem.offerLink && (
+                          <a href={selectedItem.offerLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-text-primary rounded-md hover:bg-gray-200 transition-colors text-xs font-medium">
+                            <ExternalLink size={12} /> Offer Letter
+                          </a>
+                        )}
+                        {selectedItem.certLink && (
+                          <a href={selectedItem.certLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-xs font-medium">
+                            <ExternalLink size={12} /> Certificate
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {selectedItem.type === 'achievement' && (
+                  <>
+                    <div>
+                      <p className="text-xs text-text-muted">Title</p>
+                      <p className="text-sm font-medium text-text-primary">{selectedItem.itemName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted">Category</p>
+                      <p className="text-sm font-medium text-text-primary capitalize">
+                        {selectedItem.category === 'other' ? selectedItem.customCategory : selectedItem.category}
+                      </p>
+                    </div>
+                    {selectedItem.issuer && (
+                      <div>
+                        <p className="text-xs text-text-muted">Issuer</p>
+                        <p className="text-sm font-medium text-text-primary">{selectedItem.issuer}</p>
+                      </div>
+                    )}
+                    {selectedItem.date && (
+                      <div>
+                        <p className="text-xs text-text-muted">Date</p>
+                        <p className="text-sm font-medium text-text-primary">{new Date(selectedItem.date).toLocaleDateString()}</p>
+                      </div>
+                    )}
+                    {selectedItem.description && (
+                      <div>
+                        <p className="text-xs text-text-muted">Description</p>
+                        <p className="text-sm font-medium text-text-primary">{selectedItem.description}</p>
+                      </div>
+                    )}
+                    {selectedItem.proofLink && (
+                      <div className="mt-2">
+                        <a href={selectedItem.proofLink} target="_blank" rel="noopener noreferrer" className="flex w-fit items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-xs font-medium">
+                          <ExternalLink size={12} /> Proof
+                        </a>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

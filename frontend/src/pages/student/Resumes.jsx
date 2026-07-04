@@ -4,6 +4,7 @@ import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 import { ResumesAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { getBadgeColor } from '../../utils/formatters';
 
 export default function StudentResumes() {
   const { user } = useAuth();
@@ -161,10 +162,56 @@ export default function StudentResumes() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-text-secondary">{resume.label || `Resume v${resume.version}`}</p>
+                  <p className="text-sm text-text-secondary">{resume.resume_version_name || resume.label || `Resume v${resume.version}`}</p>
                   <p className="text-xs text-text-muted mt-2">
                     Uploaded: {new Date(resume.uploaded_at).toLocaleDateString()}
                   </p>
+                  
+                  {(resume.ats_score !== undefined || resume.keywords?.length > 0 || resume.parsed_skills?.length > 0) && (
+                    <div className="mt-4 pt-3 border-t border-border space-y-3">
+                      {resume.ats_score !== undefined && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-text-primary">ATS Score:</span>
+                          <span className={`badge text-xs ${getBadgeColor('score', resume.ats_score)}`}>
+                            {resume.ats_score}/100
+                          </span>
+                        </div>
+                      )}
+                      
+                      {resume.parsed_skills && resume.parsed_skills.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-text-primary mb-1">Parsed Skills:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {resume.parsed_skills.map((skill, i) => (
+                              <span key={i} className="px-2 py-0.5 bg-gray-100 text-text-secondary rounded text-[10px]">{skill}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {resume.keywords && resume.keywords.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-text-primary mb-1">Keywords Found:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {resume.keywords.map((kw, i) => (
+                              <span key={i} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px]">{kw}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {resume.missing_keywords && resume.missing_keywords.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-text-primary mb-1">Missing Keywords:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {resume.missing_keywords.map((kw, i) => (
+                              <span key={i} className="px-2 py-0.5 bg-red-50 text-red-600 rounded text-[10px]">{kw}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   <a

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Award, FileText, Code2, Users, FolderGit2, User, ShieldCheck } from 'lucide-react';
+import { BookOpen, Award, FileText, Code2, Users, FolderGit2, User, ShieldCheck, Briefcase, Trophy } from 'lucide-react';
 import React from 'react';
 import ReadinessRing from '../../components/ReadinessRing';
 import ScoreBar from '../../components/ScoreBar';
@@ -36,9 +36,17 @@ export default function StudentDashboard() {
   }
 
   const readinessData = dashboard?.readiness || {};
-  const modules = dashboard?.modules || [];
+  let modules = dashboard?.modules || [];
   
-  const ICONS = { profile: User, skills: Award, projects: FolderGit2, certs: ShieldCheck, coding: Code2 };
+  // Statically append new modules if they are not coming from backend yet
+  if (!modules.find(m => m.id === 'internships')) {
+    modules.push({ id: 'internships', name: 'Internships', description: 'Manage your internships', status: '', href: '/internships', action: 'View Internships' });
+  }
+  if (!modules.find(m => m.id === 'achievements')) {
+    modules.push({ id: 'achievements', name: 'Achievements', description: 'Manage your achievements', status: '', href: '/achievements', action: 'View Achievements' });
+  }
+
+  const ICONS = { profile: User, skills: Award, projects: FolderGit2, certs: ShieldCheck, coding: Code2, internships: Briefcase, achievements: Trophy };
 
   return (
     <div className="space-y-8">

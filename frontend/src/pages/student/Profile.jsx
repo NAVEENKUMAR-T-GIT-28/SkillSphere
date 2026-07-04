@@ -20,7 +20,17 @@ export default function StudentProfile() {
     fullName: '',
     phone: '',
     careerObjective: '',
+    dateOfBirth: '',
+    city: '',
+    state: '',
+    languagesKnown: '',
+    preferredJobRole: '',
+    preferredWorkLocation: '',
     cgpa: '',
+    tenthPercentage: '',
+    twelfthPercentage: '',
+    currentBacklogs: '',
+    backlogHistory: '',
     batchYear: '',
     rollNumber: '',
     links: {
@@ -62,7 +72,17 @@ export default function StudentProfile() {
           fullName: studentData.full_name || '',
           phone: studentData.phone || '',
           careerObjective: studentData.career_objective || '',
+          dateOfBirth: studentData.date_of_birth ? new Date(studentData.date_of_birth).toISOString().split('T')[0] : '',
+          city: studentData.city || '',
+          state: studentData.state || '',
+          languagesKnown: studentData.languages_known ? studentData.languages_known.join(', ') : '',
+          preferredJobRole: studentData.preferred_job_role || '',
+          preferredWorkLocation: studentData.preferred_work_location || '',
           cgpa: studentData.cgpa || '',
+          tenthPercentage: studentData.tenth_percentage || '',
+          twelfthPercentage: studentData.twelfth_percentage || '',
+          currentBacklogs: studentData.current_backlogs?.toString() || '0',
+          backlogHistory: studentData.backlog_history?.toString() || '0',
           batchYear: studentData.batch_year || '',
           rollNumber: studentData.roll_number || '',
           links: {
@@ -91,11 +111,21 @@ export default function StudentProfile() {
           full_name: formData.fullName,
           phone: formData.phone,
           career_objective: formData.careerObjective,
+          date_of_birth: formData.dateOfBirth || undefined,
+          city: formData.city,
+          state: formData.state,
+          languages_known: formData.languagesKnown ? formData.languagesKnown.split(',').map(l => l.trim()).filter(Boolean) : [],
+          preferred_job_role: formData.preferredJobRole,
+          preferred_work_location: formData.preferredWorkLocation,
         };
         await UsersAPI.updateProfile(user.profileId, payload);
       } else if (section === 'academic') {
         const payload = {
           cgpa: formData.cgpa ? parseFloat(formData.cgpa) : undefined,
+          tenth_percentage: formData.tenthPercentage ? parseFloat(formData.tenthPercentage) : undefined,
+          twelfth_percentage: formData.twelfthPercentage ? parseFloat(formData.twelfthPercentage) : undefined,
+          current_backlogs: formData.currentBacklogs !== '' ? parseInt(formData.currentBacklogs, 10) : undefined,
+          backlog_history: formData.backlogHistory !== '' ? parseInt(formData.backlogHistory, 10) : undefined,
         };
         await UsersAPI.updateProfile(user.profileId, payload);
       } else if (section === 'links') {
@@ -221,6 +251,69 @@ export default function StudentProfile() {
                   ></textarea>
                   <p className="text-xs text-text-muted mt-1">{formData.careerObjective.length}/500 characters</p>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">Date of Birth</label>
+                    <input
+                      type="date"
+                      className="input-field"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => handleChange('dateOfBirth', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">Languages Known (comma separated)</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. English, Hindi, Tamil"
+                      value={formData.languagesKnown}
+                      onChange={(e) => handleChange('languagesKnown', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">City</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={formData.city}
+                      onChange={(e) => handleChange('city', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">State</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={formData.state}
+                      onChange={(e) => handleChange('state', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">Preferred Job Role</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. Software Engineer"
+                      value={formData.preferredJobRole}
+                      onChange={(e) => handleChange('preferredJobRole', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">Preferred Work Location</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. Bangalore"
+                      value={formData.preferredWorkLocation}
+                      onChange={(e) => handleChange('preferredWorkLocation', e.target.value)}
+                    />
+                  </div>
+                </div>
                 <button
                   onClick={() => handleSave('personal')}
                   disabled={loading}
@@ -248,6 +341,50 @@ export default function StudentProfile() {
                     onChange={(e) => handleChange('cgpa', e.target.value)}
                     step="0.1" min="0" max="10" 
                   />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">10th Percentage</label>
+                    <input 
+                      type="number" 
+                      className="input-field" 
+                      value={formData.tenthPercentage}
+                      onChange={(e) => handleChange('tenthPercentage', e.target.value)}
+                      step="0.1" min="0" max="100" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">12th Percentage</label>
+                    <input 
+                      type="number" 
+                      className="input-field" 
+                      value={formData.twelfthPercentage}
+                      onChange={(e) => handleChange('twelfthPercentage', e.target.value)}
+                      step="0.1" min="0" max="100" 
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">Current Backlogs</label>
+                    <input 
+                      type="number" 
+                      className="input-field" 
+                      value={formData.currentBacklogs}
+                      onChange={(e) => handleChange('currentBacklogs', e.target.value)}
+                      min="0" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-2">History of Backlogs</label>
+                    <input 
+                      type="number" 
+                      className="input-field" 
+                      value={formData.backlogHistory}
+                      onChange={(e) => handleChange('backlogHistory', e.target.value)}
+                      min="0" 
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-primary mb-2">Batch Year</label>

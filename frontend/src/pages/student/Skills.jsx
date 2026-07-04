@@ -20,6 +20,8 @@ export default function StudentSkills() {
     taxonomy_id: '',
     proficiency: 'intermediate',
     evidence_note: '',
+    years_experience: '',
+    projects_using_skill: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -62,6 +64,8 @@ export default function StudentSkills() {
         taxonomy_id: formData.taxonomy_id,
         proficiency: formData.proficiency,
         evidence_note: formData.evidence_note,
+        years_experience: formData.years_experience ? parseFloat(formData.years_experience) : undefined,
+        projects_using_skill: formData.projects_using_skill,
       };
       
       const { data: newSkill } = await SkillsAPI.addSkill(user.profileId, payload);
@@ -76,7 +80,7 @@ export default function StudentSkills() {
       };
       
       setSkills([formattedSkill, ...skills]);
-      setFormData({ taxonomy_id: '', proficiency: 'intermediate', evidence_note: '' });
+      setFormData({ taxonomy_id: '', proficiency: 'intermediate', evidence_note: '', years_experience: '', projects_using_skill: '' });
       setShowForm(false);
       toast.success('Skill added successfully');
     } catch (err) {
@@ -159,6 +163,33 @@ export default function StudentSkills() {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="skill-exp" className="block text-sm font-medium text-text-primary mb-2">Years of Experience (Optional)</label>
+              <input
+                id="skill-exp"
+                type="number"
+                step="0.5"
+                min="0"
+                className="input-field"
+                placeholder="e.g. 1.5"
+                value={formData.years_experience}
+                onChange={(e) => setFormData({...formData, years_experience: e.target.value})}
+              />
+            </div>
+            <div>
+              <label htmlFor="skill-projects" className="block text-sm font-medium text-text-primary mb-2">Projects Using Skill (Optional)</label>
+              <input
+                id="skill-projects"
+                type="text"
+                className="input-field"
+                placeholder="e.g. E-commerce site, Chat API"
+                value={formData.projects_using_skill}
+                onChange={(e) => setFormData({...formData, projects_using_skill: e.target.value})}
+              />
+            </div>
+          </div>
+
           {(formData.proficiency === 'advanced' || formData.proficiency === 'expert') && (
             <div>
               <label htmlFor="skill-evidence" className="block text-sm font-medium text-text-primary mb-2">Evidence / Experience</label>
@@ -216,6 +247,9 @@ export default function StudentSkills() {
                   <h3 className="font-semibold text-text-primary">{skill.skill_name || skill.taxonomy_id?.name}</h3>
                   <div className="flex items-center gap-3 mt-2">
                     <span className="text-xs text-text-secondary capitalize">{skill.proficiency}</span>
+                    {skill.years_experience > 0 && (
+                      <span className="text-xs text-text-secondary">{skill.years_experience} YOE</span>
+                    )}
                     <StatusBadge status={skill.status} />
                     <span className="text-xs text-text-muted">
                       {formatDate(skill.created_at)}

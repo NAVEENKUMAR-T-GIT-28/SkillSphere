@@ -24,6 +24,8 @@ export default function Layout({ children }) {
         { label: 'Skills', href: '/skills' },
         { label: 'Certifications', href: '/certifications' },
         { label: 'Projects', href: '/projects' },
+        { label: 'Internships', href: '/internships' },
+        { label: 'Achievements', href: '/achievements' },
         { label: 'Resumes', href: '/resumes' },
         { label: 'Coding', href: '/coding' },
         { label: 'Drives', href: '/drives' },

@@ -12,3 +12,5 @@ export * from './roles.api';
 export * from './academic.api';
 export * from './analytics.api';
 export * from './notifications.api';
+export * from './internships.api';
+export * from './achievements.api';

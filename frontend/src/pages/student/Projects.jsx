@@ -6,6 +6,7 @@ import StudentSearchInput from '../../components/StudentSearchInput';
 import { useToast } from '../../contexts/ToastContext';
 import { ProjectsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { getBadgeColor } from '../../utils/formatters';
 
 export default function StudentProjects() {
   const { user } = useAuth();
@@ -100,11 +101,6 @@ export default function StudentProjects() {
     }
   };
 
-  const complexityColors = {
-    basic: 'bg-green-100 text-green-700',
-    intermediate: 'bg-blue-100 text-blue-700',
-    advanced: 'bg-purple-100 text-purple-700',
-  };
 
   if (fetching) {
     return <div className="p-8 text-center text-text-secondary">Loading projects...</div>;
@@ -246,7 +242,7 @@ export default function StudentProjects() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
                     <h3 className="font-semibold text-text-primary">{project.title}</h3>
-                    <span className={`badge text-xs capitalize ${complexityColors[project.complexity_tier]}`}>
+                    <span className={`badge text-xs capitalize ${getBadgeColor('complexity', project.complexity_tier)}`}>
                       {project.complexity_tier}
                     </span>
                     {project.is_featured && (

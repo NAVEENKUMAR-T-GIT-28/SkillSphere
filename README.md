@@ -302,6 +302,8 @@ See [Readiness Score Engine](#readiness-score-engine) section below.
 | `skills` | Student skill entries (referenced, not embedded) |
 | `skill_taxonomy` | Master skill list (admin-managed) |
 | `certifications` | Cert entries with Drive link |
+| `internships` | Internship entries with Offer Letter link |
+| `achievements` | Achievement entries with Proof link |
 | `projects` | Project entries with GitHub link |
 | `resumes` | Resume versions with Drive link |
 | `coding_profiles` | One doc per platform per student |
@@ -321,6 +323,8 @@ users (1) ──────── (N) notifications
 
 students (1) ────── (N) skills
 students (1) ────── (N) certifications
+students (1) ────── (N) internships
+students (1) ────── (N) achievements
 students (N) ────── (N) projects          [via student_ids array]
 students (1) ────── (N) resumes
 students (1) ────── (N) coding_profiles
