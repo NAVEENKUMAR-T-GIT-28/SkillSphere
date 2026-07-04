@@ -3,7 +3,7 @@
  * Helper utilities for querying students via their class_id.
  */
 
-const Class = require('../models/Class');
+const classRepo = require('../repositories/classRepo');
 
 const getClassIds = async ({
   department,
@@ -26,7 +26,7 @@ const getClassIds = async ({
   if (graduation_year)         query.graduation_year = graduation_year;
   if (is_active !== undefined) query.is_active     = is_active;
 
-  const classes = await Class.find(query).select('_id');
+  const classes = await classRepo.find(query);
   return classes.map(c => c._id);
 };
 

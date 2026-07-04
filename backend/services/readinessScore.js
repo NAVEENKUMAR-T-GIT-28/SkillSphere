@@ -7,7 +7,7 @@ const projectRepo = require('../repositories/projectRepo');
 const codingProfileRepo = require('../repositories/codingProfileRepo');
 const studentRepo = require('../repositories/studentRepo');
 const readinessHistoryRepo = require('../repositories/readinessHistoryRepo');
-const SkillRackScore = require('../models/SkillRackScore');
+
 
 const recalculateScore = async (studentId) => {
   // 1. Verified skills score (max 20)
@@ -35,7 +35,8 @@ const recalculateScore = async (studentId) => {
     .filter(cp => cp.platform !== 'skillrack')
     .reduce((sum, cp) => sum + (cp.problems_solved || 0), 0);
 
-  const srScore = await SkillRackScore.findOne({ student_id: studentId });
+  const skillRackScoreRepo = require('../repositories/skillRackScoreRepo');
+  const srScore = await skillRackScoreRepo.findOne({ student_id: studentId });
   const srContribution = srScore ? (srScore.final_score / 10) * 7.5 : 0;
   const nonSrContribution = Math.min(nonSrProblems / 20, 7.5);
   const codingScore = Math.min(srContribution + nonSrContribution, 15);
@@ -62,6 +63,13 @@ const recalculateScore = async (studentId) => {
   await studentRepo.updateById(studentId, {
     readiness_score: total,
     readiness_tier: tier
+  });
+
+  // Fire-and-forget: sync StudentSearch after score update
+  // Imported lazily to avoid circular dependency (readinessScore ← studentSearchSync ← studentRepo ← readinessScore)
+  setImmediate(() => {
+    require('./studentSearchSync').syncStudentSearch(studentId)
+      .catch(err => console.error('StudentSearch sync failed:', err));
   });
 
   // Save snapshot to history

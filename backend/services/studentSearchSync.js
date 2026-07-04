@@ -13,24 +13,24 @@
  *   - Achievement data (not represented in StudentSearch schema; deferred for future phases)
  */
 
-const Student = require('../models/Student');
-const Skill = require('../models/Skill');
-const Certification = require('../models/Certification');
-const Project = require('../models/Project');
-const Internship = require('../models/Internship');
-const Resume = require('../models/Resume');
-const StudentSearch = require('../models/StudentSearch');
+const studentRepo = require('../repositories/studentRepo');
+const skillRepo = require('../repositories/skillRepo');
+const certificationRepo = require('../repositories/certificationRepo');
+const projectRepo = require('../repositories/projectRepo');
+const internshipRepo = require('../repositories/internshipRepo');
+const resumeRepo = require('../repositories/resumeRepo');
+const studentSearchRepo = require('../repositories/studentSearchRepo');
 
 async function syncStudentSearch(studentId) {
-  const student = await Student.findById(studentId).populate('class_id');
+  const student = await studentRepo.findById(studentId).populate('class_id');
   if (!student) return null;
 
   const [skills, certs, projects, internships, latestResume] = await Promise.all([
-    Skill.find({ student_id: studentId, status: 'verified' }),
-    Certification.find({ student_id: studentId, status: 'verified' }),
-    Project.find({ student_ids: studentId }),
-    Internship.find({ student_id: studentId, status: 'verified' }),
-    Resume.findOne({ student_id: studentId, is_latest: true })
+    skillRepo.findVerifiedByStudent(studentId),
+    certificationRepo.findVerifiedByStudent(studentId),
+    projectRepo.findByStudentIds(studentId),
+    internshipRepo.findVerifiedByStudent(studentId),
+    resumeRepo.findLatestByStudentId(studentId)
   ]);
 
   const doc = {
@@ -57,7 +57,7 @@ async function syncStudentSearch(studentId) {
     synced_at: new Date()
   };
 
-  return StudentSearch.findOneAndUpdate(
+  return studentSearchRepo.findOneAndUpdate(
     { student_id: studentId },
     doc,
     { upsert: true, new: true, runValidators: true }

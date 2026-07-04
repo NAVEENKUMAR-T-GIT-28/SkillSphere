@@ -5,12 +5,12 @@
  * Attaches the matching role assignment to req.roleAssignment for downstream use.
  */
 
-const RoleAssignment = require('../models/RoleAssignment');
+const roleAssignmentRepo = require('../repositories/roleAssignmentRepo');
 
 const requireDynamicRole = (...roles) => {
   return async (req, res, next) => {
     try {
-      const assignment = await RoleAssignment.findOne({
+      const assignment = await roleAssignmentRepo.findOne({
         user_id: req.user.userId,
         role: { $in: roles },
         revoked_at: null
@@ -41,7 +41,7 @@ const requireDynamicRoleWithScope = (role, scopeParam = 'scopeId') => {
     try {
       const scopeId = req.params[scopeParam];
 
-      const assignment = await RoleAssignment.findOne({
+      const assignment = await roleAssignmentRepo.findOne({
         user_id: req.user.userId,
         role,
         scope_id: scopeId,

@@ -5,6 +5,10 @@ const findByStudentId = (studentId) => CodingProfile.findOne({ student_id: stude
 
 const createForStudent = (studentId) => CodingProfile.create({ student_id: studentId, platforms: {} });
 
+const findOne = (filter) => CodingProfile.findOne(filter);
+const create = (data) => CodingProfile.create(data);
+const deleteOne = (filter) => CodingProfile.deleteOne(filter);
+
 const findOrCreateForStudent = async (studentId) => {
   let doc = await findByStudentId(studentId);
   if (!doc) doc = await createForStudent(studentId);
@@ -76,12 +80,22 @@ const updatePlatformsBatch = (studentId, sets = {}, unsets = {}) => {
   );
 };
 
+const count = (filter) => CodingProfile.countDocuments(filter);
+const findMany = (filter) => CodingProfile.find(filter);
+
 module.exports = {
   findByStudentId,
-  findAllLegacy,
+  findMany,
+  find: findMany,
+  findOne,
+  create,
+  deleteOne,
   createForStudent,
   findOrCreateForStudent,
   setPlatformData,
   removePlatform,
-  updatePlatformsBatch
+  findAllLegacy,
+  updatePlatformsBatch,
+  count,
+  countDocuments: count
 };

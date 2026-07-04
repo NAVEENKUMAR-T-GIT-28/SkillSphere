@@ -201,3 +201,92 @@ exports.updatePlatformLinks = async (req, res, next) => {
   }
 };
 
+/**
+ * Legacy routes for single platform management
+ */
+exports.listCodingProfiles = async (req, res, next) => {
+  try {
+    const profiles = await codingProfileRepo.find({ student_id: req.params.studentId }).sort({ platform: 1 });
+    success(res, profiles, { total: profiles.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.addCodingProfile = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return error(res, errors.array().map(e => e.msg).join(', '), 400, 'VALIDATION_ERROR');
+    }
+
+    const { platform } = req.body;
+    const existing = await codingProfileRepo.find({ student_id: req.params.studentId, platform });
+    if (existing && existing.length > 0) {
+      return error(res, `You already have a ${platform} profile added`, 409, 'DUPLICATE_PLATFORM');
+    }
+
+    const { recalculateScore } = require('../services/readinessScore');
+    const profile = await codingProfileRepo.create({
+      student_id: req.params.studentId,
+      ...req.body,
+      last_updated: new Date()
+    });
+
+    await recalculateScore(req.params.studentId);
+    success(res, profile, {}, 201);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.updateCodingProfile = async (req, res, next) => {
+  try {
+    const profile = await codingProfileRepo.findOne({
+      _id: req.params.profileId,
+      student_id: req.params.studentId
+    });
+
+    if (!profile) {
+      return error(res, 'Coding profile not found', 404, 'NOT_FOUND');
+    }
+
+    const allowedFields = ['username', 'profile_url', 'problems_solved', 'contest_rating', 'badges'];
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        profile[field] = req.body[field];
+      }
+    }
+
+    profile.last_updated = new Date();
+    await profile.save();
+
+    const { recalculateScore } = require('../services/readinessScore');
+    await recalculateScore(req.params.studentId);
+    success(res, profile);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteCodingProfile = async (req, res, next) => {
+  try {
+    const profile = await codingProfileRepo.findOne({
+      _id: req.params.profileId,
+      student_id: req.params.studentId
+    });
+
+    if (!profile) {
+      return error(res, 'Coding profile not found', 404, 'NOT_FOUND');
+    }
+
+    await codingProfileRepo.deleteOne({ _id: req.params.profileId });
+
+    const { recalculateScore } = require('../services/readinessScore');
+    await recalculateScore(req.params.studentId);
+    success(res, { message: 'Coding profile deleted successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+

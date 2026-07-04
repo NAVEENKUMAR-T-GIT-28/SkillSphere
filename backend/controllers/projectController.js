@@ -3,6 +3,7 @@ const { validationResult } = require('express-validator');
 const projectRepo = require('../repositories/projectRepo');
 const verificationLogRepo = require('../repositories/verificationLogRepo');
 const { recalculateScore } = require('../services/readinessScore');
+const { syncStudentSearch } = require('../services/studentSearchSync');
 const { success, error } = require('../utils/response');
 
 exports.getProjects = async (req, res, next) => {
@@ -40,6 +41,11 @@ exports.addProject = async (req, res, next) => {
       item_type: 'project', item_id: project._id, student_id: req.params.studentId, actor_id: req.user.userId,
       action: 'submitted', comment: `Project "${req.body.title}" submitted for review`
     });
+
+    // Fire-and-forget: sync StudentSearch for all team members
+    for (const sid of project.student_ids || []) {
+      syncStudentSearch(sid).catch(err => console.error('StudentSearch sync failed:', err));
+    }
 
     success(res, project, {}, 201);
   } catch (err) {
@@ -92,7 +98,12 @@ exports.deleteProject = async (req, res, next) => {
     if (project.status === 'reviewed') {
       return error(res, 'Cannot delete a reviewed project', 400, 'CANNOT_DELETE_REVIEWED');
     }
+    const studentIds = project.student_ids || [];
     await projectRepo.deleteById(req.params.projectId);
+    // Fire-and-forget: sync StudentSearch for all team members
+    for (const sid of studentIds) {
+      syncStudentSearch(sid).catch(err => console.error('StudentSearch sync failed:', err));
+    }
     success(res, { message: 'Project deleted successfully' });
   } catch (err) {
     next(err);

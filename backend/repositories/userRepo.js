@@ -8,4 +8,8 @@ const create = (data) => User.create(data);
 const updateById = (id, data) => User.findByIdAndUpdate(id, data, { new: true }).select('-password');
 const updatePassword = (id, hashedPassword) => User.findByIdAndUpdate(id, { password: hashedPassword }, { new: true });
 
-module.exports = { findById, findByEmail, findByEmailWithPassword, create, updateById, updatePassword };
+const findMany = (filter) => User.find(filter);
+
+module.exports = { 
+  findById, findByEmail, findByEmailWithPassword, findMany, find: findMany, create, updateById, updatePassword 
+};

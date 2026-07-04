@@ -5,15 +5,18 @@
  */
 
 const express = require('express');
-const { body } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
 const { requireOwnerOrRole } = require('../middleware/ownerGuard');
-const { driveLink } = require('../utils/validators');
-const { sanitizeField } = require('../utils/sanitize');
 const resumeController = require('../controllers/resumeController');
 const { trackRouter } = require('../utils/routeTracker');
 
 const router = trackRouter(express.Router(), '/api/students');
+
+/**
+ * GET /api/students/:studentId/resumes
+ * List all resume versions for a student.
+ */
+const { addResumeValidator } = require('../validators/resume.validator');
 
 /**
  * GET /api/students/:studentId/resumes
@@ -35,11 +38,7 @@ router.post(
   '/:studentId/resumes',
   authenticate,
   requireOwnerOrRole('hod'),
-  [
-    driveLink('drive_link'),
-    body('label').optional().trim().customSanitizer(sanitizeField),
-    body('resume_version_name').optional().trim().customSanitizer(sanitizeField)
-  ],
+  addResumeValidator,
   resumeController.addResume
 );
 

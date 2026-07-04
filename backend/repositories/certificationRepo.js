@@ -1,19 +1,21 @@
 // repositories/certificationRepo.js
 const Certification = require('../models/Certification');
 
-const findByStudentId = (studentId) => Certification.find({ student_id: studentId });
+const findMany = (filter = {}, skip = 0, limit = 10) => Certification.find(filter).skip(skip).limit(limit);
+const findOne = (filter) => Certification.findOne(filter);
 const findById = (id) => Certification.findById(id);
-const findByStudentAndId = (studentId, id) => Certification.findOne({ _id: id, student_id: studentId });
-const findVerifiedByStudent = (studentId) => Certification.find({ student_id: studentId, status: 'verified' });
 const create = (data) => Certification.create(data);
 const updateById = (id, data) => Certification.findByIdAndUpdate(id, data, { new: true, runValidators: true });
-const updateStatus = (id, status, reviewerId) => Certification.findByIdAndUpdate(id, { status, verified_by: reviewerId, verified_at: new Date() }, { new: true });
 const deleteById = (id) => Certification.findByIdAndDelete(id);
-const findPending = (skip = 0, limit = 10) => Certification.find({ status: 'pending' }).skip(skip).limit(limit);
-const countDocuments = (filter = {}) => Certification.countDocuments(filter);
+const count = (filter = {}) => Certification.countDocuments(filter);
+
+const findByStudentId = (studentId) => findMany({ student_id: studentId }, 0, 100);
+const findByStudentAndId = (studentId, id) => findOne({ _id: id, student_id: studentId });
+const findVerifiedByStudent = (studentId) => findMany({ student_id: studentId, status: 'verified' }, 0, 100);
+const updateStatus = (id, status, reviewerId) => updateById(id, { status, verified_by: reviewerId, verified_at: new Date() });
+const findPending = (skip = 0, limit = 10) => findMany({ status: 'pending' }, skip, limit);
 
 module.exports = {
-  findByStudentId, findById, findByStudentAndId, findVerifiedByStudent,
-  create, updateById, updateStatus, deleteById,
-  findPending, countDocuments
+  findMany, findOne, findById, create, updateById, deleteById, count, countDocuments: count,
+  findByStudentId, findByStudentAndId, findVerifiedByStudent, updateStatus, findPending
 };

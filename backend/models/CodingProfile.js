@@ -39,6 +39,6 @@ const codingProfileSchema = new mongoose.Schema(
   }
 );
 
-codingProfileSchema.index({ student_id: 1 }, { unique: true });
+// Index on student_id is already created via `unique: true` in the field definition above.
 
 module.exports = mongoose.model('CodingProfile', codingProfileSchema);

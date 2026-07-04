@@ -7,10 +7,8 @@
  */
 
 const express = require('express');
-const { body } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
 const { requireOwnerOrRole } = require('../middleware/ownerGuard');
-const { sanitizeField } = require('../utils/sanitize');
 const achievementController = require('../controllers/achievementController');
 
 const { trackRouter } = require('../utils/routeTracker');
@@ -18,17 +16,13 @@ const router = trackRouter(express.Router(), '/api/students');
 
 router.get('/:studentId/achievements', authenticate, requireOwnerOrRole('faculty', 'hod'), achievementController.getAchievements);
 
+const { addAchievementValidator } = require('../validators/achievement.validator');
+
 router.post(
   '/:studentId/achievements',
   authenticate,
   requireOwnerOrRole('hod'),
-  [
-    body('title').notEmpty().trim().withMessage('Title is required').customSanitizer(sanitizeField),
-    body('category').isIn(['hackathon', 'paper', 'patent', 'award', 'sports', 'ncc', 'nss', 'volunteer', 'competition', 'club', 'other']).withMessage('Invalid achievement category'),
-    body('custom_category').optional().trim().customSanitizer(sanitizeField),
-    body('description').optional().trim().isLength({ max: 500 }).withMessage('Description max 500 chars').customSanitizer(sanitizeField),
-    body('certificate_url').optional().trim()
-  ],
+  addAchievementValidator,
   achievementController.addAchievement
 );
 

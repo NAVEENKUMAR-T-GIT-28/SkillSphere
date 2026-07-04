@@ -6,14 +6,14 @@
  */
 
 const express = require('express');
-const { body } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleGuard');
-const { sanitizeField } = require('../utils/sanitize');
 const facultyController = require('../controllers/facultyController');
 
 const { trackRouter } = require('../utils/routeTracker');
 const router = trackRouter(express.Router(), '/api/verification');
+
+const { approveItemValidator, rejectItemValidator } = require('../validators/faculty.validator');
 
 router.get('/queue', authenticate, requireRole('faculty', 'hod'), facultyController.getVerificationQueue);
 
@@ -21,9 +21,7 @@ router.post(
   '/:type/:itemId/approve',
   authenticate,
   requireRole('faculty', 'hod'),
-  [
-    body('comment').optional().trim().customSanitizer(sanitizeField)
-  ],
+  approveItemValidator,
   facultyController.approveItem
 );
 
@@ -31,10 +29,7 @@ router.post(
   '/:type/:itemId/reject',
   authenticate,
   requireRole('faculty', 'hod'),
-  [
-    body('reason').notEmpty().trim().withMessage('Rejection reason is required').customSanitizer(sanitizeField),
-    body('comment').optional().trim().customSanitizer(sanitizeField)
-  ],
+  rejectItemValidator,
   facultyController.rejectItem
 );
 

@@ -9,10 +9,8 @@
  */
 
 const express = require('express');
-const { body } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleGuard');
-const { sanitizeField } = require('../utils/sanitize');
 const placementController = require('../controllers/placementController');
 
 const { trackRouter } = require('../utils/routeTracker');
@@ -20,19 +18,13 @@ const router = trackRouter(express.Router(), '/api');
 
 router.get('/placement-drives', authenticate, placementController.getAllDrives);
 
+const { createDriveValidator, updateApplicationStatusValidator } = require('../validators/placement.validator');
+
 router.post(
   '/placement-drives',
   authenticate,
   requireRole('hod'),
-  [
-    body('company_name').notEmpty().trim().withMessage('Company name is required').customSanitizer(sanitizeField),
-    body('role_title').notEmpty().trim().withMessage('Role title is required').customSanitizer(sanitizeField),
-    body('drive_date').isISO8601().withMessage('Valid drive date is required'),
-    body('application_deadline').isISO8601().withMessage('Valid application deadline is required'),
-    body('drive_type').isIn(['oncampus', 'offcampus', 'internship']).withMessage('Drive type must be oncampus, offcampus, or internship'),
-    body('eligibility').optional().isObject(),
-    body('eligibility.class_ids').optional().isArray()
-  ],
+  createDriveValidator,
   placementController.createDrive
 );
 
@@ -48,10 +40,7 @@ router.patch(
   '/applications/:id/status',
   authenticate,
   requireRole('faculty', 'hod'),
-  [
-    body('status').isIn(['shortlisted', 'round1', 'round2', 'selected', 'rejected']).withMessage('Invalid status'),
-    body('notes').optional().trim().customSanitizer(sanitizeField)
-  ],
+  updateApplicationStatusValidator,
   placementController.updateApplicationStatus
 );
 

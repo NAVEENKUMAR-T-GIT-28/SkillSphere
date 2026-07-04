@@ -1,24 +1,7 @@
 // controllers/authController.js
 const { validationResult } = require('express-validator');
-const jwt = require('jsonwebtoken');
-const userRepo = require('../repositories/userRepo');
-const studentRepo = require('../repositories/studentRepo');
-const facultyRepo = require('../repositories/facultyRepo');
-const { getKeys } = require('../utils/jwtKeys');
+const { register, login } = require('../services/auth');
 const { success, error } = require('../utils/response');
-const { JWT_EXPIRES_IN } = require('../config/env');
-
-const generateToken = (user) => {
-  const { privateKey } = getKeys();
-  return jwt.sign(
-    { userId: user._id, baseRole: user.base_role },
-    privateKey,
-    { 
-      algorithm: 'RS256',
-      expiresIn: JWT_EXPIRES_IN 
-    }
-  );
-};
 
 exports.register = async (req, res, next) => {
   try {
@@ -27,67 +10,12 @@ exports.register = async (req, res, next) => {
       return error(res, errors.array().map(e => e.msg).join(', '), 400, 'VALIDATION_ERROR');
     }
 
-    const { email, password, base_role, full_name, phone, department } = req.body;
-
-    const existingUser = await userRepo.findByEmail(email);
-    if (existingUser) {
-      return error(res, 'Email already registered', 409, 'EMAIL_EXISTS');
-    }
-
-    const user = await userRepo.create({ email, password, base_role });
-    let profile;
-
-    if (base_role === 'student') {
-      const { roll_number, batch_year, graduation_year, section, semester, cgpa, class_id } = req.body;
-      const Class = require('../models/Class');
-
-      let cls;
-      if (class_id) {
-        cls = await Class.findById(class_id);
-        if (!cls) {
-          return error(res, 'Class not found', 404, 'CLASS_NOT_FOUND');
-        }
-      } else {
-        // Find or create the Class for this student's cohort
-        cls = await Class.findOne({ department, section: section || 'A', batch_year });
-        if (!cls) {
-          cls = await Class.create({
-            department,
-            section: section || 'A',
-            batch_year,
-            graduation_year: graduation_year || (batch_year + 4),
-            academic_year: Math.ceil((semester || 1) / 2),
-            semester: semester || 1
-          });
-        }
-      }
-
-      profile = await studentRepo.create({
-        user_id: user._id,
-        full_name,
-        phone,
-        roll_number,
-        class_id: cls._id,
-        department: cls.department,
-        section: cls.section,
-        batch_year: cls.batch_year,
-        graduation_year: cls.graduation_year,
-        semester: semester || cls.semester,
-        cgpa
-      });
-    } else {
-      const { employee_id, designation } = req.body;
-      profile = await facultyRepo.create({
-        user_id: user._id, full_name, department, designation, employee_id, phone
-      });
-    }
-
-    const token = generateToken(user);
-    success(res, {
-      token,
-      user: { id: user._id, email: user.email, baseRole: user.base_role, name: full_name, profileId: profile._id }
-    }, {}, 201);
+    const result = await register(req.body);
+    success(res, result, {}, 201);
   } catch (err) {
+    if (err.statusCode) {
+      return error(res, err.message, err.statusCode, err.code);
+    }
     next(err);
   }
 };
@@ -99,39 +27,12 @@ exports.login = async (req, res, next) => {
       return error(res, errors.array().map(e => e.msg).join(', '), 400, 'VALIDATION_ERROR');
     }
 
-    const { email, password } = req.body;
-    const user = await userRepo.findByEmailWithPassword(email);
-    if (!user) {
-      return error(res, 'Invalid email or password', 401, 'INVALID_CREDENTIALS');
-    }
-
-    if (!user.is_active) {
-      return error(res, 'Account has been deactivated. Contact your HOD.', 403, 'ACCOUNT_DEACTIVATED');
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return error(res, 'Invalid email or password', 401, 'INVALID_CREDENTIALS');
-    }
-
-    let name = '';
-    let profileId = null;
-    if (user.base_role === 'student') {
-      const student = await studentRepo.findByUserId(user._id);
-      name = student?.full_name || '';
-      profileId = student?._id || null;
-    } else {
-      const faculty = await facultyRepo.findByUserId(user._id);
-      name = faculty?.full_name || '';
-      profileId = faculty?._id || null;
-    }
-
-    const token = generateToken(user);
-    success(res, {
-      token,
-      user: { id: user._id, email: user.email, baseRole: user.base_role, name, profileId }
-    });
+    const result = await login(req.body);
+    success(res, result);
   } catch (err) {
+    if (err.statusCode) {
+      return error(res, err.message, err.statusCode, err.code);
+    }
     next(err);
   }
 };

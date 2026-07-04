@@ -1,38 +1,21 @@
 // repositories/projectRepo.js
 const Project = require('../models/Project');
-const { syncStudentSearch } = require('../services/studentSearchSync');
 
-const findByStudentIds = (studentId) => Project.find({ student_ids: studentId });
 const findById = (id) => Project.findById(id);
-const findByStudentAndId = (studentId, id) => Project.findOne({ _id: id, student_ids: studentId });
-const findReviewedByStudent = (studentId) => Project.find({ student_ids: studentId, status: 'reviewed' });
-const create = async (data) => {
-  const result = await Project.create(data);
-  // Fire-and-forget: sync StudentSearch for all team members
-  const studentIds = result.student_ids || [];
-  for (const sid of studentIds) {
-    syncStudentSearch(sid).catch(err => console.error('StudentSearch sync failed:', err));
-  }
-  return result;
-};
+const findOne = (filter) => Project.findOne(filter);
+const findMany = (filter = {}, skip = 0, limit = 10) => Project.find(filter).skip(skip).limit(limit);
+const count = (filter = {}) => Project.countDocuments(filter);
+
+const create = (data) => Project.create(data);
 const updateById = (id, data) => Project.findByIdAndUpdate(id, data, { new: true, runValidators: true });
-const deleteById = async (id) => {
-  const project = await Project.findById(id);
-  const result = await Project.findByIdAndDelete(id);
-  // Fire-and-forget: sync StudentSearch for all team members after delete
-  if (project) {
-    const studentIds = project.student_ids || [];
-    for (const sid of studentIds) {
-      syncStudentSearch(sid).catch(err => console.error('StudentSearch sync failed:', err));
-    }
-  }
-  return result;
-};
-const findPending = (skip = 0, limit = 10) => Project.find({ status: 'pending' }).skip(skip).limit(limit);
-const countDocuments = (filter = {}) => Project.countDocuments(filter);
+const deleteById = (id) => Project.findByIdAndDelete(id);
+
+const findByStudentIds = (studentId) => findMany({ student_ids: studentId }, 0, 100);
+const findByStudentAndId = (studentId, id) => findOne({ _id: id, student_ids: studentId });
+const findReviewedByStudent = (studentId) => findMany({ student_ids: studentId, status: 'reviewed' }, 0, 100);
+const findPending = (skip = 0, limit = 10) => findMany({ status: 'pending' }, skip, limit);
 
 module.exports = {
-  findByStudentIds, findById, findByStudentAndId, findReviewedByStudent,
-  create, updateById, deleteById,
-  findPending, countDocuments
+  findMany, findOne, findById, create, updateById, deleteById, count, countDocuments: count,
+  findByStudentIds, findByStudentAndId, findReviewedByStudent, findPending
 };

@@ -5,7 +5,7 @@
  * Attaches the student document to req.student for downstream use.
  */
 
-const Student = require('../models/Student');
+const studentRepo = require('../repositories/studentRepo');
 
 const requireOwnerOrRole = (...allowedRoles) => {
   return async (req, res, next) => {
@@ -16,7 +16,7 @@ const requireOwnerOrRole = (...allowedRoles) => {
       }
 
       // Student can only access their own data
-      const student = await Student.findOne({ user_id: req.user.userId });
+      const student = await studentRepo.findOne({ user_id: req.user.userId });
 
       if (!student) {
         if (req.user.baseRole !== 'student') {

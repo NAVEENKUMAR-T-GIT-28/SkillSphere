@@ -7,10 +7,10 @@
  * (across all sections).
  */
 
-const Student       = require('../models/Student');
-const Class         = require('../models/Class');
-const CodingProfile = require('../models/CodingProfile');
-const SkillRackScore = require('../models/SkillRackScore');
+const studentRepo = require('../repositories/studentRepo');
+const classRepo = require('../repositories/classRepo');
+const codingProfileRepo = require('../repositories/codingProfileRepo');
+const skillRackScoreRepo = require('../repositories/skillRackScoreRepo');
 const { recalculateScore } = require('./readinessScore');
 
 // ── Constants (match environment config if provided) ───────────────────────
@@ -55,23 +55,19 @@ const computeCertBonus = (certificates) =>
 
 const recomputePeerGroup = async (classId) => {
   // 1. Resolve the peer group boundaries from the class document
-  const cls = await Class.findById(classId);
+  const cls = await classRepo.findById(classId);
   if (!cls) throw new Error(`Class ${classId} not found`);
 
-  const { department, batch_year, semester } = cls;
+  // 2. Find all classes in this cohort (same dept + batch_year)
+  const peerClasses = await classRepo.find({ department: cls.department, batch_year: cls.batch_year });
+  const classIds = peerClasses.map(c => c._id);
 
-  // 2. Find all active classes in this peer group
-  const peerClasses = await Class.find({ department, batch_year, is_active: true });
-  const peerClassIds = peerClasses.map(c => c._id);
-
-  // 3. Find all students in those classes
-  const students = await Student.find({ class_id: { $in: peerClassIds } }).select('_id class_id');
-  if (students.length === 0) return;
-
+  // 3. Find all students belonging to any class in this peer group
+  const students = await studentRepo.findAll({ class_id: { $in: classIds } });
   const studentIds = students.map(s => s._id);
 
-  // 4. Load their SkillRack coding profiles
-  const profiles = await CodingProfile.find({
+  // 4. Fetch SkillRack profiles for all these students
+  const profiles = await codingProfileRepo.find({
     student_id: { $in: studentIds },
     platform: 'skillrack'
   });
@@ -92,7 +88,7 @@ const recomputePeerGroup = async (classId) => {
   }
 
   // Load previous scores to detect changes
-  const previousScores = await SkillRackScore.find({
+  const previousScores = await skillRackScoreRepo.find({
     student_id: { $in: studentIds }
   }).select('student_id final_score');
 
@@ -212,7 +208,7 @@ const recomputePeerGroup = async (classId) => {
     };
   });
 
-  await SkillRackScore.bulkWrite(bulkOps, { ordered: false });
+  await skillRackScoreRepo.bulkWrite(bulkOps, { ordered: false });
 
   // 10. Recalculate readiness score for changed students
   const changedStudentIds = finalScores

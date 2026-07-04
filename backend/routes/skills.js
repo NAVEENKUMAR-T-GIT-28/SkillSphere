@@ -7,10 +7,8 @@
  */
 
 const express = require('express');
-const { body } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
 const { requireOwnerOrRole } = require('../middleware/ownerGuard');
-const { sanitizeField } = require('../utils/sanitize');
 const skillController = require('../controllers/skillController');
 
 const { trackRouter } = require('../utils/routeTracker');
@@ -20,16 +18,13 @@ router.get('/skill-taxonomy', skillController.getAllTaxonomy);
 
 router.get('/students/:studentId/skills', authenticate, requireOwnerOrRole('faculty', 'hod'), skillController.getSkills);
 
+const { addSkillValidator } = require('../validators/skill.validator');
+
 router.post(
   '/students/:studentId/skills',
   authenticate,
   requireOwnerOrRole('hod'),
-  [
-    body('taxonomy_id').isMongoId().withMessage('Valid taxonomy ID is required'),
-    body('proficiency').isIn(['beginner', 'intermediate', 'advanced', 'expert']).withMessage('Proficiency must be beginner, intermediate, advanced, or expert'),
-    body('evidence_note').optional().trim().customSanitizer(sanitizeField),
-    body('years_experience').optional().isFloat({ min: 0, max: 50 })
-  ],
+  addSkillValidator,
   skillController.addSkill
 );
 
