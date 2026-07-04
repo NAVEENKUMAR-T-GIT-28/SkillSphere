@@ -11,7 +11,7 @@ const verificationLogSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: {
-        values: ['skill', 'certification', 'project'],
+        values: ['skill', 'certification', 'project', 'internship', 'achievement'],
         message: '{VALUE} is not a valid item type'
       }
     },

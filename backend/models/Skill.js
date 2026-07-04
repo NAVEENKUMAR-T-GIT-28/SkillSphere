@@ -38,6 +38,12 @@ const skillSchema = new mongoose.Schema(
       // Required if proficiency is advanced or expert — validated in route
     },
 
+    years_experience: { type: Number, min: 0, max: 50 },
+    projects_using_skill: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Project'
+    }],
+
     status: {
       type: String,
       enum: ['pending', 'verified', 'rejected'],

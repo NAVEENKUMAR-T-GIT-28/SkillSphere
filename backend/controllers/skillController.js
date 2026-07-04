@@ -38,7 +38,7 @@ exports.addSkill = async (req, res, next) => {
       return error(res, errors.array().map(e => e.msg).join(', '), 400, 'VALIDATION_ERROR');
     }
 
-    const { taxonomy_id, proficiency, evidence_note } = req.body;
+    const { taxonomy_id, proficiency, evidence_note, years_experience } = req.body;
     const taxonomy = await skillRepo.findTaxonomyById(taxonomy_id);
     if (!taxonomy || !taxonomy.is_active) {
       return error(res, 'Skill not found in taxonomy or is inactive', 404, 'SKILL_NOT_FOUND');
@@ -54,7 +54,7 @@ exports.addSkill = async (req, res, next) => {
     }
 
     const skill = await skillRepo.create({
-      student_id: req.params.studentId, taxonomy_id, skill_name: taxonomy.name, proficiency, evidence_note, status: 'pending'
+      student_id: req.params.studentId, taxonomy_id, skill_name: taxonomy.name, proficiency, evidence_note, years_experience, status: 'pending'
     });
 
     await verificationLogRepo.create({

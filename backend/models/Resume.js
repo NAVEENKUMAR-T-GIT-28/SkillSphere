@@ -25,6 +25,11 @@ const resumeSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    resume_version_name: { type: String, trim: true },
+    ats_score: { type: Number, min: 0, max: 100 },
+    keywords: [{ type: String, trim: true }],
+    missing_keywords: [{ type: String, trim: true }],
+    parsed_skills: [{ type: String, trim: true }],
     is_latest: {
       type: Boolean,
       default: true

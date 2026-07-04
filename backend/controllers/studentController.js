@@ -71,7 +71,12 @@ exports.updateProfile = async (req, res, next) => {
       return error(res, 'Student not found', 404, 'NOT_FOUND');
     }
 
-    const allowedFields = ['full_name', 'phone', 'profile_photo_url', 'career_objective', 'cgpa', 'links'];
+    const allowedFields = [
+      'full_name', 'phone', 'profile_photo_url', 'career_objective', 'cgpa', 'links',
+      'date_of_birth', 'city', 'state', 'languages_known',
+      'current_backlogs', 'backlog_history', 'tenth_percentage', 'twelfth_percentage',
+      'preferred_job_role', 'preferred_work_location'
+    ];
     const updateData = {};
     // Coding platform keys that must NOT be stored in Student.links
     const CODING_LINK_KEYS = ['leetcode', 'hackerrank', 'codechef', 'skillrack', 'codeforces'];

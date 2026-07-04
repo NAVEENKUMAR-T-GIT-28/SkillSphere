@@ -10,7 +10,8 @@
     "test": "cross-env NODE_ENV=test jest --runInBand",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
     "test:coverage": "cross-env NODE_ENV=test jest --coverage --runInBand",
-    "migrate:class": "node scripts/migrate_class.js"
+    "migrate:class": "node scripts/migrate_class.js",
+    "rebuild:search": "node scripts/rebuild_student_search.js"
   },
   "jest": {
     "testEnvironment": "node",

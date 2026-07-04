@@ -25,10 +25,13 @@ const studentRoutes = require('./routes/students');
 const skillRoutes = require('./routes/skills');
 const certificationRoutes = require('./routes/certifications');
 const projectRoutes = require('./routes/projects');
+const internshipRoutes = require('./routes/internships');
+const achievementRoutes = require('./routes/achievements');
 const resumeRoutes = require('./routes/resumes');
 const codingProfileRoutes = require('./routes/codingProfile.routes');
 const facultyRoutes = require('./routes/faculty');
 const searchRoutes = require('./routes/search');
+const searchV2Routes = require('./routes/searchV2');
 const placementRoutes = require('./routes/placement');
 const hodRoutes = require('./routes/hod');
 const notificationRoutes = require('./routes/notifications');
@@ -83,10 +86,13 @@ app.use('/api/students', studentRoutes);
 app.use('/api', skillRoutes);                        // /api/skill-taxonomy + /api/students/:id/skills
 app.use('/api/students', certificationRoutes);       // /api/students/:id/certifications
 app.use('/api', projectRoutes);                      // /api/students/:id/projects + /api/projects/:id/rate
+app.use('/api/students', internshipRoutes);           // /api/students/:id/internships
+app.use('/api/students', achievementRoutes);          // /api/students/:id/achievements
 app.use('/api/students', resumeRoutes);              // /api/students/:id/resumes
 app.use('/api/students', codingProfileRoutes);       // /api/students/:id/coding-profile
 app.use('/api/verification', facultyRoutes);         // /api/verification/queue + approve/reject
 app.use('/api/search', searchRoutes);                // /api/search/students
+app.use('/api/search/v2', searchV2Routes);           // /api/search/v2/students (additive, validation only)
 app.use('/api', placementRoutes);                     // /api/placement-drives/* + /api/applications/*
 app.use('/api/hod', hodRoutes);                      // /api/hod/*
 app.use('/api/notifications', notificationRoutes);   // /api/notifications

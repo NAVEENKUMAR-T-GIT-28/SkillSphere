@@ -3,6 +3,8 @@ const { validationResult } = require('express-validator');
 const skillRepo = require('../repositories/skillRepo');
 const certificationRepo = require('../repositories/certificationRepo');
 const projectRepo = require('../repositories/projectRepo');
+const internshipRepo = require('../repositories/internshipRepo');
+const achievementRepo = require('../repositories/achievementRepo');
 const { approveItem, rejectItem } = require('../services/verification');
 const { success, error } = require('../utils/response');
 
@@ -28,6 +30,18 @@ exports.getVerificationQueue = async (req, res, next) => {
       const pendingProjects = await projectRepo.findPending(type === 'project' ? skip : 0, type === 'project' ? parseInt(limit) : 10).populate('student_ids', 'full_name roll_number department').populate('created_by', 'full_name');
       const totalProjects = await projectRepo.countDocuments({ status: 'pending' });
       result.projects = { items: pendingProjects, total: totalProjects };
+    }
+
+    if (!type || type === 'internship') {
+      const pendingInternships = await internshipRepo.findPending(type === 'internship' ? skip : 0, type === 'internship' ? parseInt(limit) : 10).populate('student_id', 'full_name roll_number department');
+      const totalInternships = await internshipRepo.countDocuments({ status: 'pending' });
+      result.internships = { items: pendingInternships, total: totalInternships };
+    }
+
+    if (!type || type === 'achievement') {
+      const pendingAchievements = await achievementRepo.findPending(type === 'achievement' ? skip : 0, type === 'achievement' ? parseInt(limit) : 10).populate('student_id', 'full_name roll_number department');
+      const totalAchievements = await achievementRepo.countDocuments({ status: 'pending' });
+      result.achievements = { items: pendingAchievements, total: totalAchievements };
     }
 
     success(res, result);

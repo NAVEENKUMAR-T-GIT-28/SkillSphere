@@ -2,16 +2,21 @@
 const skillRepo = require('../repositories/skillRepo');
 const certificationRepo = require('../repositories/certificationRepo');
 const projectRepo = require('../repositories/projectRepo');
+const internshipRepo = require('../repositories/internshipRepo');
+const achievementRepo = require('../repositories/achievementRepo');
 const studentRepo = require('../repositories/studentRepo');
 const verificationLogRepo = require('../repositories/verificationLogRepo');
 const { recalculateScore } = require('./readinessScore');
 const { notifyVerificationApproved, notifyVerificationRejected, notifyScoreUpdated } = require('./notification');
+const { syncStudentSearch } = require('./studentSearchSync');
 
 const getRepo = (type) => {
   switch (type) {
     case 'skill': return skillRepo;
     case 'certification': return certificationRepo;
     case 'project': return projectRepo;
+    case 'internship': return internshipRepo;
+    case 'achievement': return achievementRepo;
     default: return null;
   }
 };
@@ -22,7 +27,7 @@ const getStudentId = (type, item) => {
 };
 
 const getItemName = (type, item) => {
-  return item.title || item.skill_name || 'Unknown';
+  return item.title || item.skill_name || item.company || 'Unknown';
 };
 
 const approveItem = async (type, itemId, userId, comment) => {
@@ -79,6 +84,15 @@ const approveItem = async (type, itemId, userId, comment) => {
     }
   }
 
+  // Fire-and-forget: sync StudentSearch after verification state change
+  if (type === 'project' && item.student_ids) {
+    for (const sid of item.student_ids) {
+      syncStudentSearch(sid).catch(err => console.error('StudentSearch sync failed:', err));
+    }
+  } else {
+    syncStudentSearch(studentId).catch(err => console.error('StudentSearch sync failed:', err));
+  }
+
   return { item, scoreData };
 };
 
@@ -120,6 +134,15 @@ const rejectItem = async (type, itemId, userId, reason, comment) => {
   const studentDoc = await studentRepo.findById(studentId);
   if (studentDoc && studentDoc.user_id) {
     await notifyVerificationRejected(studentDoc.user_id._id, type.charAt(0).toUpperCase() + type.slice(1), itemName, reason);
+  }
+
+  // Fire-and-forget: sync StudentSearch after verification state change
+  if (type === 'project' && item.student_ids) {
+    for (const sid of item.student_ids) {
+      syncStudentSearch(sid).catch(err => console.error('StudentSearch sync failed:', err));
+    }
+  } else {
+    syncStudentSearch(studentId).catch(err => console.error('StudentSearch sync failed:', err));
   }
 
   return { item, scoreData };

@@ -40,6 +40,22 @@ const studentSchema = new mongoose.Schema(
       maxlength: [500, 'Career objective cannot exceed 500 characters']
     },
 
+    // Personal (Phase 1 enhancement)
+    date_of_birth: { type: Date },
+    city: { type: String, trim: true },
+    state: { type: String, trim: true },
+    languages_known: [{ type: String, trim: true }],
+
+    // Academic history (Phase 1 enhancement)
+    current_backlogs: { type: Number, default: 0, min: 0 },
+    backlog_history: { type: Number, default: 0, min: 0 },
+    tenth_percentage: { type: Number, min: 0, max: 100 },
+    twelfth_percentage: { type: Number, min: 0, max: 100 },
+
+    // Career preferences (Phase 1 enhancement)
+    preferred_job_role: { type: String, trim: true },
+    preferred_work_location: { type: String, trim: true },
+
     // Academic
     roll_number: {
       type: String,
