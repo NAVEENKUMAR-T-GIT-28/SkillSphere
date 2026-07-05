@@ -51,7 +51,7 @@ exports.updateAchievement = async (req, res, next) => {
       return error(res, 'Cannot update a verified achievement. Submit a new one instead.', 400, 'CANNOT_UPDATE_LOCKED');
     }
 
-    const allowedFields = ['title', 'category', 'custom_category', 'description', 'certificate_url'];
+    const allowedFields = ['title', 'category', 'custom_category', 'issuer', 'date', 'image_url', 'description', 'certificate_url'];
     const updateData = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {

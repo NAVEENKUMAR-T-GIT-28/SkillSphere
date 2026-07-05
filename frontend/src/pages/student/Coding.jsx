@@ -12,6 +12,7 @@ import DeveloperInsights from '../../components/coding/DeveloperInsights';
 import CertificatesList from '../../components/coding/CertificatesList';
 import PlatformDetailsDrawer from '../../components/coding/PlatformDetailsDrawer';
 import CodingDNADrawer from '../../components/coding/CodingDNADrawer';
+import GitHubCard from './coding/components/GitHubCard';
 
 export default function StudentCoding() {
   const { user } = useAuth();
@@ -22,8 +23,12 @@ export default function StudentCoding() {
   const [dnaDrawerOpen, setDnaDrawerOpen] = useState(false);
 
   const loadProfile = async () => {
-    const { data } = await CodingAPI.getCodingProfile(user.profileId);
-    setPlatforms(data);
+    try {
+      const { data } = await CodingAPI.getCodingProfile(user.profileId);
+      setPlatforms(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
@@ -70,8 +75,8 @@ export default function StudentCoding() {
 
       <CodingOverview platforms={platforms} />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {platforms && Object.entries(platforms).map(([key, platform]) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        {platforms && Object.entries(platforms).filter(([key]) => key !== 'github').map(([key, platform]) => (
           <CodingPlatformCard
             key={key}
             platformKey={key}
@@ -82,6 +87,17 @@ export default function StudentCoding() {
             onViewDetails={setSelectedPlatformKey}
           />
         ))}
+        {platforms?.github && (
+          <GitHubCard 
+            platform={platforms.github}
+            onRefresh={() => {
+              if (!platforms.github.data) {
+                return handleLink('github', { githubUrl: platforms.github.profile_url });
+              }
+              return handleRefresh('github');
+            }}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

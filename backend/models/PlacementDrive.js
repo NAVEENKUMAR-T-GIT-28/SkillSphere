@@ -63,6 +63,7 @@ const placementDriveSchema = new mongoose.Schema(
       batch_years: [{ type: Number }],
       departments: [{ type: String, trim: true }],
       sections: [{ type: String, trim: true }],
+      class_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Class' }],
       required_skills: [{ type: String, trim: true }],
       min_readiness_score: { type: Number, default: 0 }
     },

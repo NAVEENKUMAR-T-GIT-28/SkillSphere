@@ -7,7 +7,7 @@ import Layout from './components/Layout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import StudentDashboard from './pages/student/Dashboard';
-import StudentProfile from './pages/student/Profile';
+import StudentProfile from './pages/student/profile/index';
 import StudentSkills from './pages/student/Skills';
 import StudentCertifications from './pages/student/Certifications';
 import StudentProjects from './pages/student/Projects';
@@ -28,7 +28,7 @@ import HODClasses from './pages/hod/Classes';
 import AdminDashboard from './pages/admin/Dashboard';
 import Notifications from './pages/shared/Notifications';
 
-import StudentProfileV2 from "./pages/student/profile/index";
+
 
 const HomeRedirect = ({ user }) => {
   if (!user) return <Navigate to="/login" />;
@@ -74,16 +74,6 @@ function AppContent() {
           <ProtectedRoute requiredRoles={['student']}>
             <Layout>
               <StudentProfile />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile-v2"
-        element={
-          <ProtectedRoute requiredRoles={["student"]}>
-            <Layout>
-              <StudentProfileV2 />
             </Layout>
           </ProtectedRoute>
         }

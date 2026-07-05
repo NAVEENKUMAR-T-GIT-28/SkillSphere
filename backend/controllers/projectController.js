@@ -65,11 +65,14 @@ exports.updateProject = async (req, res, next) => {
       return error(res, 'Project not found', 404, 'NOT_FOUND');
     }
 
-    if (project.status === 'reviewed') {
+    const updateKeys = Object.keys(req.body);
+    const isOnlyFeaturedUpdate = updateKeys.length === 1 && updateKeys[0] === 'is_featured';
+
+    if (project.status === 'reviewed' && !isOnlyFeaturedUpdate) {
       return error(res, 'Cannot edit a reviewed project. Submit a new version instead.', 400, 'CANNOT_EDIT_REVIEWED');
     }
 
-    const allowedFields = ['title', 'description', 'tech_stack', 'github_url', 'live_demo_url', 'complexity_tier', 'student_ids'];
+    const allowedFields = ['title', 'description', 'tech_stack', 'github_url', 'live_demo_url', 'complexity_tier', 'student_ids', 'thumbnail_url', 'is_featured', 'completion_status', 'start_date', 'end_date'];
     const updateData = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {

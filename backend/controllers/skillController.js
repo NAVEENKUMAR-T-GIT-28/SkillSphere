@@ -68,6 +68,10 @@ exports.addSkill = async (req, res, next) => {
   }
 };
 
+// TODO: Issue #123 - Implement Edit Skill functionality (PATCH /api/students/:studentId/skills/:skillId)
+// This feature was deferred during Phase 1 UI Modernization.
+// Requirements: Validate ownership, ensure status resets to 'pending' on major changes, update verificationLogRepo.
+
 exports.deleteSkill = async (req, res, next) => {
   try {
     const skill = await skillRepo.findByStudentAndId(req.params.studentId, req.params.skillId);

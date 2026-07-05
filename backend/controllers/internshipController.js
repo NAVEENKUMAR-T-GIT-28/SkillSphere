@@ -50,7 +50,7 @@ exports.updateInternship = async (req, res, next) => {
       return error(res, 'Cannot update a verified internship. Submit a new one instead.', 400, 'CANNOT_UPDATE_LOCKED');
     }
 
-    const allowedFields = ['company', 'role', 'start_date', 'end_date', 'duration_months', 'stipend', 'certificate_url', 'offer_letter_url'];
+    const allowedFields = ['company', 'role', 'internship_type', 'location', 'start_date', 'end_date', 'duration_months', 'stipend', 'certificate_url', 'offer_letter_url', 'description', 'company_logo_url'];
     const updateData = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {

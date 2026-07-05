@@ -31,6 +31,15 @@ const studentSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    alternate_phone: {
+      type: String,
+      trim: true
+    },
+    gender: {
+      type: String,
+      enum: ['Male', 'Female', 'Other', 'Prefer not to say'],
+      trim: true
+    },
     profile_photo_url: {
       type: String,
       trim: true
@@ -44,6 +53,8 @@ const studentSchema = new mongoose.Schema(
     date_of_birth: { type: Date },
     city: { type: String, trim: true },
     state: { type: String, trim: true },
+    country: { type: String, trim: true },
+    pincode: { type: String, trim: true },
     languages_known: [{ type: String, trim: true }],
 
     // Academic history (Phase 1 enhancement)
@@ -62,6 +73,29 @@ const studentSchema = new mongoose.Schema(
       required: [true, 'Roll number is required'],
       unique: true,
       trim: true
+    },
+    register_number: {
+      type: String,
+      trim: true
+    },
+    department: {
+      type: String,
+      trim: true
+    },
+    section: {
+      type: String,
+      trim: true
+    },
+    semester: {
+      type: Number,
+      min: 1,
+      max: 8
+    },
+    batch_year: {
+      type: Number
+    },
+    graduation_year: {
+      type: Number
     },
     cgpa: {
       type: Number,
@@ -112,49 +146,6 @@ studentSchema.index({ class_id: 1 });
 studentSchema.index({ cgpa: 1 });
 studentSchema.index({ readiness_score: -1 });
 
-/**
- * Calculate profile completeness percentage.
- * Checks which fields are filled and returns a 0-100 score.
- */
-studentSchema.methods.calculateCompleteness = function () {
-  const fields = [
-    { name: 'full_name', weight: 15 },
-    { name: 'phone', weight: 15 },
-    { name: 'profile_photo_url', weight: 15 },
-    { name: 'career_objective', weight: 15 },
-    { name: 'cgpa', weight: 15 }
-  ];
-
-  const linkFields = ['github', 'linkedin', 'portfolio'];
-  const linkWeight = 30; // 30% total for links (coding links are in CodingProfiles)
-
-  let score = 0;
-
-  // Check main fields
-  for (const field of fields) {
-    if (this[field.name] !== undefined && this[field.name] !== null && this[field.name] !== '') {
-      score += field.weight;
-    }
-  }
-
-  // Check links (any filled link contributes proportionally)
-  let filledLinks = 0;
-  if (this.links) {
-    for (const link of linkFields) {
-      if (this.links[link]) filledLinks++;
-    }
-  }
-  score += Math.round((filledLinks / linkFields.length) * linkWeight);
-
-  return Math.min(score, 100);
-};
-
-// Recalculate completeness before save
-studentSchema.pre('save', function (next) {
-  if (this.isModified()) {
-    this.profile_completeness = this.calculateCompleteness();
-  }
-  next();
-});
+// No longer calculating completeness on save since it's dynamic.
 
 module.exports = mongoose.model('Student', studentSchema);

@@ -21,14 +21,18 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await User.deleteMany({});
-  await Class.deleteMany({});
-  await Student.deleteMany({});
+  if (mongoose.connection.readyState === 1) {
+    await User.deleteMany({});
+    await Class.deleteMany({});
+    await Student.deleteMany({});
+  }
 });
 
 afterEach(async () => {
-  await Class.deleteMany({});
-  await Student.deleteMany({});
+  if (mongoose.connection.readyState === 1) {
+    await Class.deleteMany({});
+    await Student.deleteMany({});
+  }
 });
 
 describe('Class Routes (/api/classes)', () => {

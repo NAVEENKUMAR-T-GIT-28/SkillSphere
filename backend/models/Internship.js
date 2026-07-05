@@ -23,6 +23,10 @@ const internshipSchema = new mongoose.Schema(
       required: [true, 'Role/title is required'],
       trim: true
     },
+    internship_type: { type: String, trim: true },
+    location: { type: String, trim: true },
+    description: { type: String, trim: true },
+    company_logo_url: { type: String, trim: true },
     start_date: { type: Date, required: [true, 'Start date is required'] },
     end_date: { type: Date },
     duration_months: { type: Number, min: 0 },

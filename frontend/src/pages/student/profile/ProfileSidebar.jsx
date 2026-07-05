@@ -9,8 +9,8 @@ import {
 
 const MENU_ITEMS = [
   {
-    id: "personal",
-    title: "Personal",
+    id: "basic",
+    title: "Basic",
     subtitle: "Basic information",
     icon: User,
   },
@@ -65,7 +65,7 @@ export default function ProfileSidebar({
 
         {/* Menu */}
 
-        <nav className="p-1.5 space-y-0.5">
+        <nav className="p-1.5 space-y-0.5" role="tablist" aria-label="Profile sections">
 
           {MENU_ITEMS.map((item) => {
 
@@ -78,6 +78,8 @@ export default function ProfileSidebar({
               <button
                 key={item.id}
                 onClick={() => onChange(item.id)}
+                role="tab"
+                aria-selected={active}
                 className={`group mb-0.5 flex w-full items-center justify-between rounded-lg px-2.5 py-2 transition-all duration-200
 
                 ${

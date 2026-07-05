@@ -65,4 +65,12 @@ classSchema.index({ department: 1, academic_year: 1 });
 // Threshold lookups by semester
 classSchema.index({ semester: 1 });
 
+// Human-readable identifier, e.g. "Computer Science-A-2023"
+classSchema.virtual('label').get(function () {
+  return `${this.department}-${this.section}-${this.batch_year}`;
+});
+
+classSchema.set('toJSON', { virtuals: true });
+classSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model('Class', classSchema);

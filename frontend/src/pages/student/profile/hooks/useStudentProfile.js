@@ -1,19 +1,16 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { UsersAPI } from "../../../../services/api";
 import { useAuth } from "../../../../contexts/AuthContext";
-import calcProfileCompletion from "../helpers/calcProfileCompletion";
 
 export default function useStudentProfile() {
   const { user } = useAuth();
 
   const [fetching, setFetching] = useState(true);
   const [loading, setLoading] = useState(false);
-
   const [message, setMessage] = useState("");
 
-  const [studentInfo, setStudentInfo] = useState(null);
-
-  const [activeSection, setActiveSection] = useState("personal");
+  const [profileData, setProfileData] = useState(null);
+  const [activeSection, setActiveSection] = useState("basic");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -25,15 +22,13 @@ export default function useStudentProfile() {
     languagesKnown: "",
     preferredJobRole: "",
     preferredWorkLocation: "",
-
     cgpa: "",
     tenthPercentage: "",
     twelfthPercentage: "",
-    currentBacklogs: "",
-    backlogHistory: "",
+    currentBacklogs: "0",
+    backlogHistory: "0",
     batchYear: "",
     rollNumber: "",
-
     links: {
       github: "",
       linkedin: "",
@@ -41,61 +36,50 @@ export default function useStudentProfile() {
     },
   });
 
+  // Derived from DTO — components read these directly
+  const studentInfo = profileData?.student || null;
+  const profileCompletion = profileData?.profile_completion || null;
+  const statistics = profileData?.statistics || null;
+  const resume = profileData?.resume || null;
+  const socialLinks = profileData?.social_links || null;
+
   useEffect(() => {
     fetchProfile();
   }, [user]);
 
   const fetchProfile = async () => {
     try {
-      if (!user?.profileId) return;
+      if (!user) return;
+      const { data } = await UsersAPI.getProfile();
+      setProfileData(data);
 
-      const { data } = await UsersAPI.getProfile(user.profileId);
-
-      setStudentInfo(data);
+      // Map DTO → flat formData expected by form section components
+      const s = data?.student || {};
+      const sl = data?.social_links || {};
 
       setFormData({
-        fullName: data.full_name || "",
-        phone: data.phone || "",
-        careerObjective: data.career_objective || "",
-
-        dateOfBirth: data.date_of_birth
-          ? new Date(data.date_of_birth).toISOString().split("T")[0]
+        fullName: s.full_name || "",
+        phone: s.phone || "",
+        careerObjective: s.career_objective || "",
+        dateOfBirth: s.date_of_birth || "",
+        city: s.city || "",
+        state: s.state || "",
+        languagesKnown: Array.isArray(s.languages)
+          ? s.languages.join(", ")
           : "",
-
-        city: data.city || "",
-        state: data.state || "",
-
-        languagesKnown: data.languages_known
-          ? data.languages_known.join(", ")
-          : "",
-
-        preferredJobRole: data.preferred_job_role || "",
-
-        preferredWorkLocation:
-          data.preferred_work_location || "",
-
-        cgpa: data.cgpa || "",
-
-        tenthPercentage:
-          data.tenth_percentage || "",
-
-        twelfthPercentage:
-          data.twelfth_percentage || "",
-
-        currentBacklogs:
-          data.current_backlogs?.toString() || "0",
-
-        backlogHistory:
-          data.backlog_history?.toString() || "0",
-
-        batchYear: data.batch_year || "",
-
-        rollNumber: data.roll_number || "",
-
+        preferredJobRole: s.preferred_job_role || "",
+        preferredWorkLocation: s.preferred_locations?.[0] || "",
+        cgpa: s.cgpa ?? "",
+        tenthPercentage: s.tenth_percentage ?? "",
+        twelfthPercentage: s.twelfth_percentage ?? "",
+        currentBacklogs: String(s.current_backlogs ?? 0),
+        backlogHistory: String(s.backlog_history ?? 0),
+        batchYear: s.batch_year ?? "",
+        rollNumber: s.roll_number || "",
         links: {
-          github: data.links?.github || "",
-          linkedin: data.links?.linkedin || "",
-          portfolio: data.links?.portfolio || "",
+          github: sl.github || "",
+          linkedin: sl.linkedin || "",
+          portfolio: sl.portfolio || "",
         },
       });
     } catch (err) {
@@ -106,89 +90,59 @@ export default function useStudentProfile() {
   };
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleLinkChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
-      links: {
-        ...prev.links,
-        [field]: value,
-      },
+      links: { ...prev.links, [field]: value },
     }));
   };
 
   const saveSection = async (section) => {
     setLoading(true);
-
     try {
-      if (section === "personal") {
-        await UsersAPI.updateProfile(user.profileId, {
+      if (section === "basic" || section === "personal") {
+        await UsersAPI.updateProfileBasic({
           full_name: formData.fullName,
           phone: formData.phone,
-          career_objective: formData.careerObjective,
           date_of_birth: formData.dateOfBirth || undefined,
           city: formData.city,
           state: formData.state,
-
-          languages_known: formData.languagesKnown
-            ? formData.languagesKnown
-                .split(",")
-                .map((i) => i.trim())
-                .filter(Boolean)
+          languages: formData.languagesKnown
+            ? formData.languagesKnown.split(",").map((i) => i.trim()).filter(Boolean)
             : [],
-
-          preferred_job_role:
-            formData.preferredJobRole,
-
-          preferred_work_location:
-            formData.preferredWorkLocation,
         });
       }
 
       if (section === "academic") {
-        await UsersAPI.updateProfile(user.profileId, {
-          cgpa: formData.cgpa
-            ? parseFloat(formData.cgpa)
-            : undefined,
+        await UsersAPI.updateProfileAcademic({
+          cgpa: formData.cgpa ? parseFloat(formData.cgpa) : undefined,
+        });
+      }
 
-          tenth_percentage:
-            formData.tenthPercentage
-              ? parseFloat(formData.tenthPercentage)
-              : undefined,
-
-          twelfth_percentage:
-            formData.twelfthPercentage
-              ? parseFloat(formData.twelfthPercentage)
-              : undefined,
-
-          current_backlogs:
-            formData.currentBacklogs !== ""
-              ? parseInt(formData.currentBacklogs)
-              : undefined,
-
-          backlog_history:
-            formData.backlogHistory !== ""
-              ? parseInt(formData.backlogHistory)
-              : undefined,
+      if (section === "career") {
+        await UsersAPI.updateProfileCareer({
+          career_objective: formData.careerObjective,
+          preferred_job_role: formData.preferredJobRole,
+          preferred_locations: formData.preferredWorkLocation
+            ? [formData.preferredWorkLocation]
+            : [],
         });
       }
 
       if (section === "social") {
-        await UsersAPI.updateProfile(user.profileId, {
-          links: formData.links,
+        await UsersAPI.updateProfileSocial({
+          github: formData.links.github,
+          linkedin: formData.links.linkedin,
+          portfolio: formData.links.portfolio,
         });
       }
 
       setMessage("Profile updated successfully.");
-
-      setTimeout(() => {
-        setMessage("");
-      }, 3000);
+      await fetchProfile();
+      setTimeout(() => setMessage(""), 3000);
     } catch (err) {
       console.error(err);
       setMessage("Failed to update profile.");
@@ -197,33 +151,21 @@ export default function useStudentProfile() {
     }
   };
 
-  const profileCompletion = useMemo(
-    () => calcProfileCompletion(studentInfo),
-    [studentInfo]
-  );
-
   return {
     fetching,
     loading,
-
     message,
-
     studentInfo,
-
     formData,
-
     activeSection,
-
     setActiveSection,
-
     handleChange,
-
     handleLinkChange,
-
     saveSection,
-
     profileCompletion,
-
+    statistics,
+    socialLinks,
+    resume,
     refreshProfile: fetchProfile,
   };
 }

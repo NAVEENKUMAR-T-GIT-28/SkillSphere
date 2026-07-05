@@ -3,6 +3,7 @@ import ProfileStats from "./ProfileStats";
 import ProfileSidebar from "./ProfileSidebar";
 import ProfileCompletion from "./ProfileCompletion";
 import ProfileForm from "./ProfileForm";
+import ProfileSkeleton from "./ProfileSkeleton";
 
 import useStudentProfile from "./hooks/useStudentProfile";
 
@@ -11,33 +12,25 @@ export default function StudentProfile() {
     fetching,
     loading,
     message,
-
     studentInfo,
     formData,
-
     activeSection,
     setActiveSection,
-
     handleChange,
     handleLinkChange,
-
     saveSection,
-
     profileCompletion,
+    statistics,
+    socialLinks,
+    resume,
   } = useStudentProfile();
 
   if (fetching) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-text-secondary text-lg">
-          Loading profile...
-        </p>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   return (
-    <div className="mx-auto max-w-[1700px] space-y-4 px-4 sm:px-6 py-4">
+    <div className="mx-auto max-w-7xl space-y-4 px-4 sm:px-6 py-4">
 
       {/* Hero */}
       <ProfileHero
@@ -47,7 +40,7 @@ export default function StudentProfile() {
 
       {/* Statistics */}
       <ProfileStats
-        student={studentInfo}
+        statistics={statistics}
       />
 
       {/* Main Layout */}
@@ -72,19 +65,12 @@ export default function StudentProfile() {
 
           <ProfileForm
             section={activeSection}
-
-            student={studentInfo}
-
+            resume={resume}
             formData={formData}
-
             loading={loading}
-
             message={message}
-
             onChange={handleChange}
-
             onLinkChange={handleLinkChange}
-
             onSave={saveSection}
           />
 

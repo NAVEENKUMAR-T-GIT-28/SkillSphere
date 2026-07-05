@@ -5,32 +5,32 @@ import {
     FileText,
 } from "lucide-react";
 
-export default function ProfileStats({ student }) {
+export default function ProfileStats({ statistics }) {
     const stats = [
         {
             title: "CGPA",
-            value: student?.cgpa ?? "--",
+            value: statistics?.cgpa ?? "--",
             icon: GraduationCap,
             color:
                 "from-blue-500/10 to-cyan-500/10 text-blue-600 border-blue-100",
         },
         {
             title: "Projects",
-            value: student?.projects_count ?? 0,
+            value: statistics?.projects ?? 0,
             icon: FolderKanban,
             color:
                 "from-violet-500/10 to-purple-500/10 text-violet-600 border-violet-100",
         },
         {
             title: "Skills",
-            value: student?.skills_count ?? 0,
+            value: statistics?.skills ?? 0,
             icon: BadgeCheck,
             color:
                 "from-emerald-500/10 to-green-500/10 text-emerald-600 border-emerald-100",
         },
         {
             title: "Resume",
-            value: student?.resume_uploaded ? "Uploaded" : "Pending",
+            value: statistics?.resume_uploaded ? "Uploaded" : "Pending",
             icon: FileText,
             color:
                 "from-orange-500/10 to-amber-500/10 text-orange-600 border-orange-100",

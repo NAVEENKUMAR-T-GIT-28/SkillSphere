@@ -8,10 +8,13 @@ export default function ProfileCompletion({
 }) {
   const {
     percentage = 0,
-    completedSections = 0,
-    totalSections = 0,
-    checklist = [],
+    completed_sections = [],
+    missing_sections = [],
+    progress = [],
   } = profileCompletion || {};
+
+  const totalSections = progress.length || 0;
+  const completedCount = completed_sections.length || 0;
 
   const radius = 28;
   const circumference = 2 * Math.PI * radius;
@@ -82,7 +85,7 @@ export default function ProfileCompletion({
 
         <div>
           <div className="text-sm font-semibold text-slate-900">
-            {completedSections} of {totalSections}
+            {completedCount} of {totalSections}
           </div>
           <div className="text-xs text-slate-500">
             Sections Completed
@@ -99,7 +102,7 @@ export default function ProfileCompletion({
 
       <div className="space-y-1.5">
 
-        {checklist.map((item) => (
+        {progress.map((item) => (
 
           <div
             key={item.id}
@@ -127,7 +130,7 @@ export default function ProfileCompletion({
                     : "text-slate-500"
                 }`}
               >
-                {item.label}
+                {item.title}
               </span>
 
             </div>
@@ -145,7 +148,7 @@ export default function ProfileCompletion({
         <p className="text-xs text-slate-600">
 
           <span className="font-semibold text-slate-900">
-            {completedSections}
+            {completedCount}
           </span>{" "}
           of{" "}
           <span className="font-semibold text-slate-900">

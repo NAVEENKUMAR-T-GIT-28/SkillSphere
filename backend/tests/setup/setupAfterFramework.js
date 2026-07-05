@@ -21,6 +21,12 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  // Fire-and-forget syncStudentSearch calls (readinessScore.js, verification.js,
+  // resumeController.js) may still be in flight when a test finishes — give them
+  // a brief grace period so they don't log a spurious MongoClientClosedError
+  // when we disconnect below.
+  await new Promise((resolve) => setImmediate(resolve));
+
   if (console.error.mockRestore) {
     console.error.mockRestore();
   }

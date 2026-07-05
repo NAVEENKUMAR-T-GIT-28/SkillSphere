@@ -4,13 +4,15 @@ const codingProfileRepo = require('../repositories/codingProfileRepo');
 const { fetchLeetCodeProfile } = require('../services/codingPlatforms/leetcode.service');
 const { fetchHackerRankProfile } = require('../services/codingPlatforms/hackerrank.service');
 const { fetchSkillRackProfile } = require('../services/codingPlatforms/skillrack.service');
+const { fetchGithubProfile } = require('../services/codingPlatforms/github.service');
 const { getProfileForFrontend } = require('../services/codingPlatforms/codingProfile.frontend.service');
 const { success, error } = require('../utils/response');
 
 const PLATFORM_FETCHERS = {
   leetcode: (body) => fetchLeetCodeProfile(body.username),
   hackerrank: (body) => fetchHackerRankProfile(body.username),
-  skillrack: (body) => fetchSkillRackProfile(body.skillrack_id, body.skillrack_key)
+  skillrack: (body) => fetchSkillRackProfile(body.skillrack_id, body.skillrack_key),
+  github: (body) => fetchGithubProfile({ githubUrl: body.githubUrl || body.username })
 };
 
 /**
@@ -72,15 +74,14 @@ exports.refreshPlatform = async (req, res, next) => {
 
     const profileDoc = await codingProfileRepo.findByStudentId(studentId);
     const existing = profileDoc?.platforms?.[platform];
+    
     if (!existing) {
       return error(res, `${platform} is not linked yet`, 404, 'NOT_LINKED');
     }
 
-    // Reuse stored credentials instead of requiring the body again
     const body = platform === 'skillrack'
       ? { skillrack_id: existing.skillrack_id, skillrack_key: existing.skillrack_key }
-      : { username: existing.username };
-
+      : { username: existing.username, githubUrl: existing.profile_url };
     let platformData;
     try {
       platformData = await fetcher(body);

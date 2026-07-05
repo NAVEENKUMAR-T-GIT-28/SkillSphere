@@ -27,6 +27,9 @@ const achievementSchema = new mongoose.Schema(
       }
     },
     custom_category: { type: String, trim: true },
+    issuer: { type: String, trim: true },
+    date: { type: Date },
+    image_url: { type: String, trim: true },
     description: { type: String, maxlength: [500, 'Description cannot exceed 500 characters'], trim: true },
     certificate_url: { type: String, trim: true },
 

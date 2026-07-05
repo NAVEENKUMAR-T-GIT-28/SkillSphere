@@ -39,6 +39,8 @@ const myAccessRoutes = require('./routes/myAccess');
 const adminRoutes = require('./routes/admin');
 const classRoutes = require('./routes/classes');
 
+const v1ProfileRoutes = require('./routes/profile.routes');
+
 const app = express();
 
 // ─── Global Middleware ──────────────────────────────────────────────────────
@@ -99,6 +101,9 @@ app.use('/api/notifications', notificationRoutes);   // /api/notifications
 app.use('/api/my', myAccessRoutes);                  // /api/my/*
 app.use('/api/admin', adminRoutes);                  // /api/admin/*
 app.use('/api/classes', classRoutes);                // /api/classes/*
+
+// ─── API v1 Routes ──────────────────────────────────────────────────────────
+app.use('/api/v1/student/profile', v1ProfileRoutes);
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 app.use('*', (req, res) => {

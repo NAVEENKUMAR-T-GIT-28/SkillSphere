@@ -12,13 +12,14 @@ exports.addCodingProfileValidator = [
   body('badges').optional().isArray()
 ];
 
-const platformParamCheck = param('platform').isIn(['leetcode', 'hackerrank', 'skillrack']).withMessage('Invalid platform');
+const platformParamCheck = param('platform').isIn(['leetcode', 'hackerrank', 'skillrack', 'github']).withMessage('Invalid platform');
 
 exports.linkPlatformValidator = [
   platformParamCheck,
   body('username').if(param('platform').isIn(['leetcode', 'hackerrank'])).notEmpty().withMessage('Username is required'),
   body('skillrack_id').if(param('platform').equals('skillrack')).notEmpty().withMessage('SkillRack id is required'),
-  body('skillrack_key').if(param('platform').equals('skillrack')).notEmpty().withMessage('SkillRack key is required')
+  body('skillrack_key').if(param('platform').equals('skillrack')).notEmpty().withMessage('SkillRack key is required'),
+  body('githubUrl').if(param('platform').equals('github')).notEmpty().withMessage('GitHub URL is required')
 ];
 
 exports.refreshPlatformValidator = [

@@ -7,9 +7,14 @@ exports.addProjectValidator = [
   body('tech_stack').isArray({ min: 1 }).withMessage('At least one technology must be specified'),
   body('tech_stack.*').trim().notEmpty(),
   body('github_url').notEmpty().isURL().withMessage('Must be a valid URL'),
-  body('live_demo_url').optional().isURL().withMessage('Must be a valid URL'),
+  body('live_demo_url').optional({ checkFalsy: true }).isURL().withMessage('Must be a valid URL'),
   body('complexity_tier').isIn(['basic', 'intermediate', 'advanced']).withMessage('Invalid complexity tier'),
-  body('student_ids').optional().isArray().withMessage('student_ids must be an array of ObjectIds')
+  body('student_ids').optional().isArray().withMessage('student_ids must be an array of ObjectIds'),
+  body('thumbnail_url').optional({ checkFalsy: true }).isURL().withMessage('Must be a valid URL'),
+  body('completion_status').optional().isIn(['completed', 'in_progress']).withMessage('Invalid completion status'),
+  body('start_date').optional({ checkFalsy: true }).isISO8601().withMessage('Must be a valid date'),
+  body('end_date').optional({ checkFalsy: true }).isISO8601().withMessage('Must be a valid date'),
+  body('is_featured').optional().isBoolean()
 ];
 
 exports.rateProjectValidator = [

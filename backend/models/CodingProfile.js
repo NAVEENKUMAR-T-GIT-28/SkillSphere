@@ -20,17 +20,25 @@ const codingProfileSchema = new mongoose.Schema(
     // Each key below is added dynamically when a student links that platform.
     // Shape is intentionally loose (Mixed) — each platform service owns its own shape.
     platforms: {
+      // LeetCode API
       leetcode: {
         type: mongoose.Schema.Types.Mixed,
         default: null
       },
+      // HackerRank API 
       hackerrank: {
         type: mongoose.Schema.Types.Mixed,
         default: null
       },
+      // SkillRack Scraper
       skillrack: {
         type: mongoose.Schema.Types.Mixed,
         default: null
+      },
+      // GitHub REST API
+      github: {
+          type: mongoose.Schema.Types.Mixed,
+          default: null
       }
     }
   },

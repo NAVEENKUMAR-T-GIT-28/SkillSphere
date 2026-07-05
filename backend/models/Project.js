@@ -45,6 +45,19 @@ const projectSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    completion_status: {
+      type: String,
+      enum: ["completed", "in_progress"],
+      default: "completed"
+    },
+    start_date: {
+      type: Date,
+      default: null
+    },
+    end_date: {
+      type: Date,
+      default: null
+    },
 
     complexity_tier: {
       type: String,

@@ -58,7 +58,7 @@ export default function PersonalSection({
         <div className="flex justify-end">
 
           <span className="text-xs text-slate-500">
-            {formData.careerObjective.length}/500
+            {(formData.careerObjective || "").length}/500
           </span>
 
         </div>
