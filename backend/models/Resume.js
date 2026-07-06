@@ -30,6 +30,17 @@ const resumeSchema = new mongoose.Schema(
     keywords: [{ type: String, trim: true }],
     missing_keywords: [{ type: String, trim: true }],
     parsed_skills: [{ type: String, trim: true }],
+
+    // ── ATS Engine fields (additive — see backend/ats/) ──────────────────
+    ats_grade: { type: String },
+    ats_breakdown: { type: mongoose.Schema.Types.Mixed },
+    ats_summary: { type: String },
+    ats_last_analyzed: { type: Date },
+    parsed_resume: { type: mongoose.Schema.Types.Mixed }, // structured extraction + per-field confidence
+    extracted_text: { type: String },
+    parsing_warnings: [{ type: String, trim: true }],
+    engine_version: { type: String }, // semantic version, e.g. "1.0.0"
+
     is_latest: {
       type: Boolean,
       default: true

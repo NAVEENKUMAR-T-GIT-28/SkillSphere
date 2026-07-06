@@ -1,0 +1,307 @@
+=== 1. RAW EXTRACTED TEXT ===
+Total Character Count: 2489
+Total Line Count: 87
+First 1000 Characters:
+
+
+Experience
+Completed  a  10-week  internship  focused  on  MERN  stack
+development
+Worked  on  full-stack  development  concepts  and  RESTful  API
+architecture.
+Stipend: ₹10,000 
+NPTEL INTERN (MERN)
+IIT ROPAR
+Jan 2026 - Mar 2026
+CERTIFICATION
+About Me
+Passionate  Computer  and  Communication
+Engineering  student  with  strong  interests  in
+full-stack  development,  Linux  systems,  and
+modern  web  technologies.  Skilled  in  React,
+JavaScript,  MERN  Stack,  Linux  systems,  and
+system  administration  concepts.  Continuously
+learning    through    hands-on    projects,
+internships, and technical exploration.
+Higher Secondary School 
+Veludaiyar Higher Secondary School
+Sri Sairam Institute Of Technology
+2022 - 2024
+2024 - 2028
+Python
+MERN Stack
+React.js
+Node.js
+MongoDB
+Express.js
+English
+Tamil
+Bachelor of Engineering
+Education
+Skills
+Languages 
++91 9080629615
+naveenkumarsnr28@gmail.com
+naveenkumart.portfolio
+Thiruvarur, Tamil Nadu
+NAVEENKUMAR T
+C O M P U T E R   A N D   C O M M U N
+
+=== 1.5 HEADER DETECTED INDEXES ===
+{
+  "education": {
+    "index": 35,
+    "lineContent": "Education"
+  },
+  "skills": {
+    "index": 36,
+    "lineContent": "Skills"
+  },
+  "projects": {
+    "index": 59,
+    "lineContent": "Projects"
+  },
+  "internships": {
+    "index": -1,
+    "lineContent": null
+  },
+  "certifications": {
+    "index": 11,
+    "lineContent": "CERTIFICATION"
+  },
+  "experience": {
+    "index": 2,
+    "lineContent": "Experience"
+  }
+}
+
+=== 2. PARSED RESUME OBJECT ===
+{
+  "name": {
+    "value": "Experience",
+    "confidence": 0.6
+  },
+  "email": {
+    "value": "naveenkumarsnr28@gmail.com",
+    "confidence": 0.9
+  },
+  "phone": {
+    "value": "+91 9080629615",
+    "confidence": 0.9
+  },
+  "links": {
+    "github": {
+      "value": "github.com/NAVEENKUMAR-T-GIT-28",
+      "confidence": 0.85
+    },
+    "linkedin": {
+      "value": null,
+      "confidence": 0
+    },
+    "portfolio": {
+      "value": null,
+      "confidence": 0
+    }
+  },
+  "sections": {
+    "education": {
+      "value": [],
+      "confidence": 0.3
+    },
+    "skills": {
+      "value": [
+        "Languages",
+        "+91 9080629615",
+        "naveenkumarsnr28@gmail.com",
+        "naveenkumart.portfolio",
+        "Thiruvarur, Tamil Nadu",
+        "NAVEENKUMAR T",
+        "C O M P U T E R   A N D   C O M M U N I C A T I O N",
+        "E N G I N E E R I N G   S T U D E N T",
+        "Studied Red Hat Enterprise Linux system administration concepts",
+        "Performed  Linux  administration  tasks  involving  user  management,",
+        "permissions, package management, and system configurations",
+        "Applied  RHCSA  concepts  through  hands-on  system  administration",
+        "exercises and lab environments",
+        "QUIZPULSE – REAL-TIME QUIZ PLATFORM",
+        "2026",
+        "Built a multiplayer quiz platform using React, Node.js, MongoDB, and",
+        "Socket.IO",
+        "Added OTP authentication, live quiz sessions, real-time scores, and",
+        "admin dashboard features",
+        "Containerized the application using Docker for development",
+        "GitHub:  github.com/NAVEENKUMAR-T-GIT-28/QuizPulse",
+        "Live: quizpulse-live.vercel.app"
+      ],
+      "confidence": 0.75
+    },
+    "projects": {
+      "value": [
+        "Developer Portfolio",
+        "2026",
+        "Built a fully responsive portfolio with glassmorphism aesthetic and",
+        "smooth Framer Motion animations.",
+        "Used JSON-driven modular architecture for maintainability and easy",
+        "content updates.",
+        "GitHub: github.com/NAVEENKUMAR-T-GIT-28/Portfolio",
+        "Live: naveenkumart-portfolio.vercel.app",
+        "RHCSA (RED HAT CERTIFIED SYSTEM ADMINISTRATOR)",
+        "Successfully completed RHCSA training with hands-on Linux system",
+        "administration experience",
+        "Strong understanding of Linux administration, command-line",
+        "operations, user management, and troubleshooting",
+        "Score: 300/300",
+        "Current CGPA - 8.76",
+        "Percentage - 87.33%",
+        "Git & GitHub",
+        "Linux",
+        "Docker",
+        "Networking",
+        "REST APIs",
+        "Socket.IO",
+        "Linux System Administration Intern",
+        "Vectra Technosoft Pvt. Ltd.",
+        "Jan 2026 - Feb 2026",
+        "NAVEENKUMAR-T-GIT-28",
+        "naveenkumar-tech"
+      ],
+      "confidence": 0.75
+    },
+    "internships": {
+      "value": [],
+      "confidence": 0
+    },
+    "certifications": {
+      "value": [
+        "About Me",
+        "Passionate  Computer  and  Communication",
+        "Engineering  student  with  strong  interests  in",
+        "full-stack  development,  Linux  systems,  and",
+        "modern  web  technologies.  Skilled  in  React,",
+        "JavaScript,  MERN  Stack,  Linux  systems,  and",
+        "system  administration  concepts.  Continuously",
+        "learning    through    hands-on    projects,",
+        "internships, and technical exploration.",
+        "Higher Secondary School",
+        "Veludaiyar Higher Secondary School",
+        "Sri Sairam Institute Of Technology",
+        "2022 - 2024",
+        "2024 - 2028",
+        "Python",
+        "MERN Stack",
+        "React.js",
+        "Node.js",
+        "MongoDB",
+        "Express.js",
+        "English",
+        "Tamil",
+        "Bachelor of Engineering"
+      ],
+      "confidence": 0.75
+    },
+    "experience": {
+      "value": [
+        "Completed  a  10-week  internship  focused  on  MERN  stack",
+        "development",
+        "Worked  on  full-stack  development  concepts  and  RESTful  API",
+        "architecture.",
+        "Stipend: ₹10,000",
+        "NPTEL INTERN (MERN)",
+        "IIT ROPAR",
+        "Jan 2026 - Mar 2026"
+      ],
+      "confidence": 0.75
+    }
+  }
+}
+
+=== 3. RULE DEBUG REPORT ===
+Rule: contact
+Detected: true
+Reason: Contact details (name, email, phone) are all present.
+Awarded: 9
+Expected: 9
+Suggestions: []
+
+Rule: education
+Detected: false
+Reason: No Education section detected.
+Awarded: 0
+Expected: 9
+Suggestions: ["Add an \"Education\" section with degree, institution, and graduation year."]
+
+Rule: skills
+Detected: true
+Reason: Skills section detected with roughly 11 listed skill(s).
+Awarded: 19
+Expected: 19
+Suggestions: []
+
+Rule: projects
+Detected: true
+Reason: Projects section detected with 27 line(s) of content.
+Awarded: 14
+Expected: 14
+Suggestions: []
+
+Rule: internships
+Detected: false
+Reason: No Internship/Training section detected.
+Awarded: 0
+Expected: 14
+Suggestions: ["Add an \"Internships\" section if you have any internship or training experience."]
+
+Rule: certifications
+Detected: true
+Reason: Certifications section detected with 23 line(s) of content.
+Awarded: 9
+Expected: 9
+Suggestions: []
+
+Rule: keywords
+Detected: false
+Reason: Found 2 ATS-friendly keyword(s): built, led.
+Awarded: 3
+Expected: 9
+Suggestions: ["Use more action verbs (e.g. \"developed\", \"led\", \"optimized\") when describing projects/experience."]
+
+Rule: formatting
+Detected: true
+Reason: 3/3 formatting checks passed.
+Awarded: 4
+Expected: 4
+Suggestions: []
+
+Rule: links
+Detected: false
+Reason: Found link(s): github.
+Awarded: 1.33
+Expected: 4
+Suggestions: ["Add a linkedin link.","Add a portfolio link."]
+
+Rule: completeness
+Detected: true
+Reason: 7/8 expected resume components were found.
+Awarded: 7.88
+Expected: 9
+Suggestions: ["Fill in the missing sections flagged by the other category breakdowns to raise overall completeness."]
+
+=== 4. PARSER CONFIDENCE ===
+Name Confidence: 0.6
+Email Confidence: 0.9
+Phone Confidence: 0.9
+Link [github] Confidence: 0.85
+Link [linkedin] Confidence: 0
+Link [portfolio] Confidence: 0
+Section [education] Confidence: 0.3 (lines: 0)
+Section [skills] Confidence: 0.75 (lines: 22)
+Section [projects] Confidence: 0.75 (lines: 27)
+Section [internships] Confidence: 0 (lines: 0)
+Section [certifications] Confidence: 0.75 (lines: 23)
+Section [experience] Confidence: 0.75 (lines: 8)
+
+=== 6. LINK SEARCH IN RAW TEXT ===
+Linkedin matches: none
+Portfolio matches: portfolio,Portfolio,portfolio,Portfolio,portfolio
+Contains any http/https: none
+

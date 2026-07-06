@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const resumeRepo = require('../repositories/resumeRepo');
 const { success, error } = require('../utils/response');
 const { syncStudentSearch } = require('../services/studentSearchSync');
+const atsService = require('../ats/ats.service'); // isolated module — only tryAutoReanalyze(resume) is called from here
 
 exports.getResumes = async (req, res, next) => {
   try {
@@ -56,6 +57,12 @@ exports.deleteResume = async (req, res, next) => {
       if (nextLatest) {
         nextLatest.is_latest = true;
         await resumeRepo.saveResume(nextLatest);
+
+        // Best-effort: re-score the newly-promoted latest IF it already has
+        // stored extracted text from a prior analysis. No-op otherwise —
+        // never a request-blocking error. If no version remains at all,
+        // syncStudentSearch below already reflects has_resume:false.
+        atsService.tryAutoReanalyze(nextLatest).catch(err => console.error('ATS auto-reanalyze failed:', err));
       }
     }
 

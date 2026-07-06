@@ -99,6 +99,7 @@ app.use('/api/notifications', notificationRoutes);   // /api/notifications
 app.use('/api/my', myAccessRoutes);                  // /api/my/*
 app.use('/api/admin', adminRoutes);                  // /api/admin/*
 app.use('/api/classes', classRoutes);                // /api/classes/*
+app.use('/api', require('./ats'));                    // /api/students/:id/resumes/ats etc
 
 // ─── API v1 Routes ──────────────────────────────────────────────────────────
 app.use('/api/v1/student/profile', v1ProfileRoutes);

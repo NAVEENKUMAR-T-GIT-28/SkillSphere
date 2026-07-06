@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
+import AtsPanel from '../../components/resume/AtsPanel';
 import { ResumesAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { getBadgeColor } from '../../utils/formatters';
@@ -161,13 +162,6 @@ export default function StudentResumes() {
                   </div>
                   <p className="text-sm text-slate-500 mb-4">Version {latestResume.version} &bull; Uploaded {new Date(latestResume.uploaded_at).toLocaleDateString()}</p>
                   
-                  {/* Future ATS Block Placeholder */}
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500 cursor-not-allowed" title="ATS capabilities coming soon">
-                      <Shield size={12} />
-                      ATS Scan Pending
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -235,18 +229,20 @@ export default function StudentResumes() {
         </div>
       )}
 
+      {resumes.length > 0 && <AtsPanel profileId={user.profileId} />}
+
       {/* Feature Cards Grid (Always visible for educational purposes) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
         
         <div className="bg-white border border-slate-200 p-5 rounded-2xl flex flex-col hover:shadow-sm transition-shadow relative overflow-hidden group">
           <div className="absolute top-4 right-4">
-            <span className="text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-2 py-1 rounded-md">Coming Soon</span>
+            <span className="text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md">Live</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
             <Shield size={20} />
           </div>
           <h4 className="font-bold text-slate-800 mb-1">ATS Score</h4>
-          <p className="text-xs text-slate-500 leading-relaxed">Get AI-powered ATS compatibility analysis.</p>
+          <p className="text-xs text-slate-500 leading-relaxed">Deterministic ATS compatibility scoring — upload above to run it.</p>
         </div>
 
         <div className="bg-white border border-slate-200 p-5 rounded-2xl flex flex-col hover:shadow-sm transition-shadow group">
