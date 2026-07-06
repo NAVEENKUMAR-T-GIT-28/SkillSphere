@@ -54,11 +54,6 @@ class ProfileCompletionService {
     this._addSection('resume', 'Resume', isResumeComplete, completionConfig.resume, completed_sections, missing_sections, progress);
     if (isResumeComplete) percentage += completionConfig.resume;
 
-    // Alternate Phone
-    const isAltPhoneComplete = !!student?.alternate_phone;
-    this._addSection('alternate_phone', 'Alternate Phone', isAltPhoneComplete, completionConfig.alternate_phone, completed_sections, missing_sections, progress);
-    if (isAltPhoneComplete) percentage += completionConfig.alternate_phone;
-
     return {
       percentage: Math.min(percentage, 100),
       completed_sections,

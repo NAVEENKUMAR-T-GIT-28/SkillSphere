@@ -13,9 +13,33 @@ const findByStudentId = (studentId) => findMany({ student_id: studentId }, 0, 10
 const findByStudentAndId = (studentId, id) => findOne({ _id: id, student_id: studentId });
 const findVerifiedByStudent = (studentId) => findMany({ student_id: studentId, status: 'verified' }, 0, 100);
 const updateStatus = (id, status, reviewerId) => updateById(id, { status, verified_by: reviewerId, verified_at: new Date() });
-const findPending = (skip = 0, limit = 10) => findMany({ status: 'pending' }, skip, limit);
+const { resolveScopeToStudentFilter } = require('../utils/scopeResolver');
+
+const findPending = async (skip = 0, limit = 10, scope = null) => {
+  const filter = { status: 'pending' };
+  if (scope) {
+    const studentFilter = await resolveScopeToStudentFilter(scope);
+    if (studentFilter.student_id === null) return [];
+    Object.assign(filter, studentFilter);
+  }
+  return Internship.find(filter)
+    .skip(skip)
+    .limit(limit)
+    .populate('student_id', 'full_name roll_number department')
+    .exec();
+};
+
+const countPending = async (scope = null) => {
+  const filter = { status: 'pending' };
+  if (scope) {
+    const studentFilter = await resolveScopeToStudentFilter(scope);
+    if (studentFilter.student_id === null) return 0;
+    Object.assign(filter, studentFilter);
+  }
+  return count(filter);
+};
 
 module.exports = {
   findMany, findOne, findById, create, updateById, deleteById, count, countDocuments: count,
-  findByStudentId, findByStudentAndId, findVerifiedByStudent, updateStatus, findPending
+  findByStudentId, findByStudentAndId, findVerifiedByStudent, updateStatus, findPending, countPending
 };

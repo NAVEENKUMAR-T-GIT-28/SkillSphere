@@ -5,9 +5,8 @@
 
 module.exports = {
   basic_information: 20,
-  academic_information: 15,
-  career_information: 15,
+  academic_information: 20,
+  career_information: 20,
   social_links: 10,
-  resume: 30,
-  alternate_phone: 10
+  resume: 30
 };

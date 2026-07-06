@@ -22,10 +22,13 @@ const studentSearchSchema = new mongoose.Schema(
       unique: true
     },
     name: { type: String, trim: true },
+    roll_number: { type: String, trim: true },
     cgpa: { type: Number },
     department: { type: String, trim: true },
     semester: { type: Number },
     batch_year: { type: Number },
+    graduation_year: { type: Number },
+
     section: { type: String, trim: true },
     current_backlogs: { type: Number, default: 0 },
     readiness_score: { type: Number, default: 0 },
@@ -40,6 +43,7 @@ const studentSearchSchema = new mongoose.Schema(
     internship_count: { type: Number, default: 0 },
     project_count: { type: Number, default: 0 },
     resume_ats_score: { type: Number },
+    has_resume: { type: Boolean, default: false },
 
     is_placed: { type: Boolean, default: false },
     company_placed: { type: String, trim: true },

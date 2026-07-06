@@ -13,9 +13,34 @@ const deleteById = (id) => Project.findByIdAndDelete(id);
 const findByStudentIds = (studentId) => findMany({ student_ids: studentId }, 0, 100);
 const findByStudentAndId = (studentId, id) => findOne({ _id: id, student_ids: studentId });
 const findReviewedByStudent = (studentId) => findMany({ student_ids: studentId, status: 'reviewed' }, 0, 100);
-const findPending = (skip = 0, limit = 10) => findMany({ status: 'pending' }, skip, limit);
+const { resolveScopeToStudentFilter } = require('../utils/scopeResolver');
+
+const findPending = async (skip = 0, limit = 10, scope = null) => {
+  const filter = { status: 'pending' };
+  if (scope) {
+    const studentFilter = await resolveScopeToStudentFilter(scope);
+    if (studentFilter.student_id === null) return [];
+    filter.student_ids = studentFilter.student_id;
+  }
+  return Project.find(filter)
+    .skip(skip)
+    .limit(limit)
+    .populate('student_ids', 'full_name roll_number department')
+    .populate('created_by', 'full_name')
+    .exec();
+};
+
+const countPending = async (scope = null) => {
+  const filter = { status: 'pending' };
+  if (scope) {
+    const studentFilter = await resolveScopeToStudentFilter(scope);
+    if (studentFilter.student_id === null) return 0;
+    filter.student_ids = studentFilter.student_id;
+  }
+  return count(filter);
+};
 
 module.exports = {
   findMany, findOne, findById, create, updateById, deleteById, count, countDocuments: count,
-  findByStudentIds, findByStudentAndId, findReviewedByStudent, findPending
+  findByStudentIds, findByStudentAndId, findReviewedByStudent, findPending, countPending
 };

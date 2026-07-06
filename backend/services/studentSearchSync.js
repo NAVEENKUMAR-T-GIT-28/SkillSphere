@@ -21,25 +21,30 @@ const internshipRepo = require('../repositories/internshipRepo');
 const resumeRepo = require('../repositories/resumeRepo');
 const studentSearchRepo = require('../repositories/studentSearchRepo');
 
+const codingProfileRepo = require('../repositories/codingProfileRepo');
+
 async function syncStudentSearch(studentId) {
   const student = await studentRepo.findById(studentId).populate('class_id');
   if (!student) return null;
 
-  const [skills, certs, projects, internships, latestResume] = await Promise.all([
+  const [skills, certs, projects, internships, latestResume, codingProfile] = await Promise.all([
     skillRepo.findVerifiedByStudent(studentId),
     certificationRepo.findVerifiedByStudent(studentId),
     projectRepo.findByStudentIds(studentId),
     internshipRepo.findVerifiedByStudent(studentId),
-    resumeRepo.findLatestByStudentId(studentId)
+    resumeRepo.findLatestByStudentId(studentId),
+    codingProfileRepo.findByStudentId(studentId)
   ]);
 
   const doc = {
     student_id: student._id,
     name: student.full_name,
+    roll_number: student.roll_number,
     cgpa: student.cgpa,
     department: student.class_id?.department,
     semester: student.class_id?.semester,
     batch_year: student.class_id?.batch_year,
+    graduation_year: student.class_id?.graduation_year,
     section: student.class_id?.section,
     current_backlogs: student.current_backlogs || 0,
     readiness_score: student.readiness_score,
@@ -49,10 +54,12 @@ async function syncStudentSearch(studentId) {
     verified_skills: skills.map(s => s.skill_name),
     verified_certifications: certs.map(c => c.title),
     tech_stack: [...new Set(projects.flatMap(p => p.tech_stack || []))],
+    coding_platforms: codingProfile && codingProfile.platforms ? Object.keys(codingProfile.platforms).filter(k => codingProfile.platforms[k] !== null) : [],
 
     internship_count: internships.length,
     project_count: projects.length,
     resume_ats_score: latestResume?.ats_score,
+    has_resume: !!latestResume,
 
     synced_at: new Date()
   };

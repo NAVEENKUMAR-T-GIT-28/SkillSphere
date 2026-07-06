@@ -3,8 +3,9 @@ const { success, error } = require('../utils/response');
 
 exports.getMentees = async (req, res, next) => {
   try {
-    const students = await getMenteesForUser(req.user.userId);
-    success(res, students, { total: students.length });
+    const userFullName = req.user.name || 'Mentor';
+    const result = await getMenteesForUser(req.user.userId, userFullName, req.query);
+    res.status(200).json({ success: true, ...result });
   } catch (err) { next(err); }
 };
 

@@ -30,7 +30,6 @@ const achievementRoutes = require('./routes/achievements');
 const resumeRoutes = require('./routes/resumes');
 const codingProfileRoutes = require('./routes/codingProfile.routes');
 const facultyRoutes = require('./routes/faculty');
-const searchRoutes = require('./routes/search');
 const searchV2Routes = require('./routes/searchV2');
 const placementRoutes = require('./routes/placement');
 const hodRoutes = require('./routes/hod');
@@ -93,7 +92,6 @@ app.use('/api/students', achievementRoutes);          // /api/students/:id/achie
 app.use('/api/students', resumeRoutes);              // /api/students/:id/resumes
 app.use('/api/students', codingProfileRoutes);       // /api/students/:id/coding-profile
 app.use('/api/verification', facultyRoutes);         // /api/verification/queue + approve/reject
-app.use('/api/search', searchRoutes);                // /api/search/students
 app.use('/api/search/v2', searchV2Routes);           // /api/search/v2/students (additive, validation only)
 app.use('/api', placementRoutes);                     // /api/placement-drives/* + /api/applications/*
 app.use('/api/hod', hodRoutes);                      // /api/hod/*
