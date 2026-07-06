@@ -73,6 +73,7 @@ export default function Notifications() {
       await NotificationsAPI.markAllAsRead();
       setNotifications(notifications.map(n => ({ ...n, is_read: true })));
       toast.success('All marked as read');
+      window.dispatchEvent(new Event('notificationsRead'));
     } catch (err) {
       toast.error('Failed to mark all as read');
     }
@@ -82,6 +83,7 @@ export default function Notifications() {
     try {
       await NotificationsAPI.markAsRead(id);
       setNotifications(notifications.map(n => n._id === id ? { ...n, is_read: true } : n));
+      window.dispatchEvent(new Event('notificationsRead'));
     } catch (err) {
       console.error(err);
     }
@@ -98,17 +100,7 @@ export default function Notifications() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">Notifications</h1>
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <span className="font-medium text-slate-700">Your updates</span>
-            <span>&bull;</span>
-            <span>All updates, alerts and messages.</span>
-          </div>
-        </div>
-      </div>
+      {/* Header section removed - now in global layout */}
 
       {/* Controls */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">

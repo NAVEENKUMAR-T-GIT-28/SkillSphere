@@ -50,11 +50,6 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-3xl font-bold text-text-primary">Dashboard</h1>
-        <p className="text-text-secondary mt-1">Your placement readiness at a glance</p>
-      </div>
 
       {/* Readiness Score Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

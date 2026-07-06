@@ -37,10 +37,6 @@ export default function FacultyDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-5">
-        <h1 className="text-xl font-medium text-text-primary mb-1">Faculty Dashboard</h1>
-        <p className="text-[13px] text-text-secondary">Overview of your verification queue and mentees</p>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
         <div className="bg-gray-50 rounded-md p-3.5 border border-border">

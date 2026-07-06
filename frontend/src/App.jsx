@@ -17,8 +17,8 @@ import StudentResumes from './pages/student/Resumes';
 import StudentCoding from './pages/student/Coding';
 import StudentDrives from './pages/student/Drives';
 import FacultyDashboard from './pages/faculty/Dashboard';
-import SharedQueue from './pages/shared/Queue';
-import SharedMentees from './pages/shared/Mentees';
+import VerificationWorkspace from './pages/shared/VerificationWorkspace';
+import MyMenteesWorkspace from './pages/shared/MyMenteesWorkspace';
 import HODDashboard from './pages/hod/Dashboard';
 import HODSearch from './pages/hod/Search';
 import HODRoles from './pages/hod/Roles';
@@ -175,7 +175,7 @@ function AppContent() {
         element={
           <ProtectedRoute requiredRoles={['faculty']}>
             <Layout>
-              <SharedQueue />
+              <VerificationWorkspace />
             </Layout>
           </ProtectedRoute>
         }
@@ -185,7 +185,7 @@ function AppContent() {
         element={
           <ProtectedRoute requiredRoles={['faculty']}>
             <Layout>
-              <SharedMentees />
+              <MyMenteesWorkspace role="faculty" />
             </Layout>
           </ProtectedRoute>
         }
@@ -257,7 +257,7 @@ function AppContent() {
         element={
           <ProtectedRoute requiredRoles={['hod']}>
             <Layout>
-              <SharedQueue />
+              <VerificationWorkspace />
             </Layout>
           </ProtectedRoute>
         }
@@ -267,7 +267,7 @@ function AppContent() {
         element={
           <ProtectedRoute requiredRoles={['hod']}>
             <Layout>
-              <SharedMentees />
+              <MyMenteesWorkspace role="hod" />
             </Layout>
           </ProtectedRoute>
         }

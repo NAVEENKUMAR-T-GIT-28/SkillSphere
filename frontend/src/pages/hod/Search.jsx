@@ -1,68 +1,98 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, Eye, Search, X } from 'lucide-react';
+import {
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Eye,
+  UserRound,
+  CheckCircle2,
+  Award,
+  Briefcase,
+  Code2,
+  FileText
+} from 'lucide-react';
 import TierBadge from '../../components/TierBadge';
 import Drawer from '../../components/Drawer';
 import { useToast } from '../../contexts/ToastContext';
 import { UsersAPI } from '../../services/api';
+
+const QUICK_FILTERS = [
+  { label: 'All', value: 'all' },
+  { label: 'Placement Ready', params: { tier: 'placement_ready' } },
+  { label: 'High CGPA (8.0+)', params: { cgpa_min: '8.0' } },
+  { label: 'Python Devs', params: { skills: 'Python' } },
+  { label: 'Java Devs', params: { skills: 'Java' } },
+  { label: 'Resume Uploaded', params: { has_resume: 'true' } },
+];
+
+const CODING_PLATFORMS = ['LeetCode', 'HackerRank', 'SkillRack', 'GitHub'];
+const DEPARTMENTS = ['CSE', 'IT', 'ECE', 'EEE', 'MECH', 'CIVIL', 'AIDS', 'AIML'];
 
 export default function HODSearch() {
   const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
 
   const [filters, setFilters] = useState({
-    tier: searchParams.get('tier') || 'All',
-    section: searchParams.get('section') || 'All',
     name: searchParams.get('name') || '',
+    roll_number: searchParams.get('roll_number') || '',
+    department: searchParams.get('department') || '',
+    section: searchParams.get('section') || '',
+    batch_year: searchParams.get('batch_year') || '',
+    graduation_year: searchParams.get('graduation_year') || '',
+    cgpa_min: searchParams.get('cgpa_min') || '',
+    cgpa_max: searchParams.get('cgpa_max') || '',
+    tier: searchParams.get('tier') || '',
+    skills: searchParams.get('skills') || '',
+    projects_min: searchParams.get('projects_min') || '',
+    internships_min: searchParams.get('internships_min') || '',
+    certifications_min: searchParams.get('certifications_min') || '',
+    coding_platforms: searchParams.get('coding_platforms') ? searchParams.get('coding_platforms').split(',') : [],
+    has_resume: searchParams.get('has_resume') === 'true',
   });
 
-  const [useV2, setUseV2] = useState(false);
+  const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
+  const limit = 12;
 
+  const [showFilters, setShowFilters] = useState(false);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
+  const [meta, setMeta] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
-  const fetchResults = async () => {
+  const fetchResults = async (currentPage = page, customFilters = filters) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (filters.tier !== 'All') params.append('tier', filters.tier);
-      if (filters.section !== 'All') params.append('section', filters.section);
-      if (filters.name) params.append('name', filters.name);
-      
-      setSearchParams(params);
 
-      // We still sort by readiness score desc
+      Object.entries(customFilters).forEach(([key, value]) => {
+        if (value && (typeof value === 'string' || typeof value === 'number')) {
+          params.append(key, value);
+        } else if (Array.isArray(value) && value.length > 0) {
+          params.append(key, value.join(','));
+        } else if (typeof value === 'boolean' && value) {
+          params.append(key, 'true');
+        }
+      });
+
+      params.append('page', currentPage);
+      params.append('limit', limit);
       params.append('sort_by', 'readiness_score');
       params.append('sort_order', 'desc');
 
-      let data;
-      if (useV2) {
-        const response = await UsersAPI.searchStudentsV2(params.toString());
-        data = response.data;
-      } else {
-        const response = await UsersAPI.searchStudents(params.toString());
-        data = response.data;
-      }
-      
-      const students = Array.isArray(data) ? data : data.items || [];
-      
-      // Filter by name locally since the backend might not support it fully 
-      // or we just trust the backend. For safety, we can local filter if needed.
-      const filteredStudents = filters.name 
-        ? students.filter(s => s.full_name.toLowerCase().includes(filters.name.toLowerCase())) 
-        : students;
+      setSearchParams(params);
 
-      setResults(filteredStudents.map(s => ({
-        id: s._id,
-        name: s.full_name,
-        roll: s.roll_number,
-        section: s.section || 'N/A',
-        cgpa: s.cgpa || 0,
-        readinessScore: s.readiness_score || 0,
-        tier: s.readiness_tier || 'beginner',
-      })));
+      const response = await UsersAPI.searchStudentsV2(params.toString());
+      const data = response.data;
+      
+      const students = Array.isArray(data) ? data : data.students || data.items || [];
+      const metadata = data.meta || { total: students.length, page: currentPage, totalPages: 1 };
+      
+      setResults(students);
+      setMeta(metadata);
       setSearched(true);
     } catch (err) {
       console.error('Search error:', err);
@@ -72,187 +102,441 @@ export default function HODSearch() {
     }
   };
 
+  const handleSearch = () => {
+    setPage(1);
+    fetchResults(1, filters);
+    setShowFilters(false);
+  };
+
   const handleClear = () => {
-    setFilters({ tier: 'All', section: 'All', name: '' });
+    const emptyFilters = {
+      name: '', roll_number: '', department: '', section: '', batch_year: '', graduation_year: '',
+      cgpa_min: '', cgpa_max: '', tier: '', skills: '', projects_min: '', internships_min: '',
+      certifications_min: '', coding_platforms: [], has_resume: false
+    };
+    setFilters(emptyFilters);
+    setPage(1);
     setSearched(false);
     setResults([]);
+    setMeta(null);
     setSearchParams({});
+  };
+
+  const handleQuickFilter = (quickFilter) => {
+    if (quickFilter.value === 'all') {
+      handleClear();
+      fetchResults(1, { tier: '' });
+      return;
+    }
+    const emptyFilters = {
+      name: '', roll_number: '', department: '', section: '', batch_year: '', graduation_year: '',
+      cgpa_min: '', cgpa_max: '', tier: '', skills: '', projects_min: '', internships_min: '',
+      certifications_min: '', coding_platforms: [], has_resume: false
+    };
+    const newFilters = { ...emptyFilters, ...quickFilter.params };
+    setFilters(newFilters);
+    setPage(1);
+    fetchResults(1, newFilters);
   };
 
   const handleExport = () => {
     if (!results.length) return;
-    const headers = ['Name', 'Roll Number', 'Section', 'CGPA', 'Readiness Score', 'Tier'];
+    const headers = ['Name', 'Roll Number', 'Department', 'Section', 'CGPA', 'Score', 'Tier'];
     const csvContent = [
       headers.join(','),
-      ...results.map(s => `"${s.name}","${s.roll}","${s.section}","${s.cgpa}","${s.readinessScore}","${s.tier}"`)
+      ...results.map(s => `"${s.name || ''}","${s.roll_number || ''}","${s.department || ''}","${s.section || ''}","${s.cgpa || 0}","${s.readiness_score || 0}","${s.readiness_tier || ''}"`)
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'skill_sphere_students.csv');
+    link.setAttribute('download', 'students_search_export.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     toast.success('Results exported to CSV');
   };
 
+  const handlePlatformToggle = (platform) => {
+    setFilters(prev => ({
+      ...prev,
+      coding_platforms: prev.coding_platforms.includes(platform)
+        ? prev.coding_platforms.filter(p => p !== platform)
+        : [...prev.coding_platforms, platform]
+    }));
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="mb-5">
-        <h1 className="text-xl font-medium text-text-primary mb-1">Search students</h1>
-        <p className="text-[13px] text-text-secondary">Find candidates by skills, score, or tier</p>
-      </div>
-
-      <div className="bg-gray-50 rounded-md p-3.5 mb-5 border border-border">
-        <div className="flex flex-wrap gap-4 items-end">
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-text-secondary">Tier</label>
-            <select 
-              className="text-[13px] px-2.5 py-1.5 border border-border rounded bg-surface w-32"
-              value={filters.tier}
-              onChange={(e) => setFilters({...filters, tier: e.target.value})}
-            >
-              <option value="All">All tiers</option>
-              <option value="industry_ready">Industry Ready</option>
-              <option value="placement_ready">Placement Ready</option>
-              <option value="developing">Developing</option>
-              <option value="beginner">Beginner</option>
-            </select>
-          </div>
-          
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-text-secondary">Section</label>
-            <select 
-              className="text-[13px] px-2.5 py-1.5 border border-border rounded bg-surface w-24"
-              value={filters.section}
-              onChange={(e) => setFilters({...filters, section: e.target.value})}
-            >
-              <option value="All">All</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-text-secondary">Name</label>
-            <input 
-              type="text" 
-              placeholder="Search name..." 
-              className="text-[13px] px-2.5 py-1.5 border border-border rounded bg-surface w-40"
-              value={filters.name}
-              onChange={(e) => setFilters({...filters, name: e.target.value})}
-              onKeyDown={(e) => e.key === 'Enter' && fetchResults()}
+    <div className="space-y-6 pb-12">
+      {/* Top Toolbar */}
+      <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Main Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search by student name or roll number..."
+              value={filters.name || filters.roll_number}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFilters({ ...filters, name: val, roll_number: val });
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
 
-          <button onClick={fetchResults} disabled={loading} className="px-3 py-1.5 bg-primary text-white text-[13px] font-medium rounded hover:bg-blue-700 flex items-center gap-1">
-            <Search size={14} />
-            {loading ? 'Searching' : 'Search'}
-          </button>
-          <button onClick={handleClear} className="px-3 py-1.5 border border-border text-text-secondary text-[13px] font-medium rounded hover:bg-gray-100 flex items-center gap-1">
-            <X size={14} />
-            Clear
-          </button>
-
-          <div className="flex items-center gap-2 ml-auto">
-            <input 
-              type="checkbox" 
-              id="v2-toggle" 
-              checked={useV2} 
-              onChange={(e) => setUseV2(e.target.checked)} 
-              className="rounded border-border text-primary focus:ring-primary"
-            />
-            <label htmlFor="v2-toggle" className="text-[12px] text-text-secondary cursor-pointer">Use V2 Search Engine</label>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors ${
+                showFilters 
+                  ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <Filter size={16} />
+              Filters
+              {Object.values(filters).filter(v => v !== '' && v !== false && (!Array.isArray(v) || v.length > 0)).length > 0 && (
+                <span className="flex items-center justify-center w-5 h-5 bg-blue-600 text-white rounded-full text-[10px]">
+                  {Object.values(filters).filter(v => v !== '' && v !== false && (!Array.isArray(v) || v.length > 0)).length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-70"
+            >
+              <Search size={16} />
+              Search
+            </button>
           </div>
         </div>
+
+        {/* Expandable Filters Panel */}
+        {showFilters && (
+          <div className="pt-4 mt-2 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              
+              {/* Academic */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Academic</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[13px] font-medium text-slate-700">Department</label>
+                    <select
+                      value={filters.department}
+                      onChange={(e) => setFilters({...filters, department: e.target.value})}
+                      className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50"
+                    >
+                      <option value="">All</option>
+                      {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[13px] font-medium text-slate-700">Batch</label>
+                      <input type="number" placeholder="YYYY" value={filters.batch_year} onChange={e => setFilters({...filters, batch_year: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" />
+                    </div>
+                    <div>
+                      <label className="text-[13px] font-medium text-slate-700">Grad Year</label>
+                      <input type="number" placeholder="YYYY" value={filters.graduation_year} onChange={e => setFilters({...filters, graduation_year: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[13px] font-medium text-slate-700">Min CGPA</label>
+                      <input type="number" step="0.1" max="10" value={filters.cgpa_min} onChange={e => setFilters({...filters, cgpa_min: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" />
+                    </div>
+                    <div>
+                      <label className="text-[13px] font-medium text-slate-700">Max CGPA</label>
+                      <input type="number" step="0.1" max="10" value={filters.cgpa_max} onChange={e => setFilters({...filters, cgpa_max: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Skills & Tier */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Evaluation</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[13px] font-medium text-slate-700">Readiness Tier</label>
+                    <select
+                      value={filters.tier}
+                      onChange={(e) => setFilters({...filters, tier: e.target.value})}
+                      className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50"
+                    >
+                      <option value="">All Tiers</option>
+                      <option value="industry_ready">Industry Ready</option>
+                      <option value="placement_ready">Placement Ready</option>
+                      <option value="developing">Developing</option>
+                      <option value="beginner">Beginner</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[13px] font-medium text-slate-700">Specific Skills (comma separated)</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. React, Node.js" 
+                      value={filters.skills} 
+                      onChange={e => setFilters({...filters, skills: e.target.value})} 
+                      className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Portfolio */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Portfolio Counts</h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[13px] font-medium text-slate-700">Projects &ge;</label>
+                      <input type="number" min="0" value={filters.projects_min} onChange={e => setFilters({...filters, projects_min: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" />
+                    </div>
+                    <div>
+                      <label className="text-[13px] font-medium text-slate-700">Internships &ge;</label>
+                      <input type="number" min="0" value={filters.internships_min} onChange={e => setFilters({...filters, internships_min: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[13px] font-medium text-slate-700">Certificates &ge;</label>
+                      <input type="number" min="0" value={filters.certifications_min} onChange={e => setFilters({...filters, certifications_min: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" />
+                    </div>
+                    <div className="flex flex-col justify-end">
+                      <label className="flex items-center gap-2 p-2 border border-slate-200 rounded-md bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+                        <input 
+                          type="checkbox" 
+                          checked={filters.has_resume}
+                          onChange={e => setFilters({...filters, has_resume: e.target.checked})}
+                          className="rounded text-blue-600 focus:ring-blue-500" 
+                        />
+                        <span className="text-[13px] font-medium text-slate-700">Has Resume</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coding Platforms */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Coding Platforms</h3>
+                <div className="flex flex-wrap gap-2">
+                  {CODING_PLATFORMS.map(platform => (
+                    <button
+                      key={platform}
+                      onClick={() => handlePlatformToggle(platform)}
+                      className={`px-3 py-1.5 text-[13px] font-medium rounded-full border transition-colors ${
+                        filters.coding_platforms.includes(platform)
+                          ? 'bg-blue-50 border-blue-200 text-blue-700'
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {platform}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+            
+            {/* Filter Panel Actions */}
+            <div className="flex justify-end mt-6 pt-4 border-t border-slate-100">
+              <button onClick={handleClear} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="flex justify-between items-center mb-2.5">
-        <span className="text-[13px] text-text-secondary">
-          {searched ? `${results.length} students match` : 'Enter criteria to search'}
-        </span>
+      {/* Quick Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        {QUICK_FILTERS.map((qf, i) => (
+          <button
+            key={i}
+            onClick={() => handleQuickFilter(qf)}
+            className="px-3 py-1.5 bg-white border border-slate-200 rounded-full text-[13px] font-medium text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm"
+          >
+            {qf.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search Header / Results Meta */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium text-slate-600">
+          {loading ? 'Searching...' : searched ? `Found ${meta?.total || 0} students` : 'Enter criteria and search'}
+        </h2>
         {searched && results.length > 0 && (
-          <button onClick={handleExport} className="px-2.5 py-1.5 border border-border text-text-secondary text-[12px] font-medium rounded hover:bg-gray-50 flex items-center gap-1 bg-surface">
-            <Download size={14} /> Export CSV
+          <button onClick={handleExport} className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
+            <Download size={16} />
+            Export CSV
           </button>
         )}
       </div>
 
-      <div className="border border-border rounded-lg bg-surface">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-gray-50/50">
-                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Name</th>
-                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Roll</th>
-                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Section</th>
-                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">CGPA</th>
-                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Score</th>
-                <th className="text-left text-[12px] font-medium text-text-secondary py-2 px-3">Tier</th>
-                <th className="text-left py-2 px-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {!searched ? (
-                <tr><td colSpan="7" className="py-8 text-center text-[13px] text-text-secondary">Run a search to display students.</td></tr>
-              ) : loading ? (
-                <tr><td colSpan="7" className="py-8 text-center text-[13px] text-text-secondary">Searching...</td></tr>
-              ) : results.length === 0 ? (
-                <tr><td colSpan="7" className="py-8 text-center text-[13px] text-text-secondary">No students matched the criteria.</td></tr>
-              ) : (
-                results.map(student => (
-                  <tr key={student.id} className="border-b border-border hover:bg-gray-50">
-                    <td className="py-2.5 px-3 text-[13px] font-medium text-text-primary">{student.name}</td>
-                    <td className="py-2.5 px-3 text-[13px] text-text-secondary">{student.roll}</td>
-                    <td className="py-2.5 px-3 text-[13px] text-text-secondary">{student.section}</td>
-                    <td className="py-2.5 px-3 text-[13px] font-medium text-text-primary">{student.cgpa}</td>
-                    <td className="py-2.5 px-3 text-[13px]"><strong className="text-blue-600">{student.readinessScore}</strong></td>
-                    <td className="py-2.5 px-3">
-                      <TierBadge tier={student.tier} />
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <button 
-                        onClick={() => setSelectedStudent(student)} 
-                        className="p-1 text-text-secondary hover:text-primary hover:bg-blue-50 rounded transition-colors inline-flex"
-                        title="View profile"
-                      >
-                        <Eye size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Results Grid */}
+      {searched && !loading && results.length === 0 ? (
+        <div className="text-center py-20 bg-white border border-slate-200 rounded-xl shadow-sm">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="text-slate-400" size={24} />
+          </div>
+          <h3 className="text-lg font-medium text-slate-900 mb-1">No students found</h3>
+          <p className="text-slate-500">Try adjusting your filters to broaden your search.</p>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {results.map((student) => (
+            <div key={student._id || student.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col">
+              <div className="p-5 flex-1">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-700 font-bold text-lg shadow-inner">
+                    {student.name ? student.name.charAt(0) : <UserRound size={20} />}
+                  </div>
+                  <TierBadge tier={student.readiness_tier || 'beginner'} />
+                </div>
+                
+                <h3 className="font-semibold text-slate-900 text-lg leading-tight mb-1 truncate" title={student.name}>
+                  {student.name || 'Unnamed Student'}
+                </h3>
+                <p className="text-sm text-slate-500 font-medium mb-4">
+                  {student.roll_number || 'No Roll'} &bull; {student.department || 'No Dept'} {student.section ? `(${student.section})` : ''}
+                </p>
 
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider mb-0.5">CGPA</p>
+                    <p className="font-bold text-slate-900">{student.cgpa || 'N/A'}</p>
+                  </div>
+                  <div className="bg-blue-50 p-2.5 rounded-lg border border-blue-100">
+                    <p className="text-[11px] text-blue-600 font-medium uppercase tracking-wider mb-0.5">Score</p>
+                    <p className="font-bold text-blue-700">{student.readiness_score || 0}</p>
+                  </div>
+                </div>
+
+                {/* Badges / Stats */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex items-center gap-1 text-[12px] font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md" title="Projects">
+                    <Code2 size={14} className="text-slate-400" /> {student.project_count || 0}
+                  </div>
+                  <div className="flex items-center gap-1 text-[12px] font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md" title="Internships">
+                    <Briefcase size={14} className="text-slate-400" /> {student.internship_count || 0}
+                  </div>
+                  <div className="flex items-center gap-1 text-[12px] font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md" title="Certificates">
+                    <Award size={14} className="text-slate-400" /> {student.verified_certifications?.length || 0}
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  {student.resume_ats_score != null && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                      <FileText size={12} /> Resume
+                    </span>
+                  )}
+                  {student.coding_platforms?.slice(0,2).map(platform => (
+                    <span key={platform} className="inline-flex items-center text-[11px] font-medium text-slate-600 bg-white border border-slate-200 px-2 py-0.5 rounded-full truncate">
+                      {platform}
+                    </span>
+                  ))}
+                  {student.coding_platforms?.length > 2 && (
+                    <span className="inline-flex items-center text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full">
+                      +{student.coding_platforms.length - 2}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 p-3 bg-slate-50 group-hover:bg-blue-50 transition-colors">
+                <button 
+                  onClick={() => setSelectedStudent(student)}
+                  className="w-full flex items-center justify-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  <Eye size={16} /> View Profile
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {searched && meta && meta.totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-slate-200 pt-6 mt-8">
+          <p className="text-sm text-slate-500">
+            Showing <span className="font-medium text-slate-900">{((page - 1) * limit) + 1}</span> to <span className="font-medium text-slate-900">{Math.min(page * limit, meta.total)}</span> of <span className="font-medium text-slate-900">{meta.total}</span> results
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const newPage = Math.max(1, page - 1);
+                setPage(newPage);
+                fetchResults(newPage);
+              }}
+              disabled={page === 1}
+              className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={() => {
+                const newPage = Math.min(meta.totalPages, page + 1);
+                setPage(newPage);
+                fetchResults(newPage);
+              }}
+              disabled={page === meta.totalPages}
+              className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Drawer */}
       <Drawer isOpen={!!selectedStudent} onClose={() => setSelectedStudent(null)} title="Student Details">
         {selectedStudent && (
           <div className="space-y-6">
             <div>
-              <h3 className="font-medium text-text-primary text-lg">{selectedStudent.name}</h3>
-              <p className="text-[13px] text-text-secondary">{selectedStudent.roll} • Section {selectedStudent.section}</p>
+              <h3 className="font-medium text-slate-900 text-lg">{selectedStudent.name}</h3>
+              <p className="text-[13px] text-slate-500">{selectedStudent.roll_number || 'N/A'} &bull; Section {selectedStudent.section || 'N/A'}</p>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-gray-50 border border-border rounded-md">
-                <p className="text-[12px] text-text-secondary mb-1">CGPA</p>
-                <p className="text-lg font-medium text-text-primary">{selectedStudent.cgpa}</p>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <p className="text-[12px] text-slate-500 mb-1 font-medium">CGPA</p>
+                <p className="text-xl font-bold text-slate-900">{selectedStudent.cgpa}</p>
               </div>
-              <div className="p-3 bg-gray-50 border border-border rounded-md">
-                <p className="text-[12px] text-text-secondary mb-1">Score</p>
-                <p className="text-lg font-medium text-blue-600">{selectedStudent.readinessScore}</p>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                <p className="text-[12px] text-blue-600 mb-1 font-medium">Readiness Score</p>
+                <p className="text-xl font-bold text-blue-700">{selectedStudent.readiness_score}</p>
               </div>
             </div>
 
             <div>
-              <h4 className="text-[13px] font-medium text-text-primary mb-2">Readiness Tier</h4>
-              <TierBadge tier={selectedStudent.tier} />
+              <h4 className="text-[13px] font-medium text-slate-900 mb-3 uppercase tracking-wider">Readiness Tier</h4>
+              <TierBadge tier={selectedStudent.readiness_tier} />
             </div>
+
+            {selectedStudent.verified_skills?.length > 0 && (
+              <div>
+                <h4 className="text-[13px] font-medium text-slate-900 mb-3 uppercase tracking-wider">Verified Skills</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedStudent.verified_skills.map(s => (
+                    <span key={s} className="px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200 flex items-center gap-1">
+                      <CheckCircle2 size={12} /> {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Drawer>

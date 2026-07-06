@@ -141,16 +141,7 @@ export default function StudentDrives() {
   }, [processedDrives, activeTab, searchQuery]);
 
   return (
-    <div className="space-y-6 pb-12 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">Drives</h1>
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <span className="font-medium text-slate-700">Campus placement opportunities</span>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-6 pb-12 max-w-7xl mx-auto pt-2">
 
       {/* Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

@@ -207,48 +207,58 @@ export default function StudentAchievements() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Achievements</h1>
-          <p className="text-slate-500 mt-1">Showcase your awards, hackathons and recognitions.</p>
+      {/* Top Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-3">
+        
+        {/* Left - Tabs */}
+        <div className="flex items-center gap-6 overflow-x-auto">
+          {["All", "Awards", "Hackathons", "Open Source", "Other"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`relative pb-3 text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === tab
+                  ? "text-blue-600"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {tab}
+            
+              {activeTab === tab && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-blue-600" />
+              )}
+            </button>
+          ))}
         </div>
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="relative flex-1 md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        
+        {/* Right */}
+        <div className="flex items-center gap-3">
+        
+          <div className="relative w-72">
+            <Search
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+      
             <input
               type="text"
-              placeholder="Search achievements by title, issuer..."
+              placeholder="Search achievements..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all"
+              className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
-          <button 
-            onClick={() => handleOpenForm()} 
-            className="btn-primary flex items-center justify-center px-5 py-2.5 whitespace-nowrap shadow-sm hover:shadow-md transition-all font-medium"
+        
+          <button
+            onClick={() => handleOpenForm()}
+            className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 whitespace-nowrap"
           >
-            <Plus size={18} className="mr-2" />
+            <Plus size={17} />
             Add Achievement
           </button>
+        
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-slate-200">
-        {['All', 'Awards', 'Hackathons', 'Open Source', 'Other'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-t-lg font-medium text-sm whitespace-nowrap transition-colors ${
-              activeTab === tab
-                ? 'text-primary border-b-2 border-primary bg-primary/5'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        
       </div>
 
       {/* Add/Edit Form Inline */}

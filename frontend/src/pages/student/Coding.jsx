@@ -3,7 +3,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { CodingAPI } from '../../services/api';
 import CodingPlatformCard from '../../components/CodingPlatformCard';
-import CodingOverview from '../../components/coding/CodingOverview';
 import CodingDNA from '../../components/coding/CodingDNA';
 import CodingAchievements from '../../components/coding/CodingAchievements';
 import DashboardHero from '../../components/coding/DashboardHero';
@@ -72,8 +71,14 @@ export default function StudentCoding() {
   return (
     <div className="space-y-6 pb-12">
       <DashboardHero user={user} platforms={platforms} />
-
-      <CodingOverview platforms={platforms} />
+    
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Coding Platforms
+          </h2>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {platforms && Object.entries(platforms).filter(([key]) => key !== 'github').map(([key, platform]) => (
@@ -100,7 +105,17 @@ export default function StudentCoding() {
         )}
       </div>
 
+      <section className="space-y-4">
+
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Developer Analytics
+          </h2>
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  
         <div className="lg:col-span-2">
           <DeveloperInsights platforms={platforms} />
         </div>
@@ -109,6 +124,15 @@ export default function StudentCoding() {
         </div>
       </div>
 
+      <section className="space-y-4">
+
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Skills & Achievements
+          </h2>
+        </div>
+      </section>
+          
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
           <CodingDNA platforms={platforms} onViewFullDNA={() => setDnaDrawerOpen(true)} />

@@ -374,28 +374,70 @@ export default function StudentProjects() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Projects</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage your projects and portfolio.</p>
-        </div>
-        <button
-          onClick={() => {
-            if (showForm) {
-              setShowForm(false);
-              setEditingId(null);
-              setFormData(initialFormState);
-            } else {
-              setShowForm(true);
-            }
-          }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center shrink-0"
-        >
-          {showForm ? 'Cancel' : <><Plus size={16} className="mr-1.5" /> Add Project</>}
-        </button>
-      </div>
+      {/* Top Toolbar */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
 
+          {/* Left */}
+          <div className="flex items-center gap-8">
+
+              {filterTabs.map(tab => (
+                  <button
+                      key={tab.id}
+                      onClick={() => setFilterTab(tab.id)}
+                      className={`relative pb-3 text-sm font-medium transition-colors ${
+                          filterTab === tab.id
+                              ? "text-blue-600"
+                              : "text-slate-500 hover:text-slate-700"
+                      }`}
+                  >
+                      {tab.label}
+                    
+                      {filterTab === tab.id && (
+                          <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-blue-600" />
+                      )}
+                  </button>
+              ))}
+
+          </div>
+            
+          {/* Right */}
+          <div className="flex items-center gap-3">
+            
+              <div className="relative w-72">
+                  <Search
+                      size={18}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <input
+                      type="text"
+                      placeholder="Search projects..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  />
+              </div>
+            
+              <button
+                  onClick={() => {
+                      if (showForm) {
+                          setShowForm(false);
+                          setEditingId(null);
+                          setFormData(initialFormState);
+                      } else {
+                          setShowForm(true);
+                      }
+                  }}
+                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 whitespace-nowrap"
+              >
+                  <Plus size={17} />
+                  {showForm ? "Cancel" : "Add Project"}
+              </button>
+                
+          </div>
+                
+      </div>
+                
       {/* Add/Edit Form */}
       {showForm && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -554,39 +596,6 @@ export default function StudentProjects() {
           </div>
         </div>
       )}
-
-      {/* Controls: Tabs & Search */}
-      <div className="flex flex-col-reverse sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-200 pb-0">
-        <div className="flex gap-6 overflow-x-auto no-scrollbar">
-          {filterTabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setFilterTab(tab.id)}
-              className={`pb-3 text-sm font-medium transition-all relative whitespace-nowrap ${
-                filterTab === tab.id
-                  ? 'text-blue-600'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {tab.label}
-              {filterTab === tab.id && (
-                <span className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
-              )}
-            </button>
-          ))}
-        </div>
-        
-        <div className="relative w-full sm:w-64 pb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-[100%] sm:-translate-y-[80%] text-slate-400" size={16} />
-          <input
-            type="text"
-            placeholder="Search projects..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-          />
-        </div>
-      </div>
 
       {/* Projects List */}
       {filteredProjects.length === 0 ? (
