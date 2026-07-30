@@ -5,19 +5,19 @@
  */
 const quotes = require('../config/dashboardQuotes');
 
-async function buildHero(student) {
+async function buildHero(searchDoc) {
   const quote = quotes[Math.floor(Math.random() * quotes.length)];
   
   return {
     quote,
     student: {
-      id: student._id.toString(),
-      name: student.full_name,
-      avatar: student.profile_photo_url || null,
-      department: student.department || 'Unknown',
-      batch: student.batch_year ? `${student.batch_year} - ${student.graduation_year || student.batch_year + 4}` : 'Unknown',
-      semester: student.semester || 1,
-      cgpa: student.cgpa || null
+      id: searchDoc.identity.student_id.toString(),
+      name: searchDoc.identity.full_name,
+      avatar: searchDoc.identity.avatar || null,
+      department: searchDoc.class?.department || 'Unknown',
+      batch: searchDoc.class?.display_name || 'Unknown',
+      semester: searchDoc.class?.current_semester || searchDoc.academic?.latest_semester || 1,
+      cgpa: typeof searchDoc.academic?.cgpa === 'number' ? searchDoc.academic.cgpa : null
     }
   };
 }

@@ -40,8 +40,7 @@ export default function HODSearch() {
     roll_number: searchParams.get('roll_number') || '',
     department: searchParams.get('department') || '',
     section: searchParams.get('section') || '',
-    batch_year: searchParams.get('batch_year') || '',
-    graduation_year: searchParams.get('graduation_year') || '',
+    year: searchParams.get('year') || '',
     cgpa_min: searchParams.get('cgpa_min') || '',
     cgpa_max: searchParams.get('cgpa_max') || '',
     tier: searchParams.get('tier') || '',
@@ -110,7 +109,7 @@ export default function HODSearch() {
 
   const handleClear = () => {
     const emptyFilters = {
-      name: '', roll_number: '', department: '', section: '', batch_year: '', graduation_year: '',
+      name: '', roll_number: '', department: '', section: '', year: '',
       cgpa_min: '', cgpa_max: '', tier: '', skills: '', projects_min: '', internships_min: '',
       certifications_min: '', coding_platforms: [], has_resume: false
     };
@@ -129,7 +128,7 @@ export default function HODSearch() {
       return;
     }
     const emptyFilters = {
-      name: '', roll_number: '', department: '', section: '', batch_year: '', graduation_year: '',
+      name: '', roll_number: '', department: '', section: '', year: '',
       cgpa_min: '', cgpa_max: '', tier: '', skills: '', projects_min: '', internships_min: '',
       certifications_min: '', coding_platforms: [], has_resume: false
     };
@@ -144,7 +143,7 @@ export default function HODSearch() {
     const headers = ['Name', 'Roll Number', 'Department', 'Section', 'CGPA', 'Score', 'Tier'];
     const csvContent = [
       headers.join(','),
-      ...results.map(s => `"${s.name || ''}","${s.roll_number || ''}","${s.department || ''}","${s.section || ''}","${s.cgpa || 0}","${s.readiness_score || 0}","${s.readiness_tier || ''}"`)
+      ...results.map(s => `"${s.identity?.full_name || ''}","${s.identity?.roll_number || ''}","${s.class?.department || ''}","${s.class?.section || ''}","${s.academic?.cgpa || 0}","${s.mentor?.readiness_score || 0}","${s.mentor?.readiness_tier || ''}"`)
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -239,12 +238,8 @@ export default function HODSearch() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[13px] font-medium text-slate-700">Batch</label>
-                      <input type="number" placeholder="YYYY" value={filters.batch_year} onChange={e => setFilters({...filters, batch_year: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" />
-                    </div>
-                    <div>
-                      <label className="text-[13px] font-medium text-slate-700">Grad Year</label>
-                      <input type="number" placeholder="YYYY" value={filters.graduation_year} onChange={e => setFilters({...filters, graduation_year: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" />
+                      <label className="text-[13px] font-medium text-slate-700">Year</label>
+                      <input type="number" placeholder="YYYY" value={filters.year} onChange={e => setFilters({...filters, year: e.target.value})} className="mt-1 w-full p-2 border border-slate-200 rounded-md text-sm bg-slate-50" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -399,56 +394,56 @@ export default function HODSearch() {
               <div className="p-5 flex-1">
                 <div className="flex justify-between items-start mb-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-700 font-bold text-lg shadow-inner">
-                    {student.name ? student.name.charAt(0) : <UserRound size={20} />}
+                    {student.identity?.full_name ? student.identity.full_name.charAt(0) : <UserRound size={20} />}
                   </div>
-                  <TierBadge tier={student.readiness_tier || 'beginner'} />
+                  <TierBadge tier={student.mentor?.readiness_tier || 'beginner'} />
                 </div>
                 
-                <h3 className="font-semibold text-slate-900 text-lg leading-tight mb-1 truncate" title={student.name}>
-                  {student.name || 'Unnamed Student'}
+                <h3 className="font-semibold text-slate-900 text-lg leading-tight mb-1 truncate" title={student.identity?.full_name}>
+                  {student.identity?.full_name || 'Unnamed Student'}
                 </h3>
                 <p className="text-sm text-slate-500 font-medium mb-4">
-                  {student.roll_number || 'No Roll'} &bull; {student.department || 'No Dept'} {student.section ? `(${student.section})` : ''}
+                  {student.identity?.roll_number || 'No Roll'} &bull; {student.class?.department || 'No Dept'} {student.class?.section ? `(${student.class.section})` : ''}
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 mb-5">
                   <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                     <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider mb-0.5">CGPA</p>
-                    <p className="font-bold text-slate-900">{student.cgpa || 'N/A'}</p>
+                    <p className="font-bold text-slate-900">{student.academic?.cgpa || 'N/A'}</p>
                   </div>
                   <div className="bg-blue-50 p-2.5 rounded-lg border border-blue-100">
                     <p className="text-[11px] text-blue-600 font-medium uppercase tracking-wider mb-0.5">Score</p>
-                    <p className="font-bold text-blue-700">{student.readiness_score || 0}</p>
+                    <p className="font-bold text-blue-700">{student.mentor?.readiness_score || 0}</p>
                   </div>
                 </div>
 
                 {/* Badges / Stats */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   <div className="flex items-center gap-1 text-[12px] font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md" title="Projects">
-                    <Code2 size={14} className="text-slate-400" /> {student.project_count || 0}
+                    <Code2 size={14} className="text-slate-400" /> {student.portfolio?.project_count || 0}
                   </div>
                   <div className="flex items-center gap-1 text-[12px] font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md" title="Internships">
-                    <Briefcase size={14} className="text-slate-400" /> {student.internship_count || 0}
+                    <Briefcase size={14} className="text-slate-400" /> {student.portfolio?.internship_count || 0}
                   </div>
                   <div className="flex items-center gap-1 text-[12px] font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md" title="Certificates">
-                    <Award size={14} className="text-slate-400" /> {student.verified_certifications?.length || 0}
+                    <Award size={14} className="text-slate-400" /> {student.verification?.verified_certifications?.length || 0}
                   </div>
                 </div>
 
                 <div className="flex gap-2">
-                  {student.resume_ats_score != null && (
+                  {student.ats?.has_resume && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
                       <FileText size={12} /> Resume
                     </span>
                   )}
-                  {student.coding_platforms?.slice(0,2).map(platform => (
+                  {student.coding?.platforms?.slice(0,2).map(platform => (
                     <span key={platform} className="inline-flex items-center text-[11px] font-medium text-slate-600 bg-white border border-slate-200 px-2 py-0.5 rounded-full truncate">
                       {platform}
                     </span>
                   ))}
-                  {student.coding_platforms?.length > 2 && (
+                  {student.coding?.platforms?.length > 2 && (
                     <span className="inline-flex items-center text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full">
-                      +{student.coding_platforms.length - 2}
+                      +{student.coding.platforms.length - 2}
                     </span>
                   )}
                 </div>
@@ -505,31 +500,31 @@ export default function HODSearch() {
         {selectedStudent && (
           <div className="space-y-6">
             <div>
-              <h3 className="font-medium text-slate-900 text-lg">{selectedStudent.name}</h3>
-              <p className="text-[13px] text-slate-500">{selectedStudent.roll_number || 'N/A'} &bull; Section {selectedStudent.section || 'N/A'}</p>
+              <h3 className="font-medium text-slate-900 text-lg">{selectedStudent.identity?.full_name}</h3>
+              <p className="text-[13px] text-slate-500">{selectedStudent.identity?.roll_number || 'N/A'} &bull; Section {selectedStudent.class?.section || 'N/A'}</p>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
                 <p className="text-[12px] text-slate-500 mb-1 font-medium">CGPA</p>
-                <p className="text-xl font-bold text-slate-900">{selectedStudent.cgpa}</p>
+                <p className="text-xl font-bold text-slate-900">{selectedStudent.academic?.cgpa}</p>
               </div>
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
                 <p className="text-[12px] text-blue-600 mb-1 font-medium">Readiness Score</p>
-                <p className="text-xl font-bold text-blue-700">{selectedStudent.readiness_score}</p>
+                <p className="text-xl font-bold text-blue-700">{selectedStudent.mentor?.readiness_score}</p>
               </div>
             </div>
 
             <div>
               <h4 className="text-[13px] font-medium text-slate-900 mb-3 uppercase tracking-wider">Readiness Tier</h4>
-              <TierBadge tier={selectedStudent.readiness_tier} />
+              <TierBadge tier={selectedStudent.mentor?.readiness_tier} />
             </div>
 
-            {selectedStudent.verified_skills?.length > 0 && (
+            {selectedStudent.verification?.verified_skills?.length > 0 && (
               <div>
                 <h4 className="text-[13px] font-medium text-slate-900 mb-3 uppercase tracking-wider">Verified Skills</h4>
                 <div className="flex flex-wrap gap-2">
-                  {selectedStudent.verified_skills.map(s => (
+                  {selectedStudent.verification.verified_skills.map(s => (
                     <span key={s} className="px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200 flex items-center gap-1">
                       <CheckCircle2 size={12} /> {s}
                     </span>

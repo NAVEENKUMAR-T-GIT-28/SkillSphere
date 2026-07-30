@@ -25,6 +25,7 @@ import HODRoles from './pages/hod/Roles';
 import HODDrives from './pages/hod/Drives';
 import HODAuditLog from './pages/hod/AuditLog';
 import HODClasses from './pages/hod/Classes';
+import HODStudents from './pages/hod/Students';
 import AdminDashboard from './pages/admin/Dashboard';
 import Notifications from './pages/shared/Notifications';
 
@@ -248,6 +249,16 @@ function AppContent() {
           <ProtectedRoute requiredRoles={['hod']}>
             <Layout>
               <HODClasses />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hod/classes/:classId/students"
+        element={
+          <ProtectedRoute requiredRoles={['hod']}>
+            <Layout>
+              <HODStudents />
             </Layout>
           </ProtectedRoute>
         }

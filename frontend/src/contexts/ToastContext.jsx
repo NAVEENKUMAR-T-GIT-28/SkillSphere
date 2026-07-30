@@ -4,7 +4,7 @@
  * Usage: const toast = useToast(); toast.success('Done'); toast.error('Oops');
  */
 
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useMemo } from 'react';
 import { CheckCircle, XCircle, X } from 'lucide-react';
 
 const ToastContext = createContext(null);
@@ -15,23 +15,31 @@ export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const timers = useRef({});
 
-  const dismiss = useCallback((id) => {
+  const activeMessages = useRef(new Set());
+
+  const dismiss = useCallback((id, message) => {
     clearTimeout(timers.current[id]);
+    if (message) activeMessages.current.delete(message);
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
   const add = useCallback((message, type = 'success', duration = 4000) => {
+    if (activeMessages.current.has(message)) return;
+    activeMessages.current.add(message);
+    
     const id = ++_id;
     setToasts(prev => [...prev, { id, message, type }]);
-    timers.current[id] = setTimeout(() => dismiss(id), duration);
+    timers.current[id] = setTimeout(() => dismiss(id, message), duration);
     return id;
   }, [dismiss]);
 
   const success = useCallback((msg) => add(msg, 'success'), [add]);
   const error   = useCallback((msg) => add(msg, 'error', 5000), [add]);
 
+  const value = useMemo(() => ({ success, error }), [success, error]);
+
   return (
-    <ToastContext.Provider value={{ success, error }}>
+    <ToastContext.Provider value={value}>
       {children}
 
       {/* Toast container */}
@@ -57,7 +65,7 @@ export function ToastProvider({ children }) {
             }
             <p className="flex-1 leading-snug">{toast.message}</p>
             <button
-              onClick={() => dismiss(toast.id)}
+              onClick={() => dismiss(toast.id, toast.message)}
               className="text-current opacity-50 hover:opacity-100 transition-opacity flex-shrink-0"
               aria-label="Dismiss"
             >

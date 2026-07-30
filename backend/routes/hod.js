@@ -14,13 +14,21 @@ const { createRoleAssignmentValidator, updateClassSemesterValidator } = require(
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roleGuard');
 const hodController = require('../controllers/hodController');
-
+const enrollmentController = require('../controllers/enrollmentController');
+const enrollmentValidator = require('../validators/enrollmentValidator');
+const { createStudentLimiter, passwordResetLimiter } = require('../middleware/enrollmentRateLimiter');
 const { trackRouter } = require('../utils/routeTracker');
 const router = trackRouter(express.Router(), '/api/hod');
 
 router.get('/dashboard', authenticate, requireRole('hod'), hodController.getDashboard);
 
-router.get('/students', authenticate, requireRole('hod'), hodController.getAllStudents);
+router.post('/students', authenticate, requireRole('hod'), createStudentLimiter, enrollmentValidator.validateCreateStudent, enrollmentController.createStudent);
+router.get('/students', authenticate, requireRole('hod'), enrollmentController.getStudents);
+router.get('/students/:id', authenticate, requireRole('hod'), enrollmentController.getStudentById);
+router.patch('/students/:id', authenticate, requireRole('hod'), enrollmentValidator.validateUpdateStudent, enrollmentController.updateStudent);
+router.patch('/students/:id/class', authenticate, requireRole('hod'), enrollmentValidator.validateChangeClass, enrollmentController.changeClass);
+router.patch('/students/:id/password-reset', authenticate, requireRole('hod'), passwordResetLimiter, enrollmentController.resetPassword);
+router.patch('/students/:id/status', authenticate, requireRole('hod'), enrollmentValidator.validateChangeStatus, enrollmentController.changeStatus);
 
 router.post(
   '/role-assignments',
@@ -39,13 +47,9 @@ router.get('/verification-logs', authenticate, requireRole('hod'), hodController
 router.get('/users', authenticate, requireRole('hod'), hodController.searchUsers);
 
 router.get('/classes', authenticate, requireRole('hod'), hodController.getClasses);
-
-router.patch(
-  '/classes/:classId/semester',
-  authenticate,
-  requireRole('hod'),
-  updateClassSemesterValidator,
-  hodController.updateClassSemester
-);
+router.post('/classes', authenticate, requireRole('hod'), hodController.createClass);
+router.put('/classes/:classId', authenticate, requireRole('hod'), hodController.updateClass);
+router.patch('/classes/:classId/status', authenticate, requireRole('hod'), hodController.changeClassStatus);
+router.patch('/classes/:classId/promote', authenticate, requireRole('hod'), hodController.promoteClass);
 
 module.exports = router;

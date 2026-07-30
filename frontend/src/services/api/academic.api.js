@@ -5,4 +5,5 @@ export const AcademicAPI = {
   createClass: (data) => api.post('/classes', data),
   updateClass: (id, data) => api.patch(`/classes/${id}`, data),
   deactivateClass: (id) => api.delete(`/classes/${id}`),
+  promoteClass: (id) => api.patch(`/classes/${id}/promote`),
 };

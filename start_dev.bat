@@ -1,0 +1,6 @@
+@echo off
+echo Starting Terminal 1 (Frontend Dev Server)...
+start cmd /k "cd /d "%~dp0frontend" && npm run dev"
+
+echo Starting Terminal 2 (Backend Dev Server)...
+start cmd /k "cd /d "%~dp0backend" && npm run dev"

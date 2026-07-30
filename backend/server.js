@@ -39,8 +39,12 @@ const adminRoutes = require('./routes/admin');
 const classRoutes = require('./routes/classes');
 
 const v1ProfileRoutes = require('./routes/profile.routes');
+const bootstrapEvents = require('./services/events/bootstrap');
 
 const app = express();
+
+// Initialize the event synchronization backbone
+bootstrapEvents();
 
 // ─── Global Middleware ──────────────────────────────────────────────────────
 const allowedOrigins = ALLOWED_ORIGINS

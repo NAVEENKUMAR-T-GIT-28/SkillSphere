@@ -1,11 +1,21 @@
 // controllers/hodController.js
 const { validationResult } = require('express-validator');
 const {
-  getDashboard, getAllStudents, searchUsers,
-  createRoleAssignment, getRoleAssignments,
-  getClasses, updateClassSemester, getVerificationLogs
+  getDashboard,
+  getAllStudents,
+  searchUsers,
+  createRoleAssignment,
+  getRoleAssignments,
+  getClasses,
+  updateClassSemester,
+  getVerificationLogs,
+  createClass,
+  updateClass,
+  changeClassStatus,
+  promoteClass
 } = require('../services/hodService');
 const roleAssignmentRepo = require('../repositories/roleAssignmentRepo');
+const facultyRepo = require('../repositories/facultyRepo');
 const { success, error } = require('../utils/response');
 
 exports.getDashboard = async (req, res, next) => {
@@ -92,21 +102,62 @@ exports.searchUsers = async (req, res, next) => {
 
 exports.getClasses = async (req, res, next) => {
   try {
-    const classes = await getClasses();
+    const faculty = await facultyRepo.findByUserId(req.user.userId);
+    if (!faculty) return error(res, 'Faculty profile not found', 404);
+    
+    const classes = await getClasses(faculty.department);
     success(res, classes);
   } catch (err) {
     next(err);
   }
 };
 
-exports.updateClassSemester = async (req, res, next) => {
+exports.createClass = async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, data: null, error: { message: errors.array().map(e => e.msg).join(', '), code: 'VALIDATION_ERROR' } });
-    }
+    const faculty = await facultyRepo.findByUserId(req.user.userId);
+    if (!faculty) return error(res, 'Faculty profile not found', 404);
 
-    const cls = await updateClassSemester(req.params.classId, req.body.semester);
+    const cls = await createClass(faculty.department, req.user.userId, req.body);
+    success(res, cls, 201);
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ success: false, data: null, error: { message: err.message, code: err.code } });
+    }
+    next(err);
+  }
+};
+
+exports.updateClass = async (req, res, next) => {
+  try {
+    const cls = await updateClass(req.params.classId, req.body);
+    success(res, cls);
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ success: false, data: null, error: { message: err.message, code: err.code } });
+    }
+    next(err);
+  }
+};
+
+exports.changeClassStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    if (!status || !['ACTIVE', 'ARCHIVED', 'CLOSED'].includes(status)) {
+      return res.status(400).json({ success: false, data: null, error: { message: 'Invalid status', code: 'BAD_REQUEST' } });
+    }
+    const cls = await changeClassStatus(req.params.classId, status);
+    success(res, cls);
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ success: false, data: null, error: { message: err.message, code: err.code } });
+    }
+    next(err);
+  }
+};
+
+exports.promoteClass = async (req, res, next) => {
+  try {
+    const cls = await promoteClass(req.params.classId);
     success(res, cls);
   } catch (err) {
     if (err.statusCode) {

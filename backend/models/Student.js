@@ -57,9 +57,9 @@ const studentSchema = new mongoose.Schema(
     pincode: { type: String, trim: true },
     languages_known: [{ type: String, trim: true }],
 
-    // Academic history (Phase 1 enhancement)
-    current_backlogs: { type: Number, default: 0, min: 0 },
-    backlog_history: { type: Number, default: 0, min: 0 },
+    // Academic history (Cached from AcademicRecord)
+    latest_cgpa: { type: Number, default: 0 },
+    active_backlogs: { type: Number, default: 0 },
     tenth_percentage: { type: Number, min: 0, max: 100 },
     twelfth_percentage: { type: Number, min: 0, max: 100 },
 
@@ -67,7 +67,7 @@ const studentSchema = new mongoose.Schema(
     preferred_job_role: { type: String, trim: true },
     preferred_work_location: { type: String, trim: true },
 
-    // Academic
+    // Academic Identity
     roll_number: {
       type: String,
       required: [true, 'Roll number is required'],
@@ -76,32 +76,31 @@ const studentSchema = new mongoose.Schema(
     },
     register_number: {
       type: String,
+      sparse: true,
+      unique: true,
       trim: true
     },
-    department: {
+    academic_status: {
       type: String,
-      trim: true
+      enum: ['ENROLLED', 'GRADUATED', 'ALUMNI', 'DROPPED', 'TRANSFERRED'],
+      default: 'ENROLLED'
     },
-    section: {
+    personal_email: {
       type: String,
-      trim: true
+      trim: true,
+      lowercase: true
     },
-    semester: {
-      type: Number,
-      min: 1,
-      max: 8
-    },
-    batch_year: {
-      type: Number
-    },
-    graduation_year: {
-      type: Number
-    },
-    cgpa: {
-      type: Number,
-      min: [0, 'CGPA cannot be less than 0'],
-      max: [10, 'CGPA cannot exceed 10']
-    },
+
+    // Legacy Fields (DEPRECATED - Will be removed once StudentProgressBuilder is active)
+    department: { type: String, trim: true }, // DEPRECATED
+    section: { type: String, trim: true }, // DEPRECATED
+    semester: { type: Number, min: 1, max: 8 }, // DEPRECATED
+    batch_year: { type: Number }, // DEPRECATED
+    graduation_year: { type: Number }, // DEPRECATED
+    cgpa: { type: Number, min: 0, max: 10 }, // DEPRECATED
+    current_backlogs: { type: Number, default: 0, min: 0 }, // DEPRECATED
+    backlog_history: { type: Number, default: 0, min: 0 }, // DEPRECATED
+    profile_completeness: { type: Number, default: 0, min: 0, max: 100 }, // DEPRECATED
 
     // Social + coding links (embedded — always fetched with profile, small fixed set)
     links: {
@@ -126,14 +125,6 @@ const studentSchema = new mongoose.Schema(
       type: String,
       enum: ['beginner', 'developing', 'placement_ready', 'industry_ready'],
       default: 'beginner'
-    },
-
-    // Profile completeness %
-    profile_completeness: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 100
     }
   },
   {
@@ -143,7 +134,6 @@ const studentSchema = new mongoose.Schema(
 
 // Indexes (user_id and roll_number already have unique:true in schema)
 studentSchema.index({ class_id: 1 });
-studentSchema.index({ cgpa: 1 });
 studentSchema.index({ readiness_score: -1 });
 
 // No longer calculating completeness on save since it's dynamic.

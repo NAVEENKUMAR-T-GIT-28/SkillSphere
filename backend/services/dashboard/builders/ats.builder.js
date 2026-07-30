@@ -4,26 +4,14 @@
  */
 const Resume = require('../../../models/Resume');
 
-async function buildAts(studentId) {
-  const resume = await Resume.findOne({ student_id: studentId })
-    .sort({ created_at: -1 })
-    .select('ats_score ats_grade')
-    .lean();
-
-  if (!resume) {
-    return {
-      enabled: false,
-      beta: true,
-      score: null,
-      grade: null
-    };
-  }
+async function buildAts(searchDoc) {
+  const ats = searchDoc.ats || {};
 
   return {
     enabled: true,
     beta: true,
-    score: resume.ats_score || 0,
-    grade: resume.ats_grade || null
+    score: typeof ats.score === 'number' ? ats.score : null,
+    grade: ats.grade || null
   };
 }
 

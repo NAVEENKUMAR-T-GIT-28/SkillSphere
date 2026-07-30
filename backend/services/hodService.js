@@ -6,6 +6,7 @@
 
 const studentRepo = require('../repositories/studentRepo');
 const skillRepo = require('../repositories/skillRepo');
+const mongoose = require('mongoose');
 const certificationRepo = require('../repositories/certificationRepo');
 const projectRepo = require('../repositories/projectRepo');
 const placementRepo = require('../repositories/placementRepo');
@@ -70,17 +71,19 @@ const getDashboard = async () => {
  * Get paginated student list with optional department/section/batch/tier filters.
  */
 const getAllStudents = async (params) => {
-  const { department, batch_year, section, tier, page = 1, limit = 50 } = params;
+  const { department, batch_year, section, tier, page = 1, limit = 100, class_id } = params;
   const filter = {};
 
-  if (department || batch_year || section) {
+  if (class_id) {
+    filter.class_id = new mongoose.Types.ObjectId(class_id); // Priority 2: Trust the class_id and cast for aggregate
+  } else if (department || batch_year || section) {
     const classIds = await getClassIds({
       department,
       batch_year: batch_year ? parseInt(batch_year) : undefined,
       section
     });
     if (classIds.length === 0) {
-      return { students: [], meta: buildMeta(0, 1, parseInt(limit)) };
+      return { students: [], stats: { total: 0, active: 0, suspended: 0, dropped: 0 }, meta: buildMeta(0, 1, parseInt(limit)) };
     }
     filter.class_id = { $in: classIds };
   }
@@ -90,12 +93,33 @@ const getAllStudents = async (params) => {
   const { skip, limit: parsedLimit, page: parsedPage } = paginate(page, limit);
   const total = await studentRepo.countDocuments(filter);
   const students = await studentRepo.findAll(filter)
-    .populate('user_id', 'email is_active')
+    .populate('user_id', 'email login_identifier is_active account_status')
     .sort({ readiness_score: -1 })
     .skip(skip)
     .limit(parsedLimit);
 
-  return { students, meta: buildMeta(total, parsedPage, parsedLimit) };
+  // Generate statistics via aggregation
+  const statsResult = await studentRepo.aggregate([
+    { $match: filter },
+    { $lookup: { from: 'users', localField: 'user_id', foreignField: '_id', as: 'user' } },
+    { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+    { $group: {
+        _id: null,
+        total: { $sum: 1 },
+        active: { $sum: { $cond: [{ $eq: [{ $ifNull: ['$user.account_status', 'ACTIVE'] }, 'ACTIVE'] }, 1, 0] } },
+        suspended: { $sum: { $cond: [{ $eq: ['$user.account_status', 'SUSPENDED'] }, 1, 0] } },
+        dropped: { $sum: { $cond: [{ $eq: ['$academic_status', 'DROPPED'] }, 1, 0] } },
+    }}
+  ]);
+  
+  const stats = statsResult[0] ? {
+    total: statsResult[0].total,
+    active: statsResult[0].active,
+    suspended: statsResult[0].suspended,
+    dropped: statsResult[0].dropped
+  } : { total: 0, active: 0, suspended: 0, dropped: 0 };
+
+  return { students, stats, meta: buildMeta(total, parsedPage, parsedLimit) };
 };
 
 /**
@@ -218,35 +242,107 @@ const getRoleAssignments = async () => {
 /**
  * Get all classes formatted for HOD dropdown UI.
  */
-const getClasses = async () => {
-  const classes = await classRepo.find({}).sort({ department: 1, batch_year: 1, section: 1 });
+const getClasses = async (department) => {
+  const filter = department ? { department } : {};
+  const classes = await classRepo.findMany(filter).populate('advisor_id', 'full_name').sort({ batch_start: 1, section: 1 });
   return classes.map(c => ({
     _id: c._id,
     department: c.department,
     section: c.section,
-    batch_year: c.batch_year,
-    graduation_year: c.graduation_year,
-    academic_year: c.academic_year,
-    semester: c.semester,
-    is_active: c.is_active,
-    label: `${c.department}-${c.section}-${c.batch_year}`
+    batch_start: c.batch_start,
+    batch_end: c.batch_end,
+    current_year: c.current_year,
+    current_semester: c.current_semester,
+    capacity: c.capacity,
+    advisor: c.advisor_id,
+    status: c.status,
+    label: `${c.department}-${c.section}-${c.batch_start}`
   }));
 };
 
 /**
- * Update class semester and trigger SkillRack peer-group recomputation.
+ * Create a new Class.
  */
-const updateClassSemester = async (classId, semester) => {
-  const cls = await classRepo.updateById(classId, {
-    $set: { semester, academic_year: Math.ceil(semester / 2) }
+const createClass = async (department, adminId, data) => {
+  const { batch_start, batch_end, current_year, current_semester, section, advisor_id, capacity } = data;
+  
+  // Enforce uniqueness
+  const existing = await classRepo.findOne({ department, section, batch_start });
+  if (existing) {
+    const err = new Error(`Class ${department}-${section}-${batch_start} already exists`);
+    err.statusCode = 409;
+    err.code = 'CONFLICT';
+    throw err;
+  }
+
+  const newClass = await classRepo.create({
+    department,
+    batch_start,
+    batch_end,
+    current_year,
+    current_semester,
+    section,
+    advisor_id: advisor_id || null,
+    capacity: capacity || 60,
+    status: 'ACTIVE',
+    created_by: adminId
   });
 
+  return newClass;
+};
+
+/**
+ * Edit an existing Class.
+ */
+const updateClass = async (classId, data) => {
+  const cls = await classRepo.updateById(classId, data);
   if (!cls) {
     const err = new Error('Class not found');
     err.statusCode = 404;
     err.code = 'NOT_FOUND';
     throw err;
   }
+  return cls;
+};
+
+/**
+ * Update class status (Archive / Close).
+ */
+const changeClassStatus = async (classId, status) => {
+  const cls = await classRepo.updateById(classId, { status });
+  if (!cls) {
+    const err = new Error('Class not found');
+    err.statusCode = 404;
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  return cls;
+};
+
+/**
+ * Promote Class Semester.
+ */
+const promoteClass = async (classId) => {
+  const cls = await classRepo.findById(classId);
+  if (!cls) {
+    const err = new Error('Class not found');
+    err.statusCode = 404;
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  
+  if (cls.current_semester >= 8) {
+    const err = new Error('Class is already in the final semester');
+    err.statusCode = 400;
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  cls.current_semester += 1;
+  cls.current_year = Math.ceil(cls.current_semester / 2);
+  await cls.save();
+
+  // TODO: Publish ClassPromoted event for StudentSyncService to pick up
 
   // Trigger recompute for SkillRack peer group
   const { recomputePeerGroup } = require('./skillrackScoring');
@@ -256,6 +352,7 @@ const updateClassSemester = async (classId, semester) => {
 
   return cls;
 };
+
 
 /**
  * Get paginated verification logs with optional filters.
@@ -280,6 +377,9 @@ module.exports = {
   createRoleAssignment,
   getRoleAssignments,
   getClasses,
-  updateClassSemester,
+  createClass,
+  updateClass,
+  changeClassStatus,
+  promoteClass,
   getVerificationLogs
 };

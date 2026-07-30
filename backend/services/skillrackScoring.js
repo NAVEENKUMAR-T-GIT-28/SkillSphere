@@ -68,13 +68,25 @@ const recomputePeerGroup = async (classId) => {
 
   // 4. Fetch SkillRack profiles for all these students
   const profiles = await codingProfileRepo.find({
-    student_id: { $in: studentIds },
-    platform: 'skillrack'
+    student_id: { $in: studentIds }
   });
 
   const profileMap = new Map();
   for (const p of profiles) {
-    profileMap.set(p.student_id.toString(), p.skillrack_stats);
+    const srData = p.platforms?.skillrack?.data;
+    if (srData) {
+      profileMap.set(p.student_id.toString(), {
+        code_track: srData.codeTrack || 0,
+        dc: srData.dc || 0,
+        dt: srData.dt || 0,
+        code_test: srData.codeTest || 0,
+        code_tutor: srData.codeTutor || 0,
+        solved: srData.solved || 0,
+        sr_certificates: srData.certificates || 0,
+        raw_points: srData.points || 0,
+        badges: srData.badges || { gold: 0, silver: 0, bronze: 0 }
+      });
+    }
   }
 
   // 5. Build a lookup map: student_id → class

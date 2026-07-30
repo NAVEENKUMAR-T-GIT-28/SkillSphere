@@ -52,4 +52,11 @@ router.delete(
   controller.deleteClass
 );
 
+router.patch(
+  '/:id/promote',
+  authenticate,
+  requireRole('hod'),
+  controller.promoteClass
+);
+
 module.exports = router;

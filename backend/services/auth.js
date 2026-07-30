@@ -38,29 +38,21 @@ const register = async ({ email, password, base_role, full_name, phone, departme
   let profile;
 
   if (base_role === 'student') {
-    const { roll_number, batch_year, graduation_year, section, semester, cgpa, class_id } = rest;
+    const { roll_number, class_id } = rest;
 
-    let cls;
-    if (class_id) {
-      cls = await classRepo.findById(class_id);
-      if (!cls) {
-        const err = new Error('Class not found');
-        err.statusCode = 404;
-        err.code = 'CLASS_NOT_FOUND';
-        throw err;
-      }
-    } else {
-      cls = await classRepo.findOne({ department, section: section || 'A', batch_year });
-      if (!cls) {
-        cls = await classRepo.create({
-          department,
-          section: section || 'A',
-          batch_year,
-          graduation_year: graduation_year || (batch_year + 4),
-          academic_year: Math.ceil((semester || 1) / 2),
-          semester: semester || 1
-        });
-      }
+    if (!class_id) {
+      const err = new Error('class_id is required to register a student');
+      err.statusCode = 400;
+      err.code = 'MISSING_CLASS';
+      throw err;
+    }
+
+    const cls = await classRepo.findById(class_id);
+    if (!cls) {
+      const err = new Error('Class not found');
+      err.statusCode = 404;
+      err.code = 'CLASS_NOT_FOUND';
+      throw err;
     }
 
     profile = await studentRepo.create({
@@ -68,13 +60,7 @@ const register = async ({ email, password, base_role, full_name, phone, departme
       full_name,
       phone,
       roll_number,
-      class_id: cls._id,
-      department: cls.department,
-      section: cls.section,
-      batch_year: cls.batch_year,
-      graduation_year: cls.graduation_year,
-      semester: semester || cls.semester,
-      cgpa
+      class_id: cls._id
     });
   } else {
     const { employee_id, designation } = rest;

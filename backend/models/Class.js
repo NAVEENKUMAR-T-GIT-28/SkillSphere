@@ -1,8 +1,7 @@
 /**
- * Class Model
- * One document per unique class section for a specific batch.
- * Centralises semester, academic year, and cohort identity.
- * Advancing semester = one updateMany on this collection, not N student writes.
+ * Class Model V2
+ * One document per unique academic cohort.
+ * This is the ultimate source of truth for academic state.
  */
 
 const mongoose = require('mongoose');
@@ -13,61 +12,77 @@ const classSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Department is required'],
       trim: true
-      // e.g. "CCE", "CSE", "ECE"
+    },
+    batch_start: {
+      type: Number,
+      required: [true, 'Batch start year is required']
+    },
+    batch_end: {
+      type: Number,
+      required: [true, 'Batch end year is required']
+    },
+    current_year: {
+      type: Number,
+      required: [true, 'Current year is required'],
+      min: 1,
+      max: 4
+    },
+    current_semester: {
+      type: Number,
+      required: [true, 'Current semester is required'],
+      min: 1,
+      max: 8
     },
     section: {
       type: String,
       required: [true, 'Section is required'],
       trim: true
-      // e.g. "A", "B", "C"
     },
-    batch_year: {
+    advisor_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Faculty'
+    },
+    capacity: {
       type: Number,
-      required: [true, 'Batch year is required']
-      // Year of admission — stable identifier. e.g. 2023
+      default: 60,
+      min: 1
     },
-    graduation_year: {
-      type: Number,
-      required: [true, 'Graduation year is required']
-      // Derived: batch_year + 4 for 4-year programmes
+    status: {
+      type: String,
+      enum: ['ACTIVE', 'ARCHIVED', 'CLOSED'],
+      default: 'ACTIVE'
     },
-    academic_year: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 4
-      // Current year of study (1–4). Updated once per academic year.
+    created_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
     },
-    semester: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 8
-      // Current semester (1–8). Updated twice per academic year.
-    },
-    is_active: {
-      type: Boolean,
-      default: true
-      // Graduated batches are set to false and excluded from live rankings.
-    }
+
+    // --- Legacy Fields (Phase A Dual-Write/Migration) ---
+    batch_year: { type: Number },
+    graduation_year: { type: Number },
+    academic_year: { type: Number },
+    semester: { type: Number },
+    is_active: { type: Boolean }
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
   }
 );
 
-// One class per dept + section + batch — no duplicates allowed
-classSchema.index({ department: 1, section: 1, batch_year: 1 }, { unique: true });
+// One class per dept + section + batch_start — no duplicates allowed
+classSchema.index({ department: 1, section: 1, batch_start: 1 }, { unique: true });
+classSchema.index({ department: 1, current_year: 1 });
+classSchema.index({ current_semester: 1 });
+classSchema.index({ status: 1 });
 
-// Peer group queries: all sections of a department in a given academic year
-classSchema.index({ department: 1, academic_year: 1 });
-
-// Threshold lookups by semester
-classSchema.index({ semester: 1 });
-
-// Human-readable identifier, e.g. "Computer Science-A-2023"
+// Human-readable identifier, e.g. "CSE-A-2023"
 classSchema.virtual('label').get(function () {
-  return `${this.department}-${this.section}-${this.batch_year}`;
+  return `${this.department}-${this.section}-${this.batch_start}`;
+});
+
+classSchema.virtual('display_name').get(function () {
+  return `${this.department} • Year ${this.current_year} • Section ${this.section}`;
 });
 
 classSchema.set('toJSON', { virtuals: true });

@@ -1,0 +1,770 @@
+# Faculty Verification Center Page Contract
+
+**Module:** Faculty Portal
+
+**Page:** Verification Center
+
+**Route:** `/faculty/verifications`
+
+**Access:** Faculty
+
+**Version:** 1.0
+
+**Status:** Stable
+
+---
+
+# 1. Purpose
+
+The Verification Center is the primary workspace for faculty members.
+
+It provides a centralized interface to review and verify student submissions.
+
+Supported verification types
+
+- Skills
+- Projects
+- Internships
+- Certifications
+- Achievements
+- Resume
+
+Faculty members can
+
+- View submission details
+- Download attachments
+- Review evidence
+- Add review remarks
+- Approve submission
+- Reject submission
+- Request Changes
+
+This page owns **review actions only**.
+
+Student portfolio data remains owned by Student Services.
+
+---
+
+# 2. Route
+
+```
+/faculty/verifications
+```
+
+---
+
+# 3. Authorization
+
+Allowed
+
+```
+Faculty
+```
+
+Not Allowed
+
+```
+Student
+
+Placement Officer
+
+HOD
+
+Admin
+```
+
+---
+
+# 4. Page Architecture
+
+```
+Verification Center
+
+│
+
+├── Summary Cards
+
+├── Search & Filters
+
+├── Category Tabs
+
+├── Verification Queue
+
+├── Submission Details
+
+└── Review Actions
+```
+
+---
+
+# 5. Data Ownership
+
+| Data | Owner |
+|-------|-------|
+| Submission | Student Services |
+| Attachments | File Service |
+| Review Status | Verification Service |
+| Faculty Remarks | Verification Service |
+| Review History | Verification Service |
+| Notification | Notification Service |
+
+Faculty **never edits student records directly**.
+
+Faculty only publishes review decisions.
+
+---
+
+# 6. Data Sources
+
+| Section | Source |
+|----------|--------|
+| Summary Statistics | Verification Read Model |
+| Queue | Verification Service |
+| Submission Details | Student Portfolio Services |
+| Attachments | File Service |
+| Review History | Verification Service |
+| Student Summary | Student Search |
+
+---
+
+# 7. UI Layout
+
+```
+--------------------------------------------------------
+
+Summary Cards
+
+--------------------------------------------------------
+
+Search
+
+Filters
+
+Category Tabs
+
+--------------------------------------------------------
+
+Verification Queue
+
+--------------------------------------------------------
+
+Submission Details Panel
+
+--------------------------------------------------------
+
+Review Actions
+
+--------------------------------------------------------
+```
+
+---
+
+# 8. Required APIs
+
+## Dashboard Statistics
+
+```
+GET /api/faculty/verifications/stats
+```
+
+Response
+
+```json
+{
+  "totalPending": 42,
+  "approvedToday": 18,
+  "rejectedToday": 3,
+  "averageReviewTime": "1.8 Days",
+  "completionRate": 92
+}
+```
+
+---
+
+## Category Counts
+
+```
+GET /api/faculty/verifications/categories
+```
+
+Response
+
+```json
+{
+  "all":42,
+  "projects":13,
+  "skills":11,
+  "internships":6,
+  "certificates":7,
+  "achievements":5,
+  "resume":2
+}
+```
+
+---
+
+## Verification Queue
+
+```
+GET /api/faculty/verifications
+```
+
+Query Parameters
+
+```
+page
+
+limit
+
+search
+
+category
+
+department
+
+section
+
+status
+
+priority
+
+sort
+```
+
+Response
+
+```json
+{
+  "data":[
+    {
+      "submissionId":"",
+
+      "studentId":"",
+
+      "studentName":"",
+
+      "rollNumber":"",
+
+      "department":"",
+
+      "section":"",
+
+      "submissionType":"PROJECT",
+
+      "title":"",
+
+      "submittedAt":"",
+
+      "priority":"HIGH",
+
+      "status":"PENDING"
+    }
+  ]
+}
+```
+
+---
+
+## Submission Details
+
+```
+GET /api/faculty/verifications/{submissionId}
+```
+
+Response
+
+```json
+{
+  "submission":{
+
+  },
+
+  "student":{
+
+  },
+
+  "attachments":[
+
+  ],
+
+  "history":[
+
+  ]
+}
+```
+
+---
+
+## Review Submission
+
+```
+PATCH /api/faculty/verifications/{submissionId}
+```
+
+Request
+
+```json
+{
+  "action":"APPROVE",
+
+  "remarks":"Excellent implementation."
+}
+```
+
+Response
+
+```json
+{
+  "success":true
+}
+```
+
+---
+
+# 9. Queue Item Model
+
+```typescript
+interface VerificationItem{
+
+submissionId:string
+
+studentId:string
+
+studentName:string
+
+rollNumber:string
+
+department:string
+
+section:string
+
+submissionType:
+"PROJECT"
+|
+"SKILL"
+|
+"CERTIFICATE"
+|
+"INTERNSHIP"
+|
+"ACHIEVEMENT"
+|
+"RESUME"
+
+title:string
+
+submittedAt:Date
+
+priority:
+"HIGH"
+|
+"MEDIUM"
+|
+"LOW"
+
+status:
+"PENDING"
+|
+"UNDER_REVIEW"
+
+}
+```
+
+---
+
+# 10. Submission Details Model
+
+```typescript
+interface SubmissionDetails{
+
+submissionId:string
+
+student:StudentSummary
+
+portfolioItem:any
+
+attachments:Attachment[]
+
+reviewHistory:ReviewHistory[]
+
+facultyNotes:string
+
+}
+```
+
+---
+
+# 11. Review Action Model
+
+```typescript
+interface ReviewRequest{
+
+action:
+"APPROVE"
+|
+"REJECT"
+|
+"REQUEST_CHANGES"
+
+remarks:string
+
+}
+```
+
+---
+
+# 12. UI Components
+
+## Summary Cards
+
+Displays
+
+- Pending Reviews
+- Approved Today
+- Rejected Today
+- Average Review Time
+- Completion Rate
+
+---
+
+## Search
+
+Search by
+
+- Student Name
+- Roll Number
+- Submission Title
+
+---
+
+## Filters
+
+Department
+
+Section
+
+Status
+
+Priority
+
+Category
+
+Sort Order
+
+---
+
+## Category Tabs
+
+```
+All
+
+Projects
+
+Skills
+
+Internships
+
+Certificates
+
+Achievements
+
+Resume
+```
+
+Each tab displays pending count.
+
+---
+
+## Verification Queue
+
+Each row displays
+
+- Student Avatar
+- Student Name
+- Roll Number
+- Department
+- Submission Title
+- Submission Type
+- Submitted Date
+- Priority Badge
+- Status Badge
+
+Clicking opens Submission Details.
+
+---
+
+## Submission Details Panel
+
+Displays
+
+Student Summary
+
+↓
+
+Portfolio Details
+
+↓
+
+Attachments
+
+↓
+
+Review History
+
+↓
+
+Faculty Notes
+
+↓
+
+Action Buttons
+
+---
+
+## Review Actions
+
+Available
+
+```
+Approve
+
+Reject
+
+Request Changes
+```
+
+Faculty remarks are mandatory for
+
+- Reject
+- Request Changes
+
+---
+
+# 13. Validation
+
+Approve
+
+```
+No validation required.
+```
+
+Reject
+
+```
+Remarks required.
+```
+
+Request Changes
+
+```
+Remarks required.
+```
+
+Attachment download
+
+```
+Must verify file exists.
+```
+
+---
+
+# 14. State Management
+
+Loading
+
+```
+Skeleton Queue
+```
+
+Refreshing
+
+```
+Background Refresh
+```
+
+Empty
+
+```
+No Pending Reviews
+```
+
+Error
+
+```
+Unable to load verification queue.
+```
+
+---
+
+# 15. Synchronization
+
+Review Decision
+
+↓
+
+Verification Service
+
+↓
+
+Publish Event
+
+↓
+
+Student Portfolio Updated
+
+↓
+
+Student Search Updated
+
+↓
+
+Dashboard Summary Updated
+
+↓
+
+Notification Created
+
+↓
+
+Activity Timeline Updated
+
+Faculty Dashboard automatically reflects the new counts.
+
+---
+
+# 16. Events Published
+
+```
+SkillVerified
+
+SkillRejected
+
+ProjectVerified
+
+ProjectRejected
+
+InternshipVerified
+
+InternshipRejected
+
+CertificateVerified
+
+CertificateRejected
+
+AchievementVerified
+
+AchievementRejected
+
+ResumeVerified
+
+ResumeRejected
+
+ReviewChangesRequested
+```
+
+---
+
+# 17. Navigation
+
+```
+Dashboard
+
+↓
+
+Verification Center
+
+↓
+
+Submission Details
+
+↓
+
+Approve
+
+↓
+
+Dashboard
+```
+
+OR
+
+```
+Verification Center
+
+↓
+
+Student Profile
+
+↓
+
+Back
+```
+
+---
+
+# 18. Permissions
+
+Faculty can
+
+- View Queue
+- View Submission
+- Download Attachments
+- Add Remarks
+- Approve
+- Reject
+- Request Changes
+
+Faculty cannot
+
+- Edit Student Profile
+- Delete Submission
+- Create Submission
+- Modify Student Portfolio
+
+---
+
+# 19. Performance
+
+- Server-side pagination
+- Debounced search
+- Infinite scrolling (optional)
+- Parallel loading of queue and statistics
+- Lazy loading of attachments
+- Attachment preview on demand
+- Queue refresh every 60 seconds
+
+---
+
+# 20. Development Rules
+
+- Verification Center must never modify portfolio collections directly.
+- All review actions must go through the Verification Service.
+- Student portfolio data is read-only.
+- Every review action must publish a domain event.
+- Review history is immutable.
+- Queue statistics must come from backend aggregation.
+- Search, filtering, and pagination must be server-side.
+
+---
+
+# 21. Future Enhancements
+
+- Bulk verification
+- AI-assisted verification suggestions
+- Duplicate certificate detection
+- Plagiarism alerts
+- Review SLA tracking
+- Faculty workload analytics
+- Keyboard shortcuts for review actions
+
+---
+
+# End of Document
+
+**Document:** `VERIFICATION_CENTER_PAGE_CONTRACT.md`
+
+**Module:** Faculty Portal
+
+**Version:** 1.0
+
+**Status:** Stable

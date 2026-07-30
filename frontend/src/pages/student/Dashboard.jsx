@@ -182,7 +182,7 @@ export default function StudentDashboard() {
             <QuickAction icon={FileText} label="Upload Resume" to="/resumes" />
             <QuickAction icon={FolderGit2} label="Add Project" to="/projects" />
             <QuickAction icon={Briefcase} label="Add Internship" to="/internships" />
-            <QuickAction icon={FolderGit2} label="Sync GitHub" to="/coding-profiles" />
+            <QuickAction icon={FolderGit2} label="Sync GitHub" to="/coding" />
             <QuickAction icon={Briefcase} label="Browse Drives" to="/drives" />
             <QuickAction icon={ExternalLink} label="View Applications" to="/drives/applications" />
           </div>
@@ -202,7 +202,7 @@ export default function StudentDashboard() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-900">Coding Activity</h2>
-            <Link to="/coding-profiles" className="text-sm text-blue-600 font-medium hover:underline">View All</Link>
+            <Link to="/coding" className="text-sm text-blue-600 font-medium hover:underline">View All</Link>
           </div>
           <div className="space-y-5">
             <CodingRow 

@@ -17,6 +17,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address']
     },
+    login_identifier: {
+      type: String,
+      required: [true, 'Login identifier is required'],
+      unique: true,
+      trim: true
+    },
     password: {
       type: String,
       required: [true, 'Password is required'],
@@ -34,6 +40,24 @@ const userSchema = new mongoose.Schema(
     is_active: {
       type: Boolean,
       default: true
+    },
+    account_status: {
+      type: String,
+      enum: ['ACTIVE', 'SUSPENDED', 'DISABLED', 'LOCKED'],
+      default: 'ACTIVE'
+    },
+    must_change_password: {
+      type: Boolean,
+      default: false
+    },
+    first_login_at: {
+      type: Date,
+      default: null
+    },
+    created_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
     }
   },
   {

@@ -14,21 +14,22 @@ const { buildTasks } = require('./builders/task.builder');
 const { buildCareerHealth } = require('./builders/careerHealth.builder');
 const { fromDashboardData } = require('./dashboard.dto');
 
+const studentSearchRepo = require('../../repositories/studentSearchRepo');
 const Student = require('../../models/Student'); // Needed to get the initial student object
 
 async function getDashboardData(userId) {
-  // 1. Fetch Student first (needed for studentId which drives everything else)
-  const student = await Student.findOne({ user_id: userId }).lean();
-  if (!student) {
+  // 1. Fetch StudentSearch first
+  const searchDoc = await studentSearchRepo.findByUser(userId);
+  if (!searchDoc) {
     const error = new Error('Student profile not found');
     error.statusCode = 404;
     throw error;
   }
 
-  const studentId = student._id.toString();
+  // Fallback to studentId string for legacy builders
+  const studentId = searchDoc.identity.student_id.toString();
 
   // 2. Parallelize all independent builder queries
-  // Promise.all is fast. We'll use it to ensure everything resolves.
   const [
     heroData,
     atsData,
@@ -39,12 +40,12 @@ async function getDashboardData(userId) {
     notificationsData,
     timelineData
   ] = await Promise.all([
-    buildHero(student),
-    buildAts(studentId),
-    buildCoding(studentId),
-    buildPortfolio(studentId),
+    buildHero(searchDoc),
+    buildAts(searchDoc),
+    buildCoding(searchDoc),
+    buildPortfolio(searchDoc),
     buildMentor(studentId),
-    buildPlacements(studentId),
+    buildPlacements(searchDoc, studentId),
     buildNotifications(studentId),
     buildTimeline(studentId)
   ]);
